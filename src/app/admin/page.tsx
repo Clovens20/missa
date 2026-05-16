@@ -48,21 +48,27 @@ export default function AdminDashboard() {
         customersRes,
         recentRes
       ] = await Promise.all([
-        // Total orders count
         supabase.from('guest_orders').select('*', { count: 'exact', head: true }),
-        // Pending orders count
         supabase.from('guest_orders').select('*', { count: 'exact', head: true }).eq('order_status', 'pending'),
-        // Today's orders for revenue
-        supabase.from('guest_orders').select('total, order_status').gte('created_at', isoToday),
-        // Products count and low stock
+        supabase.from('guest_orders').select('total, order_status, email').gte('created_at', isoToday),
         supabase.from('products').select('id, stock_quantity, low_stock_threshold').eq('is_active', true),
-        // Customers count
         supabase.from('abandoned_carts').select('id', { count: 'exact', head: true }),
-        // Recent activity
         supabase.from('guest_orders').select('*').order('created_at', { ascending: false }).limit(6)
       ])
 
-      // 2. Fetch total revenue (only totals to save bandwidth)
+      // 2. Fetch unique customers count from guest_orders
+      const { data: customerEmails } = await supabase
+        .from('guest_orders')
+        .select('email')
+      
+      const uniqueEmails = new Set(customerEmails?.map(c => c.email.toLowerCase()) || [])
+      
+      // Calculate today's new unique customers
+      const todayEmails = new Set(
+        todayOrdersRes.data?.map(o => (o as any).email?.toLowerCase()).filter(Boolean) || []
+      )
+
+      // 3. Fetch total revenue (only totals to save bandwidth)
       const { data: allRevenueData } = await supabase
         .from('guest_orders')
         .select('total')
@@ -81,8 +87,8 @@ export default function AdminDashboard() {
         pendingOrders: pendingOrdersRes.count || 0, 
         totalProducts: products.length, 
         lowStockProducts: lowStock, 
-        totalCustomers: customersRes.count || 0, 
-        newCustomersToday: todayOrdersRes.data?.length || 0,
+        totalCustomers: uniqueEmails.size, 
+        newCustomersToday: todayEmails.size,
         revenueGrowth: 15.2
       })
       setRecentOrders(recentRes.data || [])

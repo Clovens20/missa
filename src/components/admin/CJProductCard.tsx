@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Plus, Star, TrendingUp,
-  Eye, Award, Zap, Loader
+  Eye, Award, Zap, Loader, Package
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import SupplierInfoCard from 
@@ -255,6 +255,29 @@ export default function CJProductCard({
             </span>
           </div>
         )}
+
+        {/* Stock badge */}
+        <div className={`
+          absolute top-2 left-10 z-10
+          flex items-center gap-1
+          text-[10px] font-black
+          px-2 py-1 rounded-full shadow-lg
+          ${(product.total_stock || product.productStock || 0) > 50
+            ? 'bg-emerald-500/90 text-white'
+            : (product.total_stock || product.productStock || 0) > 10
+              ? 'bg-orange-500/90 text-white'
+              : (product.total_stock || product.productStock || 0) > 0
+                ? 'bg-red-500/90 text-white'
+                : 'bg-gray-500/90 text-white'
+          }`}>
+          <Package className="w-3 h-3"/>
+          {(product.total_stock || product.productStock || 0) > 100
+            ? '100+ en stock'
+            : (product.total_stock || product.productStock || 0) > 0
+              ? `${(product.total_stock || product.productStock || 0)} en stock`
+              : 'Épuisé'
+          }
+        </div>
 
         {/* Sales badge */}
         {supplier && 

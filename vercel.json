@@ -1,12 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/abandoned-cart",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/stock-alerts",
-      "schedule": "0 8 * * *"
+      "path": "/api/cron/sync-cj-stock",
+      "schedule": "0 * * * *"
     }
   ]
 }

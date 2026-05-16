@@ -169,6 +169,12 @@ export async function POST(
           cjProduct.materialEn,
         ].filter(Boolean)
 
+    // Calculate total stock
+    const totalStock = cjProduct.variants?.reduce(
+      (sum: number, v: any) => sum + (v.variantStock || 0),
+      0
+    ) || cjProduct.productStock || 0
+
     // Insert into dropship_products
     const { data: inserted, error } = 
       await supabase
@@ -202,11 +208,14 @@ export async function POST(
           video_url: includeVideo 
             ? mediaData.video 
             : null,
-          stock_quantity: 
-            cjProduct.productStock || 999,
+          stock_quantity: totalStock,
+          cj_variants: finalVariants,
+          cj_status: cjProduct.productStatus || 'ENABLE',
+          last_stock_sync: new Date().toISOString(),
+          supplier: 'cj',
           category_id: categoryId || null,
           tags: finalTags,
-          is_active: false,
+          is_active: totalStock > 0,
           is_dropship: true,
           weight: cjProduct.productWeight,
         })

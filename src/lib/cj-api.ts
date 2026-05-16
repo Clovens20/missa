@@ -149,12 +149,52 @@ export async function searchCJProducts(params: {
     pageSize: pageSize.toString(),
     sortField,
     sortOrder,
+    // ✅ ADD THESE FILTERS:
+    productStatus: 'ENABLE',
+    inventory: 'true', // Only products with stock
     ...(categoryId && { categoryId }),
     ...(minPrice !== undefined && { minPrice: minPrice.toString() }),
     ...(maxPrice !== undefined && { maxPrice: maxPrice.toString() }),
   })
 
-  return await cjRequestWithRetry(`/product/list?${queryParams}`)
+  const data = await cjRequestWithRetry(`/product/list?${queryParams}`)
+  
+  // ✅ Filter and normalize products
+  if (data?.list) {
+    data.list = data.list.filter((item: any) => {
+      const totalStock = item.variants?.reduce(
+        (sum: number, v: any) => sum + (v.variantStock || 0),
+        0
+      ) || item.productStock || 0
+      
+      return (
+        totalStock > 0 &&
+        item.productStatus === 'ENABLE' &&
+        !item.productRemoved
+      )
+    }).map((item: any) => {
+      const totalStock = item.variants?.reduce(
+        (sum: number, v: any) => sum + (v.variantStock || 0),
+        0
+      ) || item.productStock || 0
+
+      // Build variant stock map
+      const variantStocks: Record<string, number> = {}
+      item.variants?.forEach((v: any) => {
+        const key = [v.variantColor, v.variantSize].filter(Boolean).join(' / ')
+        if (key) variantStocks[key] = v.variantStock || 0
+      })
+
+      return {
+        ...item,
+        total_stock: totalStock,
+        variant_stocks: variantStocks,
+        in_stock: totalStock > 0,
+      }
+    })
+  }
+
+  return data
 }
 
 // ─── GET PRODUCT DETAILS ─────────────

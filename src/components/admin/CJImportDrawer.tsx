@@ -1474,33 +1474,31 @@ export default function CJImportDrawer({
                                   )
                                 )}
                               className={`
-                                min-w-[48px] h-9 px-3 
+                                min-w-[48px] h-10 px-3 
                                 rounded-xl border-2 
                                 text-xs font-bold 
                                 transition-all
-                                flex items-center 
-                                justify-center gap-1
+                                flex flex-col items-center 
+                                justify-center gap-0.5
                                 ${v.selected
                                   ? 'bg-secondary/20 border-secondary text-secondary'
-                                  : 'bg-gray-900 border-gray-700 text-gray-500 line-through'
+                                  : 'bg-gray-900 border-gray-700 text-gray-500'
                                 }
                                 ${v.stock === 0
-                                  ? 'opacity-40 cursor-not-allowed'
+                                  ? 'opacity-40 grayscale cursor-not-allowed border-red-500/30'
                                   : 'hover:scale-105 cursor-pointer'
                                 }`}
                               title={`Stock: ${v.stock} | Prix CJ: $${v.cjPrice}`}
                               disabled={v.stock === 0}>
                               
-                              {v.size || v.style || 
-                                v.sku?.substring(0, 6) || 
-                                `V${i+1}`}
+                              <span className="line-clamp-1">
+                                {v.size || v.style || v.sku?.substring(0, 6) || `V${i+1}`}
+                              </span>
                               
-                              {v.stock === 0 && (
-                                <span className="text-[8px] 
-                                  text-red-400">
-                                  OUT
-                                </span>
-                              )}
+                              <span className={`text-[8px] font-black uppercase
+                                ${v.stock > 10 ? 'text-emerald-400' : v.stock > 0 ? 'text-orange-400' : 'text-red-400'}`}>
+                                {v.stock > 0 ? `${v.stock} dispo` : 'Épuisé'}
+                              </span>
                             </button>
                           </div>
                         ))}
@@ -1508,18 +1506,16 @@ export default function CJImportDrawer({
 
                       {/* Stock info per color */}
                       <div className="px-4 pb-3 
-                        flex flex-wrap gap-2">
+                        flex flex-wrap gap-x-4 gap-y-1">
                         {colorVariants.map(
                           (v: any, i: number) => 
                           v.selected && (
-                          <span key={i}
-                            className="text-[10px] 
-                              text-gray-600">
-                            {v.size && `${v.size}: `}
-                            {v.stock >= 999 
-                              ? '∞ stock' 
-                              : `${v.stock} en stock`}
-                          </span>
+                          <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                            <span className="text-gray-500">{v.size || 'Uniq'}:</span>
+                            <span className={`font-black ${v.stock > 10 ? 'text-emerald-400' : v.stock > 0 ? 'text-orange-400' : 'text-red-400'}`}>
+                              {v.stock > 0 ? `${v.stock} en stock` : 'Épuisé'}
+                            </span>
+                          </div>
                         ))}
                       </div>
                     </div>

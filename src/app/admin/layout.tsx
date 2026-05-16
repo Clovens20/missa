@@ -89,6 +89,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { href: '/admin/banners', icon: Image, label: 'Bannières', permission: 'banners' },
         { href: '/admin/coupons', icon: Megaphone, label: 'Coupons', permission: 'coupons' },
         { href: '/admin/dropshipping', icon: Globe, label: 'Dropshipping CJ', permission: 'products' },
+        { href: '/admin/products/stock', icon: Package, label: 'Stock CJ', permission: 'products' },
         { href: '/admin/reviews', icon: Star, label: 'Avis clients', badge: pendingReviews, permission: 'products' },
         { href: '/admin/analytics', icon: BarChart3, label: 'Analytique', permission: 'analytics' },
         { href: '/admin/pixels', icon: Zap, label: 'Pixels & Tracking', permission: 'analytics' },
