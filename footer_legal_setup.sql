@@ -72,6 +72,12 @@ CREATE TABLE IF NOT EXISTS
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure columns exist if table was already created
+ALTER TABLE legal_pages 
+  ADD COLUMN IF NOT EXISTS show_in_footer BOOLEAN DEFAULT true;
+ALTER TABLE legal_pages 
+  ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
+
 ALTER TABLE legal_pages
   ENABLE ROW LEVEL SECURITY;
   
