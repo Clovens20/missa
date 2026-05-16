@@ -5,13 +5,7 @@ export async function POST() {
   try {
     const token = await getCJToken()
     
-    // Use the public app URL for the webhook callback
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL
-    if (!appUrl) {
-      return NextResponse.json({ error: 'NEXT_PUBLIC_APP_URL is not defined' }, { status: 500 })
-    }
-
-    const webhookUrl = `${appUrl}/api/webhooks/cj`
+    const webhookUrl = `https://www.missashopp.com/api/webhooks/cj`
     
     console.log('Registering CJ Webhook at:', webhookUrl)
 
