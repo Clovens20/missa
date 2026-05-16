@@ -101,6 +101,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { href: '/admin/sub-admins', icon: UserCog, label: 'Sous-admins', permission: 'sub_admins', superOnly: true },
         { href: '/admin/activity', icon: Activity, label: 'Activité', permission: null, superOnly: true },
         { href: '/admin/settings/social-links', icon: Share2, label: 'Réseaux Sociaux', permission: 'settings' },
+        { href: '/admin/settings/footer', icon: Settings, label: 'Footer & Légal', permission: 'settings' },
         { href: '/admin/settings', icon: Settings, label: 'Paramètres', permission: 'settings', highlight: true },
       ]
     }
