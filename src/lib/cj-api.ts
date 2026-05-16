@@ -149,9 +149,6 @@ export async function searchCJProducts(params: {
     pageSize: pageSize.toString(),
     sortField,
     sortOrder,
-    // ✅ ADD THESE FILTERS:
-    productStatus: 'ENABLE',
-    inventory: 'true', // Only products with stock
     ...(categoryId && { categoryId }),
     ...(minPrice !== undefined && { minPrice: minPrice.toString() }),
     ...(maxPrice !== undefined && { maxPrice: maxPrice.toString() }),
@@ -161,22 +158,11 @@ export async function searchCJProducts(params: {
   
   // ✅ Filter and normalize products
   if (data?.list) {
-    data.list = data.list.filter((item: any) => {
-      const totalStock = item.variants?.reduce(
-        (sum: number, v: any) => sum + (v.variantStock || 0),
-        0
-      ) || item.productStock || 0
-      
-      return (
-        totalStock > 0 &&
-        item.productStatus === 'ENABLE' &&
-        !item.productRemoved
-      )
-    }).map((item: any) => {
-      const totalStock = item.variants?.reduce(
-        (sum: number, v: any) => sum + (v.variantStock || 0),
-        0
-      ) || item.productStock || 0
+    data.list = data.list.map((item: any) => {
+      // Calculate stock - list might not have variants or productStock
+      const totalStock = (item.variants && item.variants.length > 0)
+        ? item.variants.reduce((sum: number, v: any) => sum + (v.variantStock || 0), 0)
+        : (item.productStock || item.inventory || item.stock || -1) // Use -1 to indicate unknown
 
       // Build variant stock map
       const variantStocks: Record<string, number> = {}
@@ -189,8 +175,13 @@ export async function searchCJProducts(params: {
         ...item,
         total_stock: totalStock,
         variant_stocks: variantStocks,
-        in_stock: totalStock > 0,
+        in_stock: totalStock > 0 || totalStock === -1, // Assume in stock if unknown
       }
+    }).filter((item: any) => {
+      // Only filter out if we KNOW it's out of stock or removed
+      if (item.productRemoved) return false
+      if (item.total_stock === 0) return false
+      return true
     })
   }
 

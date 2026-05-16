@@ -262,20 +262,24 @@ export default function CJProductCard({
           flex items-center gap-1
           text-[10px] font-black
           px-2 py-1 rounded-full shadow-lg
-          ${(product.total_stock || product.productStock || 0) > 50
-            ? 'bg-emerald-500/90 text-white'
-            : (product.total_stock || product.productStock || 0) > 10
-              ? 'bg-orange-500/90 text-white'
-              : (product.total_stock || product.productStock || 0) > 0
-                ? 'bg-red-500/90 text-white'
-                : 'bg-gray-500/90 text-white'
+          ${product.total_stock === -1
+            ? 'bg-blue-500/90 text-white'
+            : product.total_stock > 50
+              ? 'bg-emerald-500/90 text-white'
+              : product.total_stock > 10
+                ? 'bg-orange-500/90 text-white'
+                : product.total_stock > 0
+                  ? 'bg-red-500/90 text-white'
+                  : 'bg-gray-500/90 text-white'
           }`}>
           <Package className="w-3 h-3"/>
-          {(product.total_stock || product.productStock || 0) > 100
-            ? '100+ en stock'
-            : (product.total_stock || product.productStock || 0) > 0
-              ? `${(product.total_stock || product.productStock || 0)} en stock`
-              : 'Épuisé'
+          {product.total_stock === -1
+            ? 'Disponible'
+            : product.total_stock > 100
+              ? '100+ en stock'
+              : product.total_stock > 0
+                ? `${product.total_stock} en stock`
+                : 'Épuisé'
           }
         </div>
 
