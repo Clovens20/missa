@@ -242,6 +242,7 @@ export default function DropshippingPage() {
   const [searchMode, setSearchMode] = useState<'text' | 'image'>('text')
   const [imageSearchPreview, setImageSearchPreview] = useState<string>('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [searchInfo, setSearchInfo] = useState<any>(null)
 
   useEffect(() => {
     loadInitialData()
@@ -299,6 +300,7 @@ export default function DropshippingPage() {
     if (resetPage) {
       setPage(1)
       setSearchResults([])
+      setSearchInfo(null)
     }
     
     try {
@@ -321,6 +323,7 @@ export default function DropshippingPage() {
       
       if (resetPage) {
         setSearchResults(products)
+        setSearchInfo(data.search_info || null)
       } else {
         setSearchResults(prev => [...prev, ...products])
       }
@@ -598,6 +601,26 @@ export default function DropshippingPage() {
           )}
 
           {/* Results */}
+          {searchInfo?.was_translated && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl px-5 py-4 mb-4">
+              <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Globe className="w-4 h-4 text-blue-400"/>
+              </div>
+              <div className="text-sm">
+                <p className="text-blue-200 font-bold">Traduction automatique</p>
+                <p className="text-blue-400/80 text-xs">
+                  Votre recherche a été traduite en anglais pour CJ : 
+                  <span className="text-white font-black ml-1 bg-blue-500/20 px-2 py-0.5 rounded">
+                    "{searchInfo.translated}"
+                  </span>
+                </p>
+              </div>
+            </motion.div>
+          )}
+
           {searchResults.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { searchWithSupplierData } from '@/lib/cj-api'
+import { translateToCJ } from '@/lib/cj-translate'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -43,6 +44,10 @@ export async function GET(request: Request) {
       }
     }
 
+    // ── TRANSLATION ──
+    const { translated, wasTranslated } = translateToCJ(searchTerm)
+    const finalSearchTerm = translated
+
     // Check cache first
     const cacheKey = `search:${query}:${page}:${category}`
     const { data: cached } = await supabase
@@ -60,7 +65,7 @@ export async function GET(request: Request) {
 
     // Search CJ API
     const results = await searchWithSupplierData({
-      productName: searchTerm,
+      productName: finalSearchTerm,
       categoryId: category || undefined,
       pageNum: page,
       pageSize: 20,
@@ -77,7 +82,15 @@ export async function GET(request: Request) {
         expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       }, { onConflict: 'search_key' })
 
-    return NextResponse.json(results)
+    return NextResponse.json({
+      ...results,
+      search_info: {
+        original: query,
+        searchTerm: searchTerm,
+        translated: finalSearchTerm,
+        was_translated: wasTranslated,
+      }
+    })
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message },
