@@ -1,17 +1,8 @@
 import { NextResponse } from 'next/server'
-import { createClient } from 
-  '@supabase/supabase-js'
-import { Resend } from 'resend'
+import { supabaseServer } from '@/lib/supabase-server'
+import { FROM, resend } from '@/lib/email'
 import { getNewCollectionEmail } 
   from '@/lib/collection-alert-email'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-const resend = new Resend(
-  process.env.RESEND_API_KEY
-)
 
 export async function POST(req: Request) {
   try {
@@ -23,7 +14,7 @@ export async function POST(req: Request) {
 
     // Get products
     const { data: products } = 
-      await supabase
+      await (supabaseServer as any)
         .from('products')
         .select('id, name, slug, price, images')
         .in('id', productIds || [])
@@ -32,16 +23,16 @@ export async function POST(req: Request) {
 
     // Get dropship products if needed
     const { data: dropProducts } = 
-      await supabase
+      await (supabaseServer as any)
         .from('dropship_products')
         .select('id, name, slug, selling_price, images')
         .in('id', productIds || [])
         .eq('is_active', true)
         .limit(4)
 
-    const allProducts = [
+    const allProducts: any[] = [
       ...(products || []),
-      ...(dropProducts || []).map(p => ({
+      ...(dropProducts || []).map((p: any) => ({
         ...p,
         price: p.selling_price,
         is_dropship: true
@@ -57,13 +48,13 @@ export async function POST(req: Request) {
 
     // Get confirmed subscribers
     const { data: subscribers } = 
-      await supabase
+      await (supabaseServer as any)
         .from('collection_subscribers')
         .select('*')
         .eq('confirmed', true)
         .eq('notify_new_products', true)
 
-    if (!subscribers?.length) {
+    if (!(subscribers as any)?.length) {
       return NextResponse.json({
         success: true,
         sent: 0,
@@ -75,19 +66,19 @@ export async function POST(req: Request) {
     let errors = 0
 
     // Send in batches of 10 to avoid rate limits
-    const batches = []
+    const batches: any[][] = []
     for (let i = 0; 
-      i < subscribers.length; 
+      i < (subscribers as any).length; 
       i += 10
     ) {
       batches.push(
-        subscribers.slice(i, i + 10)
+        (subscribers as any).slice(i, i + 10)
       )
     }
 
     for (const batch of batches) {
       await Promise.all(
-        batch.map(async subscriber => {
+        batch.map(async (subscriber: any) => {
           try {
             const { subject: sub, html } = 
               getNewCollectionEmail(
@@ -98,13 +89,13 @@ export async function POST(req: Request) {
               )
 
             await resend.emails.send({
-              from: 'Missa Shop <hello@missashop.com>',
+              from: FROM,
               to: subscriber.email,
               subject: sub,
               html,
             })
 
-            await supabase
+            await (supabaseServer as any)
               .from('collection_subscribers')
               .update({
                 emails_sent: 
@@ -129,13 +120,13 @@ export async function POST(req: Request) {
     }
 
     // Log notification
-    await supabase
+    await (supabaseServer as any)
       .from('collection_notifications')
       .insert({
         subject,
         type,
         products: allProducts.map(
-          p => ({ id: p.id, name: p.name })
+          (p: any) => ({ id: p.id, name: p.name })
         ),
         recipients_count: sent,
       })
@@ -144,7 +135,7 @@ export async function POST(req: Request) {
       success: true,
       sent,
       errors,
-      total: subscribers.length,
+      total: (subscribers as any).length,
     })
 
   } catch (error: any) {

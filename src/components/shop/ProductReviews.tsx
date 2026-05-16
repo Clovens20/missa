@@ -285,10 +285,12 @@ function ReviewCard({
               font-bold text-primary mb-1">
               Réponse de Missa Shop
             </p>
-            <p className="text-xs 
-              text-gray-600">
-              {review.admin_reply}
-            </p>
+            <div 
+              className="prose prose-sm text-xs text-gray-600 max-w-none
+                prose-p:text-gray-600 prose-p:leading-relaxed
+                prose-strong:text-gray-900 prose-strong:font-bold"
+              dangerouslySetInnerHTML={{ __html: review.admin_reply }}
+            />
           </div>
         </div>
       )}

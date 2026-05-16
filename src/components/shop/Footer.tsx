@@ -119,9 +119,12 @@ export default function Footer() {
               </span>
             </div>
           </div>
-          <p className="text-sm text-gray-400 leading-relaxed mb-6">
-            {brand.description || "Votre boutique en ligne premium."}
-          </p>
+          <div 
+            className="prose prose-sm prose-invert max-w-none text-gray-400 leading-relaxed mb-6
+              prose-p:text-gray-400 prose-p:leading-relaxed
+              prose-strong:text-white"
+            dangerouslySetInnerHTML={{ __html: brand.description || "Votre boutique en ligne premium." }}
+          />
           
           {/* Social Links */}
           <div className="flex gap-3">

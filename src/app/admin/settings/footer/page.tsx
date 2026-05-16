@@ -689,20 +689,16 @@ function BrandTab({ data, onSave, saving }: any) {
             text-gray-400 uppercase tracking-wide
             block mb-2">{f.label}</label>
           {f.key === 'description' ? (
-            <textarea
+            <RichTextEditor
               value={form[f.key] || ''}
-              onChange={e => setForm(
+              onChange={(html) => setForm(
                 (p: any) => ({
-                  ...p, [f.key]: e.target.value
+                  ...p, [f.key]: html
                 })
               )}
-              rows={3}
               placeholder={f.placeholder}
-              className="w-full px-4 py-3
-                bg-gray-800 border border-gray-700
-                focus:border-primary rounded-xl
-                text-white text-sm focus:outline-none
-                resize-none"
+              minHeight={150}
+              compact={true}
             />
           ) : (
             <input

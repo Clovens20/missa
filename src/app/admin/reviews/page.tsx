@@ -11,6 +11,7 @@ import {
 import { StarRating } 
   from '@/components/shop/ProductReviews'
 import { toast } from 'sonner'
+import RichTextEditor from '@/components/admin/RichTextEditor'
 
 export default function ReviewsAdminPage() {
   const [reviews, setReviews] = 
@@ -338,19 +339,12 @@ export default function ReviewsAdminPage() {
                 <div className="space-y-2 
                   pt-3 border-t 
                   border-gray-800">
-                  <textarea
+                  <RichTextEditor
                     value={replyText}
-                    onChange={e => 
-                      setReplyText(e.target.value)}
+                    onChange={(html) => setReplyText(html)}
                     placeholder="Votre réponse publique..."
-                    rows={3}
-                    className="w-full px-4 py-3 
-                      bg-gray-800 border 
-                      border-gray-700 rounded-xl 
-                      text-white text-sm 
-                      focus:outline-none 
-                      focus:border-primary 
-                      resize-none"
+                    minHeight={150}
+                    compact={true}
                   />
                   <div className="flex gap-2">
                     <button

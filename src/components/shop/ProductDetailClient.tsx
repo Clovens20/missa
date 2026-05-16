@@ -221,7 +221,17 @@ export default function ProductDetailClient({
             <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-6 py-4 font-bold text-sm border-b-2 -mb-px transition-all ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>{label}</button>
           ))}
         </div>
-        {activeTab === 'desc' && <div className="prose max-w-none text-gray-700 leading-relaxed"><p>{product.description || product.short_description || 'Description non disponible.'}</p></div>}
+        {activeTab === 'desc' && (
+          <div 
+            className="prose prose-gray max-w-none text-gray-700 leading-relaxed
+              prose-headings:text-gray-900 prose-headings:font-black
+              prose-p:text-gray-600 prose-p:leading-relaxed
+              prose-strong:text-gray-900 prose-strong:font-bold
+              prose-ul:list-disc prose-ul:pl-5
+              prose-li:text-gray-600"
+            dangerouslySetInnerHTML={{ __html: product.description || product.short_description || 'Description non disponible.' }}
+          />
+        )}
         {activeTab === 'specs' && (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[ ['SKU', product.sku || 'N/A'], ['Catégorie', product.category?.name || 'N/A'], ['Stock', `${product.stock_quantity} unités`], ['Tags', product.tags?.join(', ') || 'N/A'], ['Poids', product.weight ? `${product.weight} kg` : 'N/A'], ['Vendu', `${product.sold_count} fois`] ].map(([key, val]) => (

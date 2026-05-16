@@ -9,6 +9,7 @@ import {
 import Link from 'next/link'
 import { formatPrice, slugify } from '@/lib/utils'
 import { toast } from 'sonner'
+import RichTextEditor from '@/components/admin/RichTextEditor'
 
 export default function NewBundlePage() {
   const router = useRouter()
@@ -106,7 +107,13 @@ export default function NewBundlePage() {
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-300 mb-2">Description</label>
-              <textarea value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))} placeholder="Décrivez ce bundle..." rows={3} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none resize-none"/>
+                <RichTextEditor 
+                  value={form.description}
+                  onChange={(html) => setForm(p => ({...p, description: html}))}
+                  placeholder="Décrivez ce bundle..."
+                  minHeight={150}
+                  compact={true}
+                />
             </div>
           </div>
 

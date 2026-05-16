@@ -26,6 +26,7 @@ interface RichTextEditorProps {
   onChange: (html: string) => void
   placeholder?: string
   minHeight?: number
+  compact?: boolean
 }
 
 export default function RichTextEditor({
@@ -33,6 +34,7 @@ export default function RichTextEditor({
   onChange,
   placeholder = 'Commencez à écrire...',
   minHeight = 400,
+  compact = false,
 }: RichTextEditorProps) {
 
   const editor = useEditor({
@@ -192,18 +194,20 @@ export default function RichTextEditor({
         <Divider/>
 
         {/* Headings */}
-        <ToolBtn
-          onClick={() =>
-            editor.chain().focus()
-              .toggleHeading({ level: 1 })
-              .run()
-          }
-          active={editor.isActive(
-            'heading', { level: 1 }
-          )}
-          title="Titre 1">
-          <Heading1 className="w-4 h-4"/>
-        </ToolBtn>
+        {!compact && (
+          <ToolBtn
+            onClick={() =>
+              editor.chain().focus()
+                .toggleHeading({ level: 1 })
+                .run()
+            }
+            active={editor.isActive(
+              'heading', { level: 1 }
+            )}
+            title="Titre 1">
+            <Heading1 className="w-4 h-4"/>
+          </ToolBtn>
+        )}
         <ToolBtn
           onClick={() =>
             editor.chain().focus()
@@ -288,48 +292,52 @@ export default function RichTextEditor({
           <ListOrdered className="w-4 h-4"/>
         </ToolBtn>
 
-        <Divider/>
+        {!compact && <Divider/>}
 
         {/* Alignment */}
-        <ToolBtn
-          onClick={() =>
-            editor.chain().focus()
-              .setTextAlign('left').run()
-          }
-          active={
-            editor.isActive({
-              textAlign: 'left'
-            })
-          }
-          title="Aligner à gauche">
-          <AlignLeft className="w-4 h-4"/>
-        </ToolBtn>
-        <ToolBtn
-          onClick={() =>
-            editor.chain().focus()
-              .setTextAlign('center').run()
-          }
-          active={
-            editor.isActive({
-              textAlign: 'center'
-            })
-          }
-          title="Centrer">
-          <AlignCenter className="w-4 h-4"/>
-        </ToolBtn>
-        <ToolBtn
-          onClick={() =>
-            editor.chain().focus()
-              .setTextAlign('right').run()
-          }
-          active={
-            editor.isActive({
-              textAlign: 'right'
-            })
-          }
-          title="Aligner à droite">
-          <AlignRight className="w-4 h-4"/>
-        </ToolBtn>
+        {!compact && (
+          <>
+            <ToolBtn
+              onClick={() =>
+                editor.chain().focus()
+                  .setTextAlign('left').run()
+              }
+              active={
+                editor.isActive({
+                  textAlign: 'left'
+                })
+              }
+              title="Aligner à gauche">
+              <AlignLeft className="w-4 h-4"/>
+            </ToolBtn>
+            <ToolBtn
+              onClick={() =>
+                editor.chain().focus()
+                  .setTextAlign('center').run()
+              }
+              active={
+                editor.isActive({
+                  textAlign: 'center'
+                })
+              }
+              title="Centrer">
+              <AlignCenter className="w-4 h-4"/>
+            </ToolBtn>
+            <ToolBtn
+              onClick={() =>
+                editor.chain().focus()
+                  .setTextAlign('right').run()
+              }
+              active={
+                editor.isActive({
+                  textAlign: 'right'
+                })
+              }
+              title="Aligner à droite">
+              <AlignRight className="w-4 h-4"/>
+            </ToolBtn>
+          </>
+        )}
 
         <Divider/>
 
@@ -340,14 +348,16 @@ export default function RichTextEditor({
           title="Ajouter un lien">
           <LinkIcon className="w-4 h-4"/>
         </ToolBtn>
-        <ToolBtn
-          onClick={() =>
-            editor.chain().focus()
-              .setHorizontalRule().run()
-          }
-          title="Ligne de séparation">
-          <Minus className="w-4 h-4"/>
-        </ToolBtn>
+        {!compact && (
+          <ToolBtn
+            onClick={() =>
+              editor.chain().focus()
+                .setHorizontalRule().run()
+            }
+            title="Ligne de séparation">
+            <Minus className="w-4 h-4"/>
+          </ToolBtn>
+        )}
 
         <Divider/>
 

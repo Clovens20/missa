@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { slugify } from '@/lib/utils'
 import { useRef } from 'react'
 import ProductVariantsManager from '@/components/admin/ProductVariantsManager'
+import RichTextEditor from '@/components/admin/RichTextEditor'
 import { ProductImage } from '@/types'
 
 interface ProductFormData {
@@ -261,12 +262,11 @@ export default function NewProductPage() {
               </div>
               <div>
                 <label className="block text-xs font-black text-gray-500 uppercase mb-2">Description</label>
-                <textarea 
-                  rows={5}
+                <RichTextEditor 
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(html) => setFormData({ ...formData, description: html })}
                   placeholder="Décrivez votre produit en détail..."
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none"
+                  minHeight={250}
                 />
               </div>
             </div>

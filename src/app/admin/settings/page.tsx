@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import { Settings, Globe, Type, Palette, ToggleLeft, FileText, Save, RefreshCw, Eye, Shield, Layers, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
+import RichTextEditor from '@/components/admin/RichTextEditor'
 
 const settingsTabs = [
   { id: 'general', icon: Globe, label: 'Général', desc: 'Nom, contact, livraison' },
@@ -133,7 +134,13 @@ export default function SettingsPage() {
                 {legalPages.map(page => (
                   <div key={page.id} className="mb-8 pb-8 border-b border-gray-800 last:border-0 last:mb-0 last:pb-0">
                     <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-3"><Shield className="w-5 h-5 text-primary"/><div><h3 className="font-bold text-white">{page.title}</h3><p className="text-xs text-gray-500">/{page.slug}</p></div></div><div className="flex items-center gap-2"><a href={`/${page.slug}`} target="_blank" className="text-xs text-gray-500 hover:text-white px-3 py-1.5 rounded-lg bg-gray-800 transition-colors">Voir →</a><span className={`text-xs px-2.5 py-1 rounded-full font-bold ${page.is_active ? 'bg-secondary/20 text-secondary' : 'bg-gray-600/20 text-gray-400'}`}>{page.is_active ? 'Active' : 'Inactive'}</span></div></div>
-                    <div><label className="block text-xs font-bold text-gray-500 mb-2">TITRE</label><input type="text" defaultValue={page.title} onBlur={e => saveLegalPage({ ...page, title: e.target.value })} className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none mb-3"/><label className="block text-xs font-bold text-gray-500 mb-2">CONTENU</label><textarea defaultValue={page.content} onBlur={e => saveLegalPage({ ...page, content: e.target.value })} rows={8} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none resize-y font-mono"/></div>
+                    <div><label className="block text-xs font-bold text-gray-500 mb-2">TITRE</label><input type="text" defaultValue={page.title} onBlur={e => saveLegalPage({ ...page, title: e.target.value })} className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none mb-3"/><label className="block text-xs font-bold text-gray-500 mb-2">CONTENU</label>
+                      <RichTextEditor 
+                        value={page.content}
+                        onChange={(html) => saveLegalPage({ ...page, content: html })}
+                        minHeight={300}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

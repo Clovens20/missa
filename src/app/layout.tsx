@@ -13,12 +13,12 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || 
+    process.env.NEXT_PUBLIC_APP_URL || 
     'https://missashop.com'
   ),
   title: {
-    default: 'Missa Shop — Mode & Lifestyle Premium',
-    template: '%s | Missa Shop',
+    default: `${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'} — Mode & Lifestyle Premium`,
+    template: `%s | ${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'}`,
   },
   description: 
     'Découvrez la mode premium à petits prix. ' +
@@ -32,9 +32,9 @@ export const metadata: Metadata = {
     'dropshipping', 'Missa Shop',
     'vêtements femme', 'accessoires mode',
   ],
-  authors: [{ name: 'Missa Shop' }],
-  creator: 'Missa Shop',
-  publisher: 'Missa Shop',
+  authors: [{ name: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop' }],
+  creator: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
+  publisher: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
   robots: {
     index: true,
     follow: true,
@@ -49,9 +49,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'fr_CA',
-    url: 'https://missashop.com',
-    siteName: 'Missa Shop',
-    title: 'Missa Shop — Mode & Lifestyle Premium',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com',
+    siteName: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
+    title: `${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'} — Mode & Lifestyle Premium`,
     description: 
       'Mode premium à petits prix. ' +
       'Livraison Canada, USA, Haïti.',
@@ -59,12 +59,12 @@ export const metadata: Metadata = {
       url: '/og-image.jpg',
       width: 1200,
       height: 630,
-      alt: 'Missa Shop',
+      alt: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
     }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Missa Shop',
+    title: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
     description: 
       'Mode premium à petits prix.',
     images: ['/og-image.jpg'],
@@ -74,11 +74,11 @@ export const metadata: Metadata = {
     // google: 'your-google-verification',
   },
   alternates: {
-    canonical: 'https://missashop.com',
+    canonical: process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com',
     languages: {
-      'fr-CA': 'https://missashop.com',
-      'fr-FR': 'https://missashop.com',
-      'en-US': 'https://missashop.com/en',
+      'fr-CA': process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com',
+      'fr-FR': process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com',
+      'en-US': (process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com') + '/en',
     },
   },
   icons: {

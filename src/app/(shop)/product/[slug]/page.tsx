@@ -26,7 +26,7 @@ export async function generateMetadata({
 
   if (!product) return { title: 'Produit introuvable | Missa Shop' }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://missashop.com'
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com'
   const productUrl = `${siteUrl}/product/${product.slug}`
   const imageUrl = product.images?.[0]?.url || `${siteUrl}/og-default.jpg`
   
@@ -34,12 +34,12 @@ export async function generateMetadata({
     ?.replace(/<[^>]*>/g, '')
     .replace(/\s+/g, ' ')
     .trim()
-    .substring(0, 160) || `Découvrez ${product.name} sur Missa Shop.`
+    .substring(0, 160) || `Découvrez ${product.name} sur ${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'}.`
 
   return {
     title: `${product.name} — $${product.price}`,
     description: cleanDesc,
-    keywords: [product.name, 'Missa Shop', 'boutique en ligne'],
+    keywords: [product.name, process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop', 'boutique en ligne'],
     openGraph: {
       title: product.name,
       description: cleanDesc,
@@ -51,7 +51,7 @@ export async function generateMetadata({
       }],
       url: productUrl,
       type: 'website',
-      siteName: 'Missa Shop',
+      siteName: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
     },
     twitter: {
       card: 'summary_large_image',
@@ -71,7 +71,7 @@ export async function generateMetadata({
 }
 
 function ProductSchema({ product }: { product: any }) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://missashop.com'
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com'
 
   const schema = {
     '@context': 'https://schema.org',
@@ -83,7 +83,7 @@ function ProductSchema({ product }: { product: any }) {
     sku: product.id,
     brand: {
       '@type': 'Brand',
-      name: 'Missa Shop',
+      name: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
     },
     offers: {
       '@type': 'Offer',
@@ -96,7 +96,7 @@ function ProductSchema({ product }: { product: any }) {
         : 'https://schema.org/OutOfStock',
       seller: {
         '@type': 'Organization',
-        name: 'Missa Shop',
+        name: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
       },
     },
     ...(product.review_count > 0 ? {
