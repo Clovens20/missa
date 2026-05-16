@@ -21,6 +21,10 @@ export default function CollectionAlertPopup() {
   const [done, setDone] = useState(false)
   const [dismissed, setDismissed] = 
     useState(false)
+  const [selectedInterests, setSelectedInterests] =
+    useState<string[]>([
+      'collections', 'flash', 'vip'
+    ])
 
   useEffect(() => {
     // Don't show if already subscribed
@@ -90,7 +94,17 @@ export default function CollectionAlertPopup() {
         name: name.trim() || null,
         source: 'popup',
         confirmed: true,
-        // Auto confirm for simplicity
+        // Save what they selected:
+        notify_new_products: 
+          selectedInterests
+            .includes('collections'),
+        notify_flash_sales: 
+          selectedInterests
+            .includes('flash'),
+        // VIP = both notifications
+        notify_restocks: 
+          selectedInterests
+            .includes('vip'),
       }, {
         onConflict: 'email',
         ignoreDuplicates: true,
@@ -148,7 +162,7 @@ export default function CollectionAlertPopup() {
               damping: 25,
             }}
             className="fixed left-1/2 
-              top-1/2 -translate-x-1/2 
+              top-[40%] -translate-x-1/2 
               -translate-y-1/2 z-[101] 
               w-full max-w-md 
               overflow-hidden rounded-3xl 
@@ -219,37 +233,102 @@ export default function CollectionAlertPopup() {
                 <div className="bg-white p-6">
                   
                   {/* Benefits */}
+                  <p className="text-xs text-gray-500 
+                    text-center mb-3 
+                    flex items-center 
+                    justify-center gap-1.5">
+                    <span>👆</span>
+                    Choisissez vos préférences
+                  </p>
+
                   <div className="grid 
-                    grid-cols-3 gap-3 mb-6">
+                    grid-cols-3 gap-3 mb-3">
                     {[
                       { 
+                        key: 'collections',
                         icon: '👗', 
                         text: 'Nouvelles collections' 
                       },
                       { 
+                        key: 'flash',
                         icon: '⚡', 
-                        text: 'Flash sales exclusives' 
+                        text: 'Flash sales' 
                       },
                       { 
+                        key: 'vip',
                         icon: '🎁', 
                         text: 'Offres VIP' 
                       },
-                    ].map((b, i) => (
-                      <div key={i}
-                        className="text-center 
-                          bg-gray-50 rounded-2xl 
-                          p-3">
-                        <p className="text-2xl 
-                          mb-1">{b.icon}</p>
-                        <p className="text-[10px] 
-                          text-gray-500 
-                          font-semibold 
-                          leading-tight">
-                          {b.text}
-                        </p>
-                      </div>
-                    ))}
+                    ].map((b, i) => {
+                      const isSelected = 
+                        selectedInterests.includes(b.key)
+
+                      return (
+                        <motion.button
+                          key={i}
+                          type="button"
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            setSelectedInterests(prev => {
+                              // Toggle selection
+                              if (prev.includes(b.key)) {
+                                // Keep at least 1 selected
+                                if (prev.length === 1) return prev
+                                return prev.filter(
+                                  k => k !== b.key
+                                )
+                              }
+                              return [...prev, b.key]
+                            })
+                          }}
+                          className={`
+                            relative text-center 
+                            bg-gray-50 rounded-2xl p-3
+                            border-2 transition-all
+                            cursor-pointer
+                            ${isSelected
+                              ? 'border-primary bg-primary/5 shadow-sm'
+                              : 'border-gray-200 opacity-60'
+                            }`}>
+                          
+                          {/* Checkmark when selected */}
+                          {isSelected && (
+                            <div className="absolute 
+                              -top-1.5 -right-1.5
+                              w-5 h-5 bg-primary 
+                              rounded-full flex items-center
+                              justify-center shadow-sm">
+                              <Check className="w-3 h-3 
+                                text-white"/>
+                            </div>
+                          )}
+                          
+                          <p className={`text-2xl mb-1
+                            transition-all
+                            ${isSelected ? '' : 'grayscale'}`}>
+                            {b.icon}
+                          </p>
+                          <p className={`text-[10px] 
+                            font-semibold leading-tight
+                            transition-colors
+                            ${isSelected
+                              ? 'text-gray-700'
+                              : 'text-gray-400'
+                            }`}>
+                            {b.text}
+                          </p>
+                        </motion.button>
+                      )
+                    })}
                   </div>
+
+                  <p className="text-center text-[10px]
+                    text-primary font-bold mb-4">
+                    {selectedInterests.length === 3 
+                      ? 'Tout sélectionné ✓' 
+                      : `${selectedInterests.length}/3 sélectionné(s)`
+                    }
+                  </p>
 
                   <form onSubmit={subscribe}
                     className="space-y-3">
@@ -310,7 +389,11 @@ export default function CollectionAlertPopup() {
                         <>
                           <Bell 
                             className="w-4 h-4"/>
-                          Je veux être alertée!
+                          M'alerter pour {selectedInterests.length}
+                          {selectedInterests.length > 1 
+                            ? ' catégories' 
+                            : ' catégorie'
+                          }!
                           <ArrowRight 
                             className="w-4 h-4"/>
                         </>
