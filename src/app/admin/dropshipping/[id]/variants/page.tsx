@@ -566,7 +566,7 @@ export default function VariantManagerPage() {
                     </span>
                     <span className="text-primary">
                       CJ: {formatPrice(
-                        v.cjPrice || 0
+                        v.cjPrice || v.price || 0
                       )}
                     </span>
                   </div>

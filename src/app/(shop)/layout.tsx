@@ -1,12 +1,7 @@
 import CollectionAlertPopup from '@/components/shop/CollectionAlertPopup'
 import MobileNav from '@/components/shop/MobileNav'
 import PixelsInjector from '@/components/shop/PixelsInjector'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { supabaseServer as supabase } from '@/lib/supabase-server'
 
 function OrganizationSchema() {
   const siteUrl = 
@@ -54,11 +49,13 @@ export default async function ShopLayout({
   children: React.ReactNode
 }) {
   // Fetch active pixels
-  const { data: pixelData } = await supabase
+  const { data: rawPixelData } = await supabase
     .from('tracking_pixels')
     .select('*')
     .eq('id', '00000000-0000-0000-0000-000000000001')
     .single()
+
+  const pixelData = rawPixelData as any
 
   const pixels = {
     facebook: pixelData?.facebook_enabled ? {

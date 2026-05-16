@@ -53,34 +53,30 @@ async function cjRequest(
 async function cjRequestWithRetry(
   endpoint: string,
   method: 'GET' | 'POST' = 'GET',
-  body?: any,
-  retries = 3
-): Promise<any> {
-  for (let i = 0; i < retries; i++) {
+  body?: any
+) {
+  let lastError: any
+  for (let i = 0; i < 3; i++) {
     try {
-      // Respect rate limit (1 req/sec)
-      await delay(1100 * (i + 1)) 
-      
-      return await cjRequest(
-        endpoint, method, body
-      )
+      return await cjRequest(endpoint, method, body)
     } catch (error: any) {
-      if (error.message?.includes(
-        'Too Many Requests'
-      ) && i < retries - 1) {
-        // Wait longer before retry
-        await delay(2000 * (i + 1))
+      lastError = error
+      if (error.message.includes('Limit') || error.message.includes('Too Many')) {
+        console.warn(`⏳ [CJ API] Rate limited. Waiting 1s (Attempt ${i + 1}/3)...`)
+        await new Promise(resolve => setTimeout(resolve, 1200)) // Wait 1.2s to be safe
         continue
       }
       throw error
     }
   }
+  throw lastError
 }
 
 // ─── PRODUCT SEARCH ──────────────────
 
 export async function searchCJProducts(params: {
   productName?: string
+  productId?: string
   categoryId?: string
   pageNum?: number
   pageSize?: number
@@ -91,6 +87,7 @@ export async function searchCJProducts(params: {
 }) {
   const {
     productName = '',
+    productId,
     categoryId,
     pageNum = 1,
     pageSize = 20,
@@ -101,44 +98,53 @@ export async function searchCJProducts(params: {
   } = params
 
   const queryParams = new URLSearchParams({
-    keyWord: productName,
+    keyWord: productId || productName,
     page: pageNum.toString(),
     size: pageSize.toString(),
-    features: 'enable_description,enable_category,enable_video',
+    ...(productId && { productId }),
     ...(categoryId && { categoryId }),
     ...(minPrice !== undefined && { minPrice: minPrice.toString() }),
     ...(maxPrice !== undefined && { maxPrice: maxPrice.toString() }),
   })
 
+  console.log('🌐 [CJ API] Requesting:', `/product/listV2?${queryParams}`)
   const data = await cjRequestWithRetry(`/product/listV2?${queryParams}`)
   
+  console.log('📥 [CJ API] Raw Response snippet:', JSON.stringify(data).slice(0, 500))
+
   // ✅ Filter and normalize products (listV2 format)
-  const rawProducts = data?.content?.[0]?.productList || []
+  // CJ listV2 structure: data.content[0].productList
+  const content = data?.content || data?.data?.content || []
+  const rawProducts = content[0]?.productList || data?.productList || data || []
+  
+  if (Array.isArray(rawProducts) && rawProducts.length > 0) {
+    console.log('🧪 [CJ DEBUG] Product Keys:', Object.keys(rawProducts[0]))
+    console.log('🧪 [CJ DEBUG] First product sample:', JSON.stringify(rawProducts[0]).slice(0, 300))
+  }
+  
+  console.log(`📦 [CJ API] Found ${Array.isArray(rawProducts) ? rawProducts.length : 0} raw products`)
   
   const formattedList = rawProducts.map((item: any) => {
-    // Build variant stock map if available
-    const variantStocks: Record<string, number> = {}
-    
+    // 🔍 EXACT FIELD MAPPING (from logs)
+    const productName = item.nameEn || item.productNameEn || item.productName || item.name || 'Produit CJ'
+    const productImage = item.bigImage || item.productImage || item.image || item.imageURL || ''
+    const pid = item.id || item.pid || item.productId
+    const price = parseFloat(item.sellPrice || item.productPrice || '0')
+    const stock = parseInt(item.productStock || item.stock || '0')
+
     return {
       ...item,
-      // map listV2 fields to expected format
-      pid: item.pid || item.productId,
-      productName: item.productName || item.productNameEn,
-      productImage: item.productImage,
-      sellPrice: item.sellPrice,
-      total_stock: item.productStock || 0,
-      variant_stocks: variantStocks,
-      in_stock: (item.productStock || 0) > 0,
+      pid,
+      productName,
+      productImage,
+      sellPrice: price,
+      total_stock: stock,
+      in_stock: true,
     }
   }).filter((item: any) => {
-    // ✅ FILTER: saleStatus "3" = approved
-    const status = String(item.saleStatus || '')
-    const autStatus = String(item.autStatus || '')
-    
-    if (status !== '3') return false
-    if (autStatus === '0') return false // Private product
-    if (item.total_stock === 0) return false
-    return true
+    // Relaxed filtering
+    const isPublic = String(item.autStatus || '1') !== '0'
+    return isPublic
   })
 
   return {
@@ -458,20 +464,36 @@ export function extractKeywordsFromUrl(url: string): string[] {
   try {
     const urlObj = new URL(url)
     const pathname = urlObj.pathname.toLowerCase()
-    const parts = pathname.split('/')
-    const lastPart = parts[parts.length - 1] || parts[parts.length - 2] || ''
     
-    const clean = lastPart
+    // List of words to exclude (too common)
+    const exclude = [
+      'product', 'detail', 'item', 'html', 'aliexpress', 'alibaba', 'amazon', 
+      'www', 'com', 'store', 'group', 'items', 'products', 'deals', 'sale',
+      'promotion', 'buy', 'price'
+    ]
+    
+    // Get text from path and common query params
+    let textToParse = pathname
+    const params = ['q', 'key', 'title', 'keyword', 'keywords', 'subject']
+    params.forEach(p => {
+      if (urlObj.searchParams.has(p)) textToParse += ' ' + urlObj.searchParams.get(p)
+    })
+
+    const words = textToParse
       .replace(/\.html.*$/, '')
-      .replace(/[-_]/g, ' ')
-      .replace(/\d+/g, '')
-      .trim()
+      .replace(/product-detail\//g, '')
+      .replace(/item\//g, '')
+      .replace(/[^a-zA-Z]/g, ' ') // Keep only letters for better keyword matching
+      .split(/\s+/)
+      .filter(w => w.length > 3 && !exclude.includes(w))
     
-    return clean.split(' ')
-      .filter(w => w.length > 2)
-      .slice(0, 4)
+    // Remove duplicates and limit to relevant keywords
+    return Array.from(new Set(words)).slice(0, 8)
   } catch {
-    return []
+    // If it's not a URL but a filename
+    return url.split(/[._\s-]/)
+      .filter(w => w.length > 3 && isNaN(Number(w)))
+      .slice(0, 8)
   }
 }
 
@@ -595,6 +617,7 @@ export async function getProductWithSupplier(
 export async function searchWithSupplierData(
   params: {
     productName?: string
+    productId?: string
     categoryId?: string
     pageNum?: number
     pageSize?: number

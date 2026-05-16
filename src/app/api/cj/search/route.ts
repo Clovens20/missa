@@ -19,28 +19,45 @@ export async function GET(request: Request) {
 
     let searchTerm = query
     
+    // ── ID DETECTION ──
+    // If query is just a long number, search by ID directly
+    const isCJId = /^\d{15,25}$/.test(query.trim())
+    
     // ── URL DETECTION & PARSING ──
-    if (query.includes('aliexpress.com') || query.includes('alibaba.com')) {
+    if (query.includes('aliexpress.com') || query.includes('alibaba.com') || query.includes('amazon.com')) {
       try {
-        // Extract product name from URL
-        // Example: aliexpress.com/item/100500123.html or alibaba.com/product-detail/name_123.html
         const urlObj = new URL(query)
-        const pathParts = urlObj.pathname.split('/')
+        const path = urlObj.pathname.toLowerCase()
+        
+        // Remove common URL clutter
+        const cleanPath = path
+          .replace(/\.html.*$/, '')
+          .replace(/product-detail\//g, '')
+          .replace(/item\//g, '')
+          .replace(/\/$/, '')
+        
+        const pathParts = cleanPath.split('/')
         const lastPart = pathParts[pathParts.length - 1]
         
-        // Clean name (remove .html, replace - with space)
-        searchTerm = lastPart
-          .replace(/\.html.*$/, '')
-          .replace(/[-_]/g, ' ')
-          .replace(/\d+/g, '') // Remove long IDs
-          .trim()
+        // Extract words, keeping alphanumeric ones longer than 2 chars
+        // We no longer strip ALL numbers, just standalone long IDs
+        const words = lastPart
+          .split(/[-_]/)
+          .filter(w => w.length > 2 && !/^\d{10,}$/.test(w))
+          
+        searchTerm = words.join(' ')
         
+        // Strategy 2: Check common query params if path is too short
         if (searchTerm.length < 5) {
-          // If extracted name too short, try middle part
-          searchTerm = pathParts[pathParts.length - 2]?.replace(/[-_]/g, ' ') || searchTerm
+          searchTerm = urlObj.searchParams.get('title') || 
+                      urlObj.searchParams.get('key') || 
+                      urlObj.searchParams.get('q') || 
+                      searchTerm
         }
+        
+        console.log(`🔗 [DEBUG] Extracted search term from URL: "${searchTerm}"`)
       } catch (e) {
-        // Fallback to query
+        console.warn('⚠️ [DEBUG] Failed to parse URL, using raw query')
       }
     }
 
@@ -50,22 +67,30 @@ export async function GET(request: Request) {
 
     // Check cache first
     const cacheKey = `search:${query}:${page}:${category}`
-    const { data: cached } = await supabase
-      .from('cj_search_cache')
-      .select('results, expires_at')
-      .eq('search_key', cacheKey)
-      .single()
+    try {
+      const { data: cached } = await supabase
+        .from('cj_search_cache')
+        .select('results, expires_at')
+        .eq('search_key', cacheKey)
+        .single()
 
-    if (cached && new Date(cached.expires_at) > new Date()) {
-      return NextResponse.json({
-        ...cached.results,
-        fromCache: true,
-      })
+      if (cached && new Date(cached.expires_at) > new Date()) {
+        console.log('⚡ [DEBUG] Serving from cache')
+        return NextResponse.json({
+          ...cached.results,
+          fromCache: true,
+        })
+      }
+    } catch (cacheErr) {
+      // Ignore cache errors
     }
 
     // Search CJ API
+    console.log('🔍 [DEBUG] Starting CJ Search for:', isCJId ? query : finalSearchTerm)
+    
     const results = await searchWithSupplierData({
-      productName: finalSearchTerm,
+      productName: isCJId ? undefined : finalSearchTerm,
+      productId: isCJId ? query.trim() : undefined,
       categoryId: category || undefined,
       pageNum: page,
       pageSize: 20,
@@ -73,14 +98,39 @@ export async function GET(request: Request) {
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
     })
 
-    // Cache for 1 hour
-    await supabase
-      .from('cj_search_cache')
-      .upsert({
-        search_key: cacheKey,
-        results,
-        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      }, { onConflict: 'search_key' })
+    console.log('📦 [DEBUG] CJ Raw Results Count:', results?.list?.length || 0)
+    
+    // ── FALLBACK STRATEGY ──
+    // If no results, try a broader search (first 2 words only)
+    if (results?.list?.length === 0 && finalSearchTerm.split(' ').length > 2) {
+      const broadTerm = finalSearchTerm.split(' ').slice(0, 2).join(' ')
+      console.log('🔄 [DEBUG] Trying broad fallback search:', broadTerm)
+      const fallbackResults = await searchWithSupplierData({
+        productName: broadTerm,
+        pageNum: 1,
+        pageSize: 10
+      })
+      if (fallbackResults?.list?.length > 0) {
+        results.list = fallbackResults.list
+        results.total = fallbackResults.total
+        console.log(`✅ [DEBUG] Fallback found ${results.list.length} products`)
+      }
+    }
+
+    // Cache results for 1 hour
+    if (results?.list?.length > 0) {
+      try {
+        await supabase
+          .from('cj_search_cache')
+          .upsert({
+            search_key: cacheKey,
+            results,
+            expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          }, { onConflict: 'search_key' })
+      } catch (dbErr) {
+        console.warn('⚠️ [DEBUG] Failed to cache results')
+      }
+    }
 
     return NextResponse.json({
       ...results,
@@ -89,6 +139,8 @@ export async function GET(request: Request) {
         searchTerm: searchTerm,
         translated: finalSearchTerm,
         was_translated: wasTranslated,
+        count: results?.list?.length || 0,
+        debug_info: 'Optimization applied: nested parsing + broad fallback'
       }
     })
   } catch (error: any) {

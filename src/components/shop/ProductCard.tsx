@@ -11,6 +11,7 @@ import { formatPrice } from '@/lib/utils'
 import VariantPicker from './VariantPicker'
 import { useCart } from '@/contexts/CartContext'
 import { toast } from 'sonner'
+import ProductQuickView from './ProductQuickView'
 
 const COLOR_HEX: Record<string, string> = {
   'Rouge': '#EF4444', 'Red': '#EF4444',
@@ -40,6 +41,7 @@ export default function ProductCard({
 }) {
   const { addItem } = useCart()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [quickViewOpen, setQuickViewOpen] = useState(false)
   
   // Colors & sizes
   const colors: string[] =
@@ -289,12 +291,12 @@ export default function ProductCard({
             </button>
 
             {/* Quick view */}
-            <Link
-              href={
-                `/product/${product.slug}`
-              }
-              onClick={e =>
-                e.stopPropagation()}
+            <button
+              onClick={e => {
+                e.preventDefault()
+                e.stopPropagation()
+                setQuickViewOpen(true)
+              }}
               className="w-9 h-9 rounded-full
                 bg-white/90 shadow-md
                 flex items-center justify-center
@@ -305,7 +307,7 @@ export default function ProductCard({
                 group-hover:translate-x-0
                 duration-300 delay-150">
               <Eye className="w-4 h-4"/>
-            </Link>
+            </button>
           </div>
 
           {/* ── ADD TO CART overlay ── */}
@@ -528,6 +530,25 @@ export default function ProductCard({
             color: selection.color,
             size: selection.size,
             image: selection.image || mainImage,
+          } as any)
+          toast.success(`✅ ${product.name} ajouté!`)
+        }}
+      />
+      {/* Quick View Modal */}
+      <ProductQuickView
+        product={product}
+        isOpen={quickViewOpen}
+        onClose={() => setQuickViewOpen(false)}
+        onAddToCart={(pid, vid, qty) => {
+          // Standard selection format for CartContext
+          const selectedVariant = product.variants?.find((v: any) => (v.id || v.vid) === vid) as any
+          addItem({
+            ...product,
+            price: selectedVariant?.price || product.price,
+          }, qty, {
+            color: selectedVariant?.color || null,
+            size: selectedVariant?.size || null,
+            image: selectedVariant?.image || selectedVariant?.image_url || mainImage,
           } as any)
           toast.success(`✅ ${product.name} ajouté!`)
         }}

@@ -158,7 +158,7 @@ export async function POST(
                 )?.propertyValueEn,
                 image: v.variantImage || null,
                 stock: v.variantStock || 999,
-                price: parseFloat(
+                cjPrice: parseFloat(
                   v.variantSellPrice || cjPrice
                 ),
                 properties: properties,

@@ -13,19 +13,37 @@ export async function POST(req: Request) {
     }
 
     // ── CASE 1: Alibaba/AliExpress URL ──
-    if (imageUrl && (imageUrl.includes('aliexpress.com') || imageUrl.includes('alibaba.com'))) {
-      const keywords = extractKeywordsFromUrl(imageUrl)
+    const isExternalLink = imageUrl && (
+      imageUrl.includes('aliexpress.com') || 
+      imageUrl.includes('alibaba.com') || 
+      imageUrl.includes('amazon.com')
+    )
+
+    if (isExternalLink) {
+      const keywords = extractKeywordsFromUrl(imageUrl!)
       if (keywords.length > 0) {
-        const results = await searchWithSupplierData({
-          productName: keywords.join(' '),
-          pageSize: 20
-        })
-        return NextResponse.json({
-          list: results.list || [],
-          total: results.total || 0,
-          searchMethod: 'smart_link',
-          message: `Recherche basée sur le lien: ${keywords.join(' ')}`
-        })
+        // Try multiple searches to find the best match
+        const searchTerms = [
+          keywords.join(' '), // Full name
+          keywords.slice(0, 3).join(' '), // First 3 words
+          keywords.slice(-3).join(' '), // Last 3 words
+        ]
+
+        for (const term of searchTerms) {
+          const results = await searchWithSupplierData({
+            productName: term,
+            pageSize: 20
+          })
+          
+          if (results.list?.length > 0) {
+            return NextResponse.json({
+              list: results.list,
+              total: results.total || results.list.length,
+              searchMethod: 'smart_link',
+              message: `Recherche réussie pour: ${term}`
+            })
+          }
+        }
       }
     }
 

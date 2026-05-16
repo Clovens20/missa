@@ -65,8 +65,14 @@ export default function CJProductCard({
   const badge = getStatusBadge(status)
 
   const mainImage = 
-    product.productImageSet?.[0] || 
-    product.productImage
+    product.productImage || 
+    product.image ||
+    product.productImageEn ||
+    product.imageURL ||
+    product.productImageSet?.[0]
+
+  const displayStock = product.total_stock || parseInt(product.productStock || '0')
+  const hasStockInfo = displayStock > 0 || product.in_stock === true
 
   // ── LIST VIEW ──
   if (viewMode === 'list') {
@@ -294,24 +300,14 @@ export default function CJProductCard({
           flex items-center gap-1
           text-[10px] font-black
           px-2 py-1 rounded-full shadow-lg
-          ${product.total_stock === -1
-            ? 'bg-blue-500/90 text-white'
-            : product.total_stock > 50
-              ? 'bg-emerald-500/90 text-white'
-              : product.total_stock > 10
-                ? 'bg-orange-500/90 text-white'
-                : product.total_stock > 0
-                  ? 'bg-red-500/90 text-white'
-                  : 'bg-gray-500/90 text-white'
+          ${hasStockInfo
+            ? 'bg-emerald-500/90 text-white'
+            : 'bg-blue-500/90 text-white'
           }`}>
           <Package className="w-3 h-3"/>
-          {product.total_stock === -1
-            ? 'Disponible'
-            : product.total_stock > 100
-              ? '100+ en stock'
-              : product.total_stock > 0
-                ? `${product.total_stock} en stock`
-                : 'Épuisé'
+          {displayStock > 0 
+            ? (displayStock > 100 ? '100+ en stock' : `${displayStock} en stock`)
+            : 'Disponible'
           }
         </div>
 
