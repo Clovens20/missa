@@ -462,41 +462,60 @@ export function getDefaultDropshipNote(
 }
 
 // ─── IMAGE SEARCH ────────────────────
-// Upload image to CJ and get 
-// similar products
+
+// Extract keywords from Alibaba/AliExpress URL
+export function extractKeywordsFromUrl(url: string): string[] {
+  try {
+    const urlObj = new URL(url)
+    const pathname = urlObj.pathname.toLowerCase()
+    const parts = pathname.split('/')
+    const lastPart = parts[parts.length - 1] || parts[parts.length - 2] || ''
+    
+    const clean = lastPart
+      .replace(/\.html.*$/, '')
+      .replace(/[-_]/g, ' ')
+      .replace(/\d+/g, '')
+      .trim()
+    
+    return clean.split(' ')
+      .filter(w => w.length > 2)
+      .slice(0, 4)
+  } catch {
+    return []
+  }
+}
 
 export async function searchByImage(
-  imageFile: File | string
-  // File object or base64 string
+  imageInput: File | string
 ): Promise<any> {
   const token = await getCJToken()
+  let base64Image: string = ''
   
-  // If it's a File, convert to base64
-  let base64Image: string
-  
-  if (typeof imageFile === 'string') {
-    // Already base64 or URL
-    base64Image = imageFile.startsWith(
-      'data:'
-    ) 
-      ? imageFile.split(',')[1]
-      : imageFile
+  if (typeof imageInput === 'string') {
+    if (imageInput.startsWith('http')) {
+      await delay(1100)
+      const response = await fetch(`${CJ_API_URL}/product/searchByImage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'CJ-Access-Token': token,
+        },
+        body: JSON.stringify({
+          imageUrl: imageInput,
+          pageNum: 1,
+          pageSize: 20,
+        }),
+      })
+      const data = await response.json()
+      if (data.code === 200) return data.data
+      throw new Error(data.message || 'Image URL search failed')
+    }
+    base64Image = imageInput.includes(',') ? imageInput.split(',')[1] : imageInput
   } else {
-    // Convert File to base64
-    base64Image = await new Promise(
-      (resolve) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = 
-            e.target?.result as string
-          resolve(result.split(',')[1])
-        }
-        reader.readAsDataURL(imageFile)
-      }
-    )
+    const arrayBuffer = await (imageInput as any).arrayBuffer()
+    base64Image = Buffer.from(arrayBuffer).toString('base64')
   }
 
-  // Respect rate limit
   await delay(1100)
 
   const response = await fetch(
@@ -516,14 +535,9 @@ export async function searchByImage(
   )
 
   const data = await response.json()
-  
   if (data.code !== 200) {
-    throw new Error(
-      data.message || 
-      'Image search failed'
-    )
+    throw new Error(data.message || 'Image search failed')
   }
-  
   return data.data
 }
 

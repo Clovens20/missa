@@ -16,6 +16,33 @@ export async function GET(request: Request) {
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
 
+    let searchTerm = query
+    
+    // ── URL DETECTION & PARSING ──
+    if (query.includes('aliexpress.com') || query.includes('alibaba.com')) {
+      try {
+        // Extract product name from URL
+        // Example: aliexpress.com/item/100500123.html or alibaba.com/product-detail/name_123.html
+        const urlObj = new URL(query)
+        const pathParts = urlObj.pathname.split('/')
+        const lastPart = pathParts[pathParts.length - 1]
+        
+        // Clean name (remove .html, replace - with space)
+        searchTerm = lastPart
+          .replace(/\.html.*$/, '')
+          .replace(/[-_]/g, ' ')
+          .replace(/\d+/g, '') // Remove long IDs
+          .trim()
+        
+        if (searchTerm.length < 5) {
+          // If extracted name too short, try middle part
+          searchTerm = pathParts[pathParts.length - 2]?.replace(/[-_]/g, ' ') || searchTerm
+        }
+      } catch (e) {
+        // Fallback to query
+      }
+    }
+
     // Check cache first
     const cacheKey = `search:${query}:${page}:${category}`
     const { data: cached } = await supabase
@@ -33,7 +60,7 @@ export async function GET(request: Request) {
 
     // Search CJ API
     const results = await searchWithSupplierData({
-      productName: query,
+      productName: searchTerm,
       categoryId: category || undefined,
       pageNum: page,
       pageSize: 20,
