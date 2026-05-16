@@ -18,6 +18,7 @@ export async function GET(req: Request) {
     const maxPrice = parseFloat(searchParams.get('maxPrice') || '9999')
     const inStock = searchParams.get('inStock') === 'true'
     const onSale = searchParams.get('onSale') === 'true'
+    const country = searchParams.get('country') || 'UNKNOWN'
 
     // ── Build query ───────────────────
     let query = supabase
@@ -26,6 +27,18 @@ export async function GET(req: Request) {
       .eq('is_active', true)
       .gte('price', minPrice)
       .lte('price', maxPrice)
+
+    // Geographic filtering
+    if (country !== 'UNKNOWN') {
+      const upperCountry = country.toUpperCase()
+      // Filter logic:
+      // 1. Worldwide products
+      // 2. OR Countries containing '*'
+      // 3. OR Countries containing the visitor's country
+      query = query.or(
+        `availability_type.eq.worldwide,available_countries.cs.{"*"},available_countries.cs.{"${upperCountry}"}`
+      )
+    }
 
     if (category) {
       query = query.eq('category', category)

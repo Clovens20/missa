@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import { 
   ArrowLeft, Save, Image as ImageIcon, 
   Plus, Trash2, Package, Tag, 
-  DollarSign, Hash, Layers, X, AlertTriangle
+  DollarSign, Hash, Layers, X, AlertTriangle,
+  Search, RefreshCw, Globe
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -39,6 +41,8 @@ interface ProductFormData {
   sizes: string[]
   variant_images: Record<string, ProductImage[]>
   images: ProductImage[]
+  availability_type: string
+  available_countries: string[]
 }
 
 export default function EditProductPage() {
@@ -71,7 +75,9 @@ export default function EditProductPage() {
     colors: [] as string[],
     sizes: [] as string[],
     variant_images: {} as Record<string, ProductImage[]>,
-    images: [] as ProductImage[]
+    images: [] as ProductImage[],
+    availability_type: 'worldwide',
+    available_countries: ['*']
   })
 
   const [imageUrl, setImageUrl] = useState('')
@@ -80,6 +86,12 @@ export default function EditProductPage() {
   const [currentTag, setCurrentTag] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  
+  // Switch Supplier states
+  const [showSwitchModal, setShowSwitchModal] = useState(false)
+  const [searchingSupplier, setSearchingSupplier] = useState<string | null>(null)
+  const [supplierResults, setSupplierResults] = useState<any[]>([])
+  const [switching, setSwitching] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -119,7 +131,9 @@ export default function EditProductPage() {
         colors: p.colors || [],
         sizes: p.sizes || [],
         variant_images: p.variant_images || {},
-        images: p.images || []
+        images: p.images || [],
+        availability_type: p.availability_type || 'worldwide',
+        available_countries: p.available_countries || ['*']
       })
       setImageUrl(p.images?.[0]?.url || '')
       setAdditionalImages(p.images?.slice(1) || [])
@@ -234,6 +248,90 @@ export default function EditProductPage() {
     }
   }
 
+  async function searchOnSupplier(
+    supplierKey: string,
+    productName: string
+  ) {
+    setSearchingSupplier(supplierKey)
+    setShowSwitchModal(true)
+    setSupplierResults([])
+
+    try {
+      // For CJ we can use our existing search API
+      const endpoint = supplierKey === 'cj' 
+        ? `/api/cj/search?q=${encodeURIComponent(productName)}&page=1`
+        : `/api/admin/${supplierKey}/search?q=${encodeURIComponent(productName)}&page=1`
+      
+      const res = await fetch(endpoint)
+      const data = await res.json()
+
+      const products = data.list || data.products || []
+      setSupplierResults(products.slice(0, 5))
+    } catch (err) {
+      toast.error('Erreur de recherche fournisseur')
+    } finally {
+      setSearchingSupplier(null)
+    }
+  }
+
+  async function switchSupplier(
+    newProduct: any,
+    supplierKey: string
+  ) {
+    setSwitching(true)
+    
+    try {
+      const res = await fetch(
+        `/api/admin/products/${id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            supplier: supplierKey,
+            supplier_product_id:
+              newProduct.id ||
+              newProduct.cj_id ||
+              newProduct.pid ||
+              newProduct.productId,
+            stock_quantity:
+              newProduct.total_stock ||
+              newProduct.stock || 
+              newProduct.productStock || 99,
+            cost_price:
+              newProduct.price ||
+              newProduct.cost_price ||
+              newProduct.sellPrice ||
+              newProduct.productPrice,
+            is_active: true,
+            last_stock_sync:
+              new Date().toISOString(),
+          }),
+        }
+      )
+
+      if (res.ok) {
+        toast.success(
+          '✅ Fournisseur changé!',
+          {
+            description:
+              `Produit réactivé via ${supplierKey.toUpperCase()}`,
+          }
+        )
+        setShowSwitchModal(false)
+        loadData() // Refresh product data
+      } else {
+        const err = await res.json()
+        throw new Error(err.error || 'Erreur switch')
+      }
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setSwitching(false)
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!formData.name || !formData.price) { toast.error('Nom et prix obligatoires'); return }
@@ -257,6 +355,8 @@ export default function EditProductPage() {
         colors: formData.colors,
         sizes: formData.sizes,
         variant_images: formData.variant_images,
+        availability_type: formData.availability_type,
+        available_countries: formData.available_countries,
         updated_at: new Date().toISOString()
       }
 
@@ -276,6 +376,71 @@ export default function EditProductPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-20">
+      {/* ── SWITCH SUPPLIER MODAL ── */}
+      <AnimatePresence>
+        {showSwitchModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-gray-900 border border-gray-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl"
+            >
+              <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-black text-white">Changer de fournisseur</h3>
+                  <p className="text-gray-500 text-sm">Recherche sur {searchingSupplier?.toUpperCase()}</p>
+                </div>
+                <button onClick={() => setShowSwitchModal(false)} className="p-2 hover:bg-gray-800 rounded-xl transition-colors">
+                  <X className="w-6 h-6 text-gray-500"/>
+                </button>
+              </div>
+
+              <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4">
+                {searchingSupplier && supplierResults.length === 0 && (
+                  <div className="py-12 flex flex-col items-center justify-center gap-4">
+                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"/>
+                    <p className="text-gray-400 font-bold">Recherche des meilleurs matchs...</p>
+                  </div>
+                )}
+
+                {!searchingSupplier && supplierResults.length === 0 && (
+                  <div className="py-12 text-center">
+                    <p className="text-gray-500 italic">Aucun résultat trouvé pour "{formData.name}"</p>
+                  </div>
+                )}
+
+                {supplierResults.map((res: any, idx: number) => (
+                  <div key={idx} className="bg-gray-950 border border-gray-800 rounded-2xl p-4 flex items-center gap-4 group hover:border-primary/50 transition-all">
+                    <div className="w-20 h-20 bg-gray-800 rounded-xl overflow-hidden flex-shrink-0">
+                      <img 
+                        src={res.productImage || res.image || res.url || res.product_image} 
+                        alt={res.productNameEn || res.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-sm line-clamp-1">{res.productNameEn || res.name || res.productName}</p>
+                      <p className="text-gray-500 text-xs mt-1">
+                        Prix: <span className="text-secondary">${res.sellPrice || res.price || res.cost_price}</span>
+                        {' '}· Stock: <span className="text-primary">{res.productStock || res.stock || res.total_stock || '99+'}</span>
+                      </p>
+                      <button 
+                        onClick={() => switchSupplier(res, searchingSupplier || 'cj')}
+                        disabled={switching}
+                        className="mt-3 w-full bg-primary/10 hover:bg-primary text-primary hover:text-white text-xs font-black py-2 rounded-lg border border-primary/20 transition-all flex items-center justify-center gap-2"
+                      >
+                        {switching ? <RefreshCw className="w-3 h-3 animate-spin"/> : 'Utiliser ce produit'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/admin/products" className="p-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-gray-400 hover:text-white transition-colors">
@@ -295,6 +460,48 @@ export default function EditProductPage() {
           Enregistrer les modifications
         </button>
       </div>
+
+      {/* ── SWITCH SUPPLIER FEATURE ── */}
+      {(parseInt(formData.stock_quantity) === 0 || variants.reduce((sum, v) => sum + (v.stock || 0), 0) === 0) &&
+        product?.supplier && (
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-3xl p-6 space-y-4 shadow-xl shadow-orange-500/5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center animate-pulse">
+              <AlertTriangle className="w-6 h-6 text-orange-400"/>
+            </div>
+            <div>
+              <p className="text-orange-400 font-black text-lg">Stock épuisé chez {product.supplier.toUpperCase()}</p>
+              <p className="text-gray-400 text-sm">Ce produit est masqué sur le shop. Changez de fournisseur pour le réactiver.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Trouver sur un autre fournisseur :</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { key: 'cj', label: 'CJ Dropshipping', icon: '🔵', color: 'border-blue-500/30 hover:border-blue-500 text-blue-400' },
+                { key: 'hypersku', label: 'HyperSKU', icon: '🟣', color: 'border-purple-500/30 hover:border-purple-500 text-purple-400' },
+                { key: 'eprolo', label: 'Eprolo', icon: '🟢', color: 'border-green-500/30 hover:border-green-500 text-green-400' },
+              ]
+              .filter(s => s.key !== product.supplier)
+              .map(supplier => (
+                <button
+                  key={supplier.key}
+                  onClick={() => searchOnSupplier(supplier.key, formData.name)}
+                  className={`flex items-center gap-3 bg-gray-950 border ${supplier.color} rounded-2xl p-4 text-sm font-black transition-all hover:scale-[1.02] active:scale-[0.98] group`}
+                >
+                  <span className="text-lg grayscale group-hover:grayscale-0 transition-all">{supplier.icon}</span>
+                  <div className="flex-1 text-left">
+                    <p className="text-xs text-gray-400 font-bold group-hover:text-white transition-colors">{supplier.label}</p>
+                    <p className="text-[9px] opacity-50">Search API</p>
+                  </div>
+                  <Search className="w-4 h-4 opacity-30 group-hover:opacity-100 transition-opacity"/>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -627,6 +834,61 @@ export default function EditProductPage() {
             </div>
           </div>
 
+
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 space-y-4">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Globe className="w-5 h-5 text-blue-400"/>
+              Disponibilité géographique
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { 
+                  value: 'worldwide', 
+                  icon: '🌍', 
+                  label: 'Mondial', 
+                  desc: 'Disponible partout',
+                  color: 'border-blue-500/50',
+                  activeColor: 'bg-blue-500/10 border-blue-500'
+                },
+                { 
+                  value: 'restricted', 
+                  icon: '🇨🇦', 
+                  label: 'Canada + USA', 
+                  desc: 'Stock local seulement',
+                  color: 'border-orange-500/50',
+                  activeColor: 'bg-orange-500/10 border-orange-500'
+                }
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFormData({ 
+                    ...formData, 
+                    availability_type: opt.value,
+                    available_countries: opt.value === 'worldwide' ? ['*'] : ['CA', 'US']
+                  })}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                    formData.availability_type === opt.value 
+                      ? opt.activeColor 
+                      : 'border-gray-800 hover:border-gray-700'
+                  }`}
+                >
+                  <p className="text-2xl mb-2">{opt.icon}</p>
+                  <p className="text-white font-black text-sm">{opt.label}</p>
+                  <p className="text-gray-500 text-[10px] mt-1">{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+            {formData.availability_type === 'restricted' && (
+              <div className="bg-gray-950 border border-gray-800 rounded-2xl p-4 flex flex-wrap gap-2">
+                {formData.available_countries.map(c => (
+                  <span key={c} className="bg-orange-500/10 text-orange-400 text-[10px] font-black px-2 py-1 rounded-lg border border-orange-500/20">
+                    {c === 'CA' ? '🇨🇦 Canada' : c === 'US' ? '🇺🇸 USA' : c}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2"><Tag className="w-5 h-5 text-secondary"/>Organisation</h2>

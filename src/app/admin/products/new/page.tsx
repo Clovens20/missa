@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, Save, Image as ImageIcon, 
   Plus, Trash2, Package, Tag, 
-  DollarSign, Hash, Layers, AlertTriangle, X
+  DollarSign, Hash, Layers, AlertTriangle, X, Globe
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -38,6 +38,8 @@ interface ProductFormData {
   sizes: string[]
   variant_images: Record<string, ProductImage[]>
   images: ProductImage[]
+  availability_type: string
+  available_countries: string[]
 }
 
 export default function NewProductPage() {
@@ -67,7 +69,9 @@ export default function NewProductPage() {
     colors: [] as string[],
     sizes: [] as string[],
     variant_images: {} as Record<string, ProductImage[]>,
-    images: [] as ProductImage[]
+    images: [] as ProductImage[],
+    availability_type: 'worldwide',
+    available_countries: ['*']
   })
 
   const [imageUrl, setImageUrl] = useState('')
@@ -186,6 +190,8 @@ export default function NewProductPage() {
         colors: formData.colors,
         sizes: formData.sizes,
         variant_images: formData.variant_images,
+        availability_type: formData.availability_type,
+        available_countries: formData.available_countries,
         updated_at: new Date().toISOString()
       }
 
@@ -570,6 +576,61 @@ export default function NewProductPage() {
 
 
           {/* Organisation */}
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 space-y-4">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Globe className="w-5 h-5 text-blue-400"/>
+              Disponibilité géographique
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { 
+                  value: 'worldwide', 
+                  icon: '🌍', 
+                  label: 'Mondial', 
+                  desc: 'Disponible partout',
+                  color: 'border-blue-500/50',
+                  activeColor: 'bg-blue-500/10 border-blue-500'
+                },
+                { 
+                  value: 'restricted', 
+                  icon: '🇨🇦', 
+                  label: 'Canada + USA', 
+                  desc: 'Stock local seulement',
+                  color: 'border-orange-500/50',
+                  activeColor: 'bg-orange-500/10 border-orange-500'
+                }
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFormData({ 
+                    ...formData, 
+                    availability_type: opt.value,
+                    available_countries: opt.value === 'worldwide' ? ['*'] : ['CA', 'US']
+                  })}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                    formData.availability_type === opt.value 
+                      ? opt.activeColor 
+                      : 'border-gray-800 hover:border-gray-700'
+                  }`}
+                >
+                  <p className="text-2xl mb-2">{opt.icon}</p>
+                  <p className="text-white font-black text-sm">{opt.label}</p>
+                  <p className="text-gray-500 text-[10px] mt-1">{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+            {formData.availability_type === 'restricted' && (
+              <div className="bg-gray-950 border border-gray-800 rounded-2xl p-4 flex flex-wrap gap-2">
+                {formData.available_countries.map(c => (
+                  <span key={c} className="bg-orange-500/10 text-orange-400 text-[10px] font-black px-2 py-1 rounded-lg border border-orange-500/20">
+                    {c === 'CA' ? '🇨🇦 Canada' : c === 'US' ? '🇺🇸 USA' : c}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2"><Tag className="w-5 h-5 text-secondary"/>Organisation</h2>
             <div className="space-y-4">

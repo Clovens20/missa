@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { 
-  LayoutDashboard, Package, ShoppingCart, Users, Tag, Image, BarChart3, Settings, LogOut, Menu, X, ChevronRight, Shield, Bell, ExternalLink, Megaphone, FileText, UserCog, Activity, Building2, Globe, Star, Zap, Share2
+  LayoutDashboard, Package, ShoppingCart, Users, Tag, Image, BarChart3, Settings, LogOut, Menu, X, ChevronRight, Shield, Bell, ExternalLink, Megaphone, FileText, UserCog, Activity, Building2, Globe, Star, Zap, Share2, Mail
 } from 'lucide-react'
 
 interface AdminLayoutProps {
@@ -17,6 +17,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [admin, setAdmin] = useState<any>(null)
   const [notifications, setNotifications] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
   const [pendingReviews, setPendingReviews] = useState(0)
 
   useEffect(() => {
@@ -58,6 +59,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending')
     setPendingReviews(reviewCount || 0)
+
+    const { count: messageCount } = await supabase
+      .from('contact_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'new')
+    setUnreadMessages(messageCount || 0)
   }
 
   async function handleLogout() {
@@ -78,6 +85,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { href: '/admin/inventaire', icon: Package, label: 'Inventaire', permission: 'products' },
         { href: '/admin/abandoned-carts', icon: ShoppingCart, label: 'Paniers abandonnés', permission: 'orders' },
         { href: '/admin/customers', icon: Users, label: 'Clients', permission: 'customers' },
+        { href: '/admin/messages', icon: Mail, label: 'Messages Contact', badge: unreadMessages, permission: null },
         { href: '/admin/subscribers', icon: Bell, label: 'Abonnés & Alertes', permission: 'products' },
       ]
     },
@@ -142,7 +150,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="ml-auto text-gray-500 hover:text-white transition-colors flex-shrink-0">{sidebarOpen ? <X className="w-5 h-5"/> : <Menu className="w-5 h-5"/>}</button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 scrollbar-hide">
+        <nav className="flex-1 overflow-y-auto py-4 scrollbar-custom">
           {navSections.map(section => (
             <div key={section.title} className="mb-6">
               {sidebarOpen && <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest px-4 mb-2">{section.title}</p>}

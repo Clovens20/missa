@@ -9,6 +9,8 @@ import { useWishlist } from '@/contexts/WishlistContext'
 import { formatPrice, calculateDiscount } from '@/lib/utils'
 import type { Product, Review, ProductVariant } from '@/types'
 import { toast } from 'sonner'
+import { useCountry } from '@/contexts/CountryContext'
+import { isProductAvailable } from '@/lib/geo-detect'
 import { 
   UrgencyBlock,
   RecentPurchasePopup,
@@ -32,6 +34,7 @@ export default function ProductDetailClient({
 }: Props) {
   const { addItem } = useCart()
   const { toggle, isInWishlist } = useWishlist()
+  const { country: visitorCountry } = useCountry()
   
   const [mainImg, setMainImg] = useState(0)
   const [quantity, setQuantity] = useState(1)
@@ -42,6 +45,7 @@ export default function ProductDetailClient({
 
   const inWishlist = isInWishlist(product.id)
   const discount = product.compare_price ? calculateDiscount(product.price, product.compare_price) : 0
+  const isAvailable = isProductAvailable(product, visitorCountry)
 
   const colors: string[] = [
     ...new Set(
@@ -184,22 +188,46 @@ export default function ProductDetailClient({
             </AnimatePresence>
 
             {/* Quantity + Add to cart */}
-            <div className="flex gap-3">
-              <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
-                <button onClick={() => setQuantity(q => Math.max(1, q-1))} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"><Minus className="w-4 h-4"/></button>
-                <span className="w-12 text-center font-bold text-lg">{quantity}</span>
-                <button onClick={() => setQuantity(q => q+1)} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"><Plus className="w-4 h-4"/></button>
+            <div className="space-y-4">
+              {!isAvailable && (
+                <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-5 text-center space-y-2">
+                  <div className="text-3xl">🚚</div>
+                  <p className="text-orange-400 font-black">Non disponible dans votre région</p>
+                  <p className="text-gray-500 text-sm">
+                    Ce produit est disponible uniquement au {product.available_countries?.includes('CA') ? 'Canada' : ''} {product.available_countries?.includes('US') ? 'et aux États-Unis' : ''}.
+                  </p>
+                  <Link href="/catalog" className="text-primary font-bold text-xs hover:underline inline-block mt-2">
+                    💡 Découvrez nos produits disponibles dans votre région →
+                  </Link>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
+                  <button onClick={() => setQuantity(q => Math.max(1, q-1))} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"><Minus className="w-4 h-4"/></button>
+                  <span className="w-12 text-center font-bold text-lg">{quantity}</span>
+                  <button onClick={() => setQuantity(q => q+1)} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"><Plus className="w-4 h-4"/></button>
+                </div>
+                <motion.button 
+                  onClick={handleAddToCart} 
+                  disabled={adding || product.stock_quantity === 0 || !isAvailable} 
+                  whileTap={{ scale: 0.97 }} 
+                  className={`flex-1 py-3 rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all ${
+                    (product.stock_quantity === 0 || !isAvailable) 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : adding ? 'bg-secondary text-white' : 'bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/30'
+                  }`}
+                >
+                  {adding ? <Check className="w-5 h-5"/> : <ShoppingCart className="w-5 h-5"/>}
+                  {product.stock_quantity === 0 ? 'Rupture de stock' : !isAvailable ? 'Région non desservie' : adding ? 'Ajouté au panier!' : 'Ajouter au panier'}
+                </motion.button>
+                <ShareProduct
+                  productName={product.name}
+                  productSlug={product.slug}
+                  productImage={product.images?.[0]?.url}
+                  productPrice={product.price}
+                />
               </div>
-              <motion.button onClick={handleAddToCart} disabled={adding || product.stock_quantity === 0} whileTap={{ scale: 0.97 }} className={`flex-1 py-3 rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all ${product.stock_quantity === 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : adding ? 'bg-secondary text-white' : 'bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/30'}`}>
-                {adding ? <Check className="w-5 h-5"/> : <ShoppingCart className="w-5 h-5"/>}
-                {product.stock_quantity === 0 ? 'Rupture de stock' : adding ? 'Ajouté au panier!' : 'Ajouter au panier'}
-              </motion.button>
-              <ShareProduct
-                productName={product.name}
-                productSlug={product.slug}
-                productImage={product.images?.[0]?.url}
-                productPrice={product.price}
-              />
             </div>
 
             {/* Trust badges */}

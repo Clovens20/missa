@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getCJToken } from '@/lib/cj-api'
+import { getCJToken } from '@/lib/cj-token'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     // Get all active products that come from CJ
     const { data: products } = await supabase
       .from('dropship_products')
-      .select('id, name, cj_product_id, stock_quantity, is_active')
+      .select('id, name, cj_product_id, stock_quantity, is_active, supplier')
       .not('cj_product_id', 'is', null)
 
     if (!products?.length) {
@@ -98,7 +98,28 @@ export async function GET(req: Request) {
             cj_variants: cjProduct.variants || []
           })
 
-          if (newStock === 0) outOfStock++
+          if (newStock === 0) {
+            outOfStock++
+            
+            // Create notification for admin if it just became empty
+            if (product.stock_quantity > 0) {
+              await supabase
+                .from('admin_notifications')
+                .insert({
+                  type: 'stock_empty',
+                  title: '⚠️ Stock épuisé',
+                  message: 
+                    `"${product.name}" est épuisé` +
+                    ` chez ${product.supplier || 'CJ'}.` +
+                    ` Changez le fournisseur!`,
+                  product_id: product.id,
+                  action_url: 
+                    `/admin/products/edit/${product.id}`,
+                  created_at: 
+                    new Date().toISOString(),
+                })
+            }
+          }
         }
 
         synced++

@@ -1,12 +1,13 @@
 'use client'
 import { useCart } from '@/contexts/CartContext'
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react'
+import { useSettings } from '@/contexts/SettingsContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { formatPrice, getSafeImageUrl } from '@/lib/utils'
 
-const FREE_SHIPPING_THRESHOLD = 50
+// Threshold fallback removed, now using getSetting
 
 export default function CartDrawer() {
   const { 
@@ -14,6 +15,9 @@ export default function CartDrawer() {
     toggleCart, removeItem, 
     updateQty, clearCart 
   } = useCart()
+  const { getSetting } = useSettings()
+
+  const FREE_SHIPPING_THRESHOLD = getSetting('free_shipping_threshold', 50)
 
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - total)
   const progress = Math.min(100, (total / FREE_SHIPPING_THRESHOLD) * 100)

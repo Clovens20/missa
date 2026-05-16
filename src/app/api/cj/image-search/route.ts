@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getCJToken, searchByImage, extractKeywordsFromUrl, searchWithSupplierData } from '@/lib/cj-api'
+import { searchByImage, extractKeywordsFromUrl, searchWithSupplierData } from '@/lib/cj-api'
+import { getCJToken } from '@/lib/cj-token'
 
 export async function POST(req: Request) {
   try {

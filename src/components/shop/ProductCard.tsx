@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
-  ShoppingCart,
+  ShoppingCart, Plus,
   Heart, Star, Eye,
   Package,
 } from 'lucide-react'
@@ -246,6 +246,25 @@ export default function ProductCard({
           <div className="absolute top-3
             right-3 z-10 flex flex-col gap-2">
 
+            {/* Quick Add Button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={!inStock}
+              className={`
+                w-9 h-9 rounded-full
+                shadow-md flex items-center
+                justify-center transition-all
+                bg-primary text-white hover:bg-primary-dark
+                disabled:bg-gray-400
+                opacity-0 group-hover:opacity-100
+                translate-x-2
+                group-hover:translate-x-0
+                duration-300`}
+              title="Ajouter au panier"
+            >
+              <Plus className="w-5 h-5"/>
+            </button>
+
             {/* Wishlist */}
             <button
               onClick={e => {
@@ -263,7 +282,7 @@ export default function ProductCard({
                 opacity-0 group-hover:opacity-100
                 translate-x-2
                 group-hover:translate-x-0
-                duration-300`}>
+                duration-300 delay-75`}>
               <Heart className={`w-4 h-4
                 ${wishlist
                   ? 'fill-white' : ''}`}/>
@@ -284,7 +303,7 @@ export default function ProductCard({
                 opacity-0 group-hover:opacity-100
                 translate-x-2
                 group-hover:translate-x-0
-                duration-300 delay-75">
+                duration-300 delay-150">
               <Eye className="w-4 h-4"/>
             </Link>
           </div>

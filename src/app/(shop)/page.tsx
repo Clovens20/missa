@@ -14,8 +14,10 @@ import Link from 'next/link'
 import Header from '@/components/shop/Header'
 import Footer from '@/components/shop/Footer'
 import CartDrawer from '@/components/shop/CartDrawer'
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { ChevronUp } from 'lucide-react'
+import { useCountry } from '@/contexts/CountryContext'
+import { useSettings } from '@/contexts/SettingsContext'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 
 // ── Sort options ─────────────────────
 const SORT_OPTIONS = [
@@ -58,6 +60,8 @@ export default function HomePage() {
   const [onlyInStock, setOnlyInStock] = useState(false)
   const [onlyOnSale, setOnlyOnSale] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const { country: visitorCountry, loading: countryLoading } = useCountry()
+  const { getSetting } = useSettings()
 
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: loadMore,
@@ -109,6 +113,7 @@ export default function HomePage() {
           ...(category !== 'all' && {
             category
           }),
+          country: visitorCountry
         })
 
         const res = await fetch(`/api/shop/products?${params}`)
@@ -161,10 +166,11 @@ export default function HomePage() {
 
   // Initial load
   useEffect(() => {
+    if (countryLoading) return
     pageRef.current = 1
     setPage(1)
     fetchProducts({ page: 1 })
-  }, [activeCategory, sortBy, priceRange, onlyInStock, onlyOnSale])
+  }, [activeCategory, sortBy, priceRange, onlyInStock, onlyOnSale, visitorCountry, countryLoading])
 
   // Load more
   function loadMore() {
@@ -195,7 +201,7 @@ export default function HomePage() {
 
         {/* ── TOP BANNER (compact) ── */}
         <div className="bg-gradient-to-r from-primary to-orange-500 text-white text-center py-2 px-4 text-xs font-bold hidden sm:block">
-          🚚 Livraison gratuite dès $50 · 🔒 Paiement sécurisé · ↩️ Retour 30 jours
+          🚚 Livraison gratuite dès {getSetting('free_shipping_threshold', 50)}$ · 🔒 Paiement sécurisé · ↩️ Retour 30 jours
         </div>
 
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 space-y-4">

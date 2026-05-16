@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { getCJToken } from './cj-token'
 
 const CJ_API_URL = process.env.CJ_API_URL || 'https://developers.cjdropshipping.com/api2.0/v1'
 const CJ_EMAIL = process.env.CJ_EMAIL!
@@ -9,51 +10,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// ─── TOKEN MANAGEMENT ───────────────
-
-export async function getCJToken(): Promise<string> {
-  // Check if valid token exists
-  const { data: tokenData } = await supabase
-    .from('cj_tokens')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
-
-  if (tokenData && new Date(tokenData.expires_at) > new Date()) {
-    return tokenData.access_token
-  }
-
-  // Get new token
-  const response = await fetch(
-    `${CJ_API_URL}/authentication/getAccessToken`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: CJ_EMAIL,
-        password: CJ_API_KEY,
-      }),
-    }
-  )
-
-  const data = await response.json()
-  
-  if (!data.data?.accessToken) {
-    throw new Error('CJ Auth failed: ' + (data.message || 'Unknown error'))
-  }
-
-  // Store token (expires in 24h)
-  await supabase
-    .from('cj_tokens')
-    .insert({
-      access_token: data.data.accessToken,
-      refresh_token: data.data.refreshToken || null,
-      expires_at: new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString(),
-    })
-
-  return data.data.accessToken
-}
+// Token management is now handled in cj-token.ts
 
 
 // Rate limiter - wait between calls
@@ -144,54 +101,87 @@ export async function searchCJProducts(params: {
   } = params
 
   const queryParams = new URLSearchParams({
-    productName,
-    pageNum: pageNum.toString(),
-    pageSize: pageSize.toString(),
-    sortField,
-    sortOrder,
+    keyWord: productName,
+    page: pageNum.toString(),
+    size: pageSize.toString(),
+    features: 'enable_description,enable_category,enable_video',
     ...(categoryId && { categoryId }),
     ...(minPrice !== undefined && { minPrice: minPrice.toString() }),
     ...(maxPrice !== undefined && { maxPrice: maxPrice.toString() }),
   })
 
-  const data = await cjRequestWithRetry(`/product/list?${queryParams}`)
+  const data = await cjRequestWithRetry(`/product/listV2?${queryParams}`)
   
-  // ✅ Filter and normalize products
-  if (data?.list) {
-    data.list = data.list.map((item: any) => {
-      // Calculate stock - list might not have variants or productStock
-      const totalStock = (item.variants && item.variants.length > 0)
-        ? item.variants.reduce((sum: number, v: any) => sum + (v.variantStock || 0), 0)
-        : (item.productStock || item.inventory || item.stock || -1) // Use -1 to indicate unknown
+  // ✅ Filter and normalize products (listV2 format)
+  const rawProducts = data?.content?.[0]?.productList || []
+  
+  const formattedList = rawProducts.map((item: any) => {
+    // Build variant stock map if available
+    const variantStocks: Record<string, number> = {}
+    
+    return {
+      ...item,
+      // map listV2 fields to expected format
+      pid: item.pid || item.productId,
+      productName: item.productName || item.productNameEn,
+      productImage: item.productImage,
+      sellPrice: item.sellPrice,
+      total_stock: item.productStock || 0,
+      variant_stocks: variantStocks,
+      in_stock: (item.productStock || 0) > 0,
+    }
+  }).filter((item: any) => {
+    // ✅ FILTER: saleStatus "3" = approved
+    const status = String(item.saleStatus || '')
+    const autStatus = String(item.autStatus || '')
+    
+    if (status !== '3') return false
+    if (autStatus === '0') return false // Private product
+    if (item.total_stock === 0) return false
+    return true
+  })
 
-      // Build variant stock map
-      const variantStocks: Record<string, number> = {}
-      item.variants?.forEach((v: any) => {
-        const key = [v.variantColor, v.variantSize].filter(Boolean).join(' / ')
-        if (key) variantStocks[key] = v.variantStock || 0
-      })
-
-      return {
-        ...item,
-        total_stock: totalStock,
-        variant_stocks: variantStocks,
-        in_stock: totalStock > 0 || totalStock === -1, // Assume in stock if unknown
-      }
-    }).filter((item: any) => {
-      // Only filter out if we KNOW it's out of stock or removed
-      if (item.productRemoved) return false
-      if (item.total_stock === 0) return false
-      return true
-    })
+  return {
+    ...data,
+    list: formattedList
   }
-
-  return data
 }
 
 // ─── GET PRODUCT DETAILS ─────────────
 
 export async function getCJProductDetail(pid: string) {
   return await cjRequestWithRetry(`/product/query?pid=${pid}`)
+}
+
+// ─── STOCK VERIFICATION ──────────────
+
+export async function verifyCJStock(vid: string): Promise<number> {
+  const token = await getCJToken()
+  
+  const res = await fetch(
+    `https://developers.cjdropshipping.com/api2.0/v1/product/stock/queryByVid?vid=${vid}`,
+    {
+      headers: {
+        'CJ-Access-Token': token
+      }
+    }
+  )
+  const data = await res.json()
+  
+  if (data.code === 200 && data.data) {
+    // Sum all warehouse stocks
+    const total = data.data.reduce(
+      (sum: number, warehouse: any) =>
+        sum + (
+          warehouse.totalInventoryNum || 
+          warehouse.storageNum || 
+          0
+        ),
+      0
+    )
+    return total
+  }
+  return 0
 }
 
 // Get ALL product images + videos
@@ -678,8 +668,9 @@ export async function getAllProductVariants(
     const variants = product.variants.map(
       (v: any, index: number) => {
         // Extract all properties
-        const properties = 
-          v.variantProperty || []
+        const properties = Array.isArray(v.variantProperty) 
+          ? v.variantProperty 
+          : []
         
         // Find size
         const sizeProp = properties.find(

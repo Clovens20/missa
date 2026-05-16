@@ -337,10 +337,31 @@ export default function DropshippingPage() {
   }
 
   async function handleImport(product: any) {
-    setSelectedProduct(product)
-    // Pre-fill import price with 2.5x CJ price
-    const cjPrice = parseFloat(product.sellPrice || product.productPrice || 0)
-    setImportPrice((Math.ceil(cjPrice * 2.5 * 2) / 2).toFixed(2))
+    const pid = product.pid || product.productId
+    setImporting(pid)
+    
+    try {
+      // ✅ VERIFY STATUS BEFORE IMPORT
+      const res = await fetch(`/api/cj/product?pid=${pid}`)
+      const data = await res.json()
+      
+      // Handle both { data: { productStatus } } and { productStatus } depending on API response
+      const status = data?.data?.productStatus || data?.productStatus
+      
+      if (status === 'REMOVED' || status === 'OFFLINE' || !data) {
+        toast.error("❌ Ce produit n'est plus disponible sur CJ")
+        return
+      }
+
+      setSelectedProduct(product)
+      // Pre-fill import price with 2.5x CJ price
+      const cjPrice = parseFloat(product.sellPrice || product.productPrice || 0)
+      setImportPrice((Math.ceil(cjPrice * 2.5 * 2) / 2).toFixed(2))
+    } catch (err) {
+      toast.error("Erreur lors de la vérification du produit")
+    } finally {
+      setImporting(null)
+    }
   }
 
   async function confirmImport() {

@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/contexts/CartContext'
 import { WishlistProvider } from '@/contexts/WishlistContext'
+import { CountryProvider } from '@/contexts/CountryContext'
+import { SettingsProvider } from '@/contexts/SettingsContext'
 import { Toaster } from 'sonner'
 
 const inter = Inter({ 
@@ -94,15 +96,19 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <CartProvider>
-          <WishlistProvider>
-            {children}
-            <Toaster 
-              position="top-right"
-              richColors
-            />
-          </WishlistProvider>
-        </CartProvider>
+        <SettingsProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <CountryProvider>
+                {children}
+                <Toaster 
+                  position="top-right"
+                  richColors
+                />
+              </CountryProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </SettingsProvider>
       </body>
     </html>
   )

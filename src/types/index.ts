@@ -33,6 +33,8 @@ export interface Product {
   sizes?: string[]
   available_sizes?: string[]
   variant_images?: Record<string, ProductImage[]>
+  availability_type?: string
+  available_countries?: string[]
 }
 
 export interface ProductImage {

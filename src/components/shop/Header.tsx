@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
+import { useSettings } from '@/contexts/SettingsContext'
 import { supabase } from '@/lib/supabase'
 import { formatPrice, getSafeImageUrl } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -19,6 +20,7 @@ import SmartSearchBar from '@/components/shop/SmartSearchBar'
 export default function Header() {
   const { count, toggleCart, total } = useCart()
   const { count: wishCount } = useWishlist()
+  const { getSetting } = useSettings()
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const router = useRouter()
@@ -81,11 +83,11 @@ export default function Header() {
       <div className="bg-gray-900 text-white py-2">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-xs">
           <div className="flex items-center gap-4 hidden md:flex">
-            <div className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5 text-secondary"/><span>🚚 Livraison gratuite dès 50$</span></div>
+            <div className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5 text-secondary"/><span>🚚 Livraison gratuite dès {getSetting('free_shipping_threshold', 50)}$</span></div>
             <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-secondary"/><span>🔒 Paiement 100% sécurisé</span></div>
             <div className="flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-secondary"/><span>📦 Retours faciles 30 jours</span></div>
           </div>
-          <div className="md:hidden text-center w-full text-xs">🚚 Livraison gratuite +50$ | 🔒 Paiement sécurisé</div>
+          <div className="md:hidden text-center w-full text-xs">🚚 Livraison gratuite +{getSetting('free_shipping_threshold', 50)}$ | 🔒 Paiement sécurisé</div>
           <div className="hidden md:flex items-center gap-4">
             <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-secondary"/><span>Support 24/7</span></div>
             <Link href="/track" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors ml-2 border-l border-gray-700 pl-4">
@@ -110,8 +112,17 @@ export default function Header() {
               />
             </div>
             <div className="hidden sm:block">
-              <div className="leading-none"><span className="font-black text-lg md:text-xl text-primary">Missa</span><span className="font-black text-lg md:text-xl text-secondary">Shop</span></div>
-              <p className="text-[10px] text-gray-400 font-medium tracking-wide">MODE & LIFESTYLE PREMIUM</p>
+              <div className="leading-none">
+                <span className="font-black text-lg md:text-xl text-primary">
+                  {getSetting('site_name', 'Missa Shop').split(' ')[0]}
+                </span>
+                <span className="font-black text-lg md:text-xl text-secondary">
+                  {getSetting('site_name', 'Missa Shop').split(' ')[1] || ''}
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">
+                {getSetting('site_tagline', 'MODE & LIFESTYLE PREMIUM')}
+              </p>
             </div>
           </Link>
 

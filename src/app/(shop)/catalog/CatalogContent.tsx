@@ -8,6 +8,9 @@ import CartDrawer from '@/components/shop/CartDrawer'
 import ProductCard from '@/components/shop/ProductCard'
 import type { Product, Category } from '@/types'
 
+import { useCountry } from '@/contexts/CountryContext'
+import { isProductAvailable } from '@/lib/geo-detect'
+
 interface CatalogContentProps {
   initialProducts: Product[]
   initialCategories: Category[]
@@ -17,8 +20,10 @@ export default function CatalogContent({ initialProducts, initialCategories }: C
   const [showFilters, setShowFilters] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [sort, setSort] = useState('newest')
+  const { country: visitorCountry } = useCountry()
 
   const filtered = initialProducts
+    .filter(p => isProductAvailable(p as { availability_type?: string; available_countries?: string[] }, visitorCountry))
     .filter(p => !activeCategory || p.category_id === activeCategory)
     .sort((a, b) => {
       if (sort === 'price-asc') return a.price - b.price

@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { 
   getCJProductDetail,
   getCJProductMedia,
-  calculateSellingPrice 
+  calculateSellingPrice,
+  verifyCJStock
 } from '@/lib/cj-api'
 import { createClient } from 
   '@supabase/supabase-js'
@@ -76,6 +77,18 @@ export async function POST(
       )
     }
 
+    // ✅ Verify real stock before import
+    const firstVid = cjProduct.variants?.[0]?.vid
+    if (firstVid) {
+      const realStock = await verifyCJStock(firstVid)
+      if (realStock === 0) {
+        return NextResponse.json({
+          error: '❌ Stock épuisé sur CJ pour la variante principale',
+          code: 'OUT_OF_STOCK'
+        }, { status: 400 })
+      }
+    }
+
     // Get markup setting
     const { data: markupSetting } = 
       await supabase
@@ -89,10 +102,10 @@ export async function POST(
       markupSetting?.value || '150'
     )
 
-    const cjPrice = parseFloat(
-      cjProduct.sellPrice || 
-      cjProduct.productPrice || 0
-    )
+    const rawCjPrice = cjProduct.sellPrice || cjProduct.productPrice || '0'
+    const cjPrice = typeof rawCjPrice === 'string'
+      ? parseFloat(rawCjPrice.split('-')[0])
+      : parseFloat(rawCjPrice.toString())
     
     const finalSellingPrice = 
       sellingPrice || 
@@ -126,29 +139,31 @@ export async function POST(
     const finalVariants = 
       variants?.length > 0 
         ? variants
-        : (cjProduct.variants || [])
-            .map((v: any) => ({
-              id: v.vid,
-              vid: v.vid,
-              sku: v.variantSku,
-              size: v.variantProperty?.find(
-                (p: any) => 
-                  p.propertyName
-                    .toLowerCase() === 'size'
-              )?.propertyValueEn,
-              color: v.variantProperty?.find(
-                (p: any) => 
-                  p.propertyName
-                    .toLowerCase() === 'color'
-              )?.propertyValueEn,
-              image: v.variantImage || null,
-              stock: v.variantStock || 999,
-              price: parseFloat(
-                v.variantSellPrice || cjPrice
-              ),
-              properties: 
-                v.variantProperty || [],
-            }))
+        : (Array.isArray(cjProduct.variants) ? cjProduct.variants : [])
+            .map((v: any) => {
+              const properties = Array.isArray(v.variantProperty) ? v.variantProperty : []
+              return {
+                id: v.vid,
+                vid: v.vid,
+                sku: v.variantSku,
+                size: properties.find(
+                  (p: any) => 
+                    p.propertyName
+                      ?.toLowerCase() === 'size'
+                )?.propertyValueEn,
+                color: properties.find(
+                  (p: any) => 
+                    p.propertyName
+                      ?.toLowerCase() === 'color'
+                )?.propertyValueEn,
+                image: v.variantImage || null,
+                stock: v.variantStock || 999,
+                price: parseFloat(
+                  v.variantSellPrice || cjPrice
+                ),
+                properties: properties,
+              }
+            })
 
     const productName = customName || 
       cjProduct.productNameEn || 
@@ -217,7 +232,11 @@ export async function POST(
           tags: finalTags,
           is_active: totalStock > 0,
           is_dropship: true,
-          weight: cjProduct.productWeight,
+          weight: typeof cjProduct.productWeight === 'string' 
+            ? parseFloat(cjProduct.productWeight.split('-')[0]) 
+            : cjProduct.productWeight,
+          availability_type: 'worldwide',
+          available_countries: ['*'],
         })
         .select()
         .single()

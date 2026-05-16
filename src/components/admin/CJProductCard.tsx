@@ -35,6 +35,34 @@ export default function CJProductCard({
     Math.ceil(price * 2.5 * 2) / 2
   const profit = suggestedPrice - price
   const supplier = product.supplierInfo
+  const status = product.productStatus || ''
+
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case 'ONSALE':
+        return {
+          label: '✅ Disponible',
+          class: 'bg-green-500/20 text-green-400'
+        }
+      case 'REMOVED':
+        return {
+          label: '❌ Retiré',
+          class: 'bg-red-500/20 text-red-400'
+        }
+      case 'SOLDOUT':
+        return {
+          label: '⚠️ Épuisé',
+          class: 'bg-orange-500/20 text-orange-400'
+        }
+      default:
+        return {
+          label: '✅ Disponible',
+          class: 'bg-green-500/20 text-green-400'
+        }
+    }
+  }
+
+  const badge = getStatusBadge(status)
 
   const mainImage = 
     product.productImageSet?.[0] || 
@@ -75,6 +103,10 @@ export default function CJProductCard({
               {product.productNameEn || 
                 product.productName}
             </p>
+
+            <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold mb-2 ${badge.class}`}>
+              {badge.label}
+            </div>
             
             <div className="flex items-center 
               gap-3 mb-2">
@@ -317,6 +349,10 @@ export default function CJProductCard({
           {product.productNameEn || 
             product.productName}
         </p>
+
+        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badge.class}`}>
+          {badge.label}
+        </div>
 
         {/* Pricing */}
         <div className="flex items-center 
