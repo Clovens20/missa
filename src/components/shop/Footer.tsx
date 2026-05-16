@@ -1,9 +1,37 @@
+'use client'
+import { useState, useEffect }
+  from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 'lucide-react'
+import { Mail, Phone } from 'lucide-react'
 import NewsletterWidget from './NewsletterWidget'
 
+const PLATFORM_ICONS: Record<
+  string, string
+> = {
+  facebook: '📘',
+  instagram: '📸',
+  tiktok: '🎵',
+  youtube: '▶️',
+  twitter: '𝕏',
+  whatsapp: '💬',
+  pinterest: '📌',
+  snapchat: '👻',
+  linkedin: '💼',
+  threads: '🧵',
+}
+
 export default function Footer() {
+  const [socialLinks, setSocialLinks] =
+    useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/shop/social-links')
+      .then(r => r.json())
+      .then(d => setSocialLinks(d.data || []))
+      .catch(() => {})
+  }, [])
+
   return (
     <footer className="bg-gray-900 text-gray-300">
       {/* Main footer */}
@@ -29,11 +57,32 @@ export default function Footer() {
             Votre boutique en ligne premium. Mode, beauté et lifestyle livrés partout.
           </p>
           <div className="flex gap-3">
-            {[Facebook, Instagram, Twitter, Youtube].map((Icon, i) => (
-              <a key={i} href="#" className="w-9 h-9 bg-gray-800 hover:bg-primary rounded-xl flex items-center justify-center transition-colors">
-                <Icon className="w-4 h-4"/>
-              </a>
-            ))}
+            {socialLinks.length > 0 ? (
+              <div className="flex gap-4
+                items-center flex-wrap">
+                {socialLinks.map(link => (
+                  <a
+                    key={link.platform}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={link.label}
+                    className="w-10 h-10
+                      bg-white/10 hover:bg-primary
+                      rounded-xl flex items-center
+                      justify-center text-lg
+                      transition-all
+                      hover:scale-110">
+                    {PLATFORM_ICONS[link.platform]
+                      || '🔗'}
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-gray-500 italic">
+                Suivez-nous sur nos réseaux
+              </p>
+            )}
           </div>
         </div>
 
