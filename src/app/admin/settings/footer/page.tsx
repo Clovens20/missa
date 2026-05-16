@@ -11,6 +11,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import RichTextEditor from '@/components/admin/RichTextEditor'
 
 type Tab = 
   'contact' | 'links' | 
@@ -472,31 +473,18 @@ export default function FooterManagerPage() {
                     </label>
                     <span className="text-xs
                       text-gray-600">
-                      HTML supporté
                     </span>
                   </div>
-                  <textarea
-                    value={
-                      editingPage.content || ''
+                  <RichTextEditor
+                    value={editingPage.content || ''}
+                    onChange={(html) =>
+                      setEditingPage((p: any) => ({
+                        ...p,
+                        content: html,
+                      }))
                     }
-                    onChange={e =>
-                      setEditingPage(
-                        (p: any) => ({
-                          ...p,
-                          content: e.target.value
-                        })
-                      )
-                    }
-                    rows={16}
-                    placeholder="<h2>Titre</h2><p>Contenu de la page...</p>"
-                    className="w-full px-4 py-3
-                      bg-gray-800
-                      border border-gray-700
-                      focus:border-primary
-                      rounded-xl text-white
-                      text-sm focus:outline-none
-                      resize-none font-mono
-                      leading-relaxed"
+                    placeholder="Commencez à écrire votre page légale..."
+                    minHeight={380}
                   />
                 </div>
 
