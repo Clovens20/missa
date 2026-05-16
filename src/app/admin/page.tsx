@@ -36,31 +36,53 @@ export default function AdminDashboard() {
   async function loadDashboard() {
     setRefreshing(true)
     const today = new Date(); today.setHours(0,0,0,0)
+    const isoToday = today.toISOString()
     
     try {
-      const [ordersRes, productsRes, customersRes, recentRes] = await Promise.all([
-        supabase.from('guest_orders').select('total, created_at, order_status'),
+      // 1. Fetch counts and essential stats in parallel
+      const [
+        totalOrdersRes,
+        pendingOrdersRes,
+        todayOrdersRes,
+        productsRes,
+        customersRes,
+        recentRes
+      ] = await Promise.all([
+        // Total orders count
+        supabase.from('guest_orders').select('*', { count: 'exact', head: true }),
+        // Pending orders count
+        supabase.from('guest_orders').select('*', { count: 'exact', head: true }).eq('order_status', 'pending'),
+        // Today's orders for revenue
+        supabase.from('guest_orders').select('total, order_status').gte('created_at', isoToday),
+        // Products count and low stock
         supabase.from('products').select('id, stock_quantity, low_stock_threshold').eq('is_active', true),
-        supabase.from('abandoned_carts').select('created_at'),
+        // Customers count
+        supabase.from('abandoned_carts').select('id', { count: 'exact', head: true }),
+        // Recent activity
         supabase.from('guest_orders').select('*').order('created_at', { ascending: false }).limit(6)
       ])
 
-      const orders = ordersRes.data || []
+      // 2. Fetch total revenue (only totals to save bandwidth)
+      const { data: allRevenueData } = await supabase
+        .from('guest_orders')
+        .select('total')
+        .not('order_status', 'eq', 'cancelled')
+
+      const totalRevenue = allRevenueData?.reduce((s, o) => s + o.total, 0) || 0
+      const todayRevenue = todayOrdersRes.data?.filter(o => o.order_status !== 'cancelled').reduce((s, o) => s + o.total, 0) || 0
+      
       const products = productsRes.data || []
-      const totalRevenue = orders.filter(o => o.order_status !== 'cancelled').reduce((s, o) => s + o.total, 0)
-      const todayRevenue = orders.filter(o => new Date(o.created_at) >= today && o.order_status !== 'cancelled').reduce((s, o) => s + o.total, 0)
-      const pendingOrders = orders.filter(o => o.order_status === 'pending').length
       const lowStock = products.filter(p => p.stock_quantity <= (p.low_stock_threshold || 5)).length
 
       setStats({
         totalRevenue, 
         todayRevenue, 
-        totalOrders: orders.length, 
-        pendingOrders, 
+        totalOrders: totalOrdersRes.count || 0, 
+        pendingOrders: pendingOrdersRes.count || 0, 
         totalProducts: products.length, 
         lowStockProducts: lowStock, 
-        totalCustomers: customersRes.data?.length || 0, 
-        newCustomersToday: customersRes.data?.filter(c => new Date(c.created_at) >= today).length || 0,
+        totalCustomers: customersRes.count || 0, 
+        newCustomersToday: todayOrdersRes.data?.length || 0,
         revenueGrowth: 15.2
       })
       setRecentOrders(recentRes.data || [])

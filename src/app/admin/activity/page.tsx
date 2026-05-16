@@ -16,7 +16,7 @@ export default function ActivityPage() {
   useEffect(() => {
     async function loadLogs() {
       const { data, error } = await supabase
-        .from('activity_logs')
+        .from('admin_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50)

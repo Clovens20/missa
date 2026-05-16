@@ -47,10 +47,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   async function loadNotifications() {
-    const { count: orderCount } = await supabase.from('guest_orders').select('*', { count: 'exact' }).eq('order_status', 'pending')
+    const { count: orderCount } = await supabase
+      .from('guest_orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('order_status', 'pending')
     setNotifications(orderCount || 0)
 
-    const { count: reviewCount } = await supabase.from('product_reviews').select('*', { count: 'exact' }).eq('status', 'pending')
+    const { count: reviewCount } = await supabase
+      .from('product_reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending')
     setPendingReviews(reviewCount || 0)
   }
 
