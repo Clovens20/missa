@@ -1,0 +1,109 @@
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { CartProvider } from '@/contexts/CartContext'
+import { WishlistProvider } from '@/contexts/WishlistContext'
+import { Toaster } from 'sonner'
+
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap'
+})
+
+export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || 
+    'https://missashop.com'
+  ),
+  title: {
+    default: 'Missa Shop — Mode & Lifestyle Premium',
+    template: '%s | Missa Shop',
+  },
+  description: 
+    'Découvrez la mode premium à petits prix. ' +
+    'Robes, sacs, bijoux, chaussures et plus. ' +
+    'Livraison au Canada, USA et Haïti. ' +
+    'Paiement sécurisé. Retour 30 jours.',
+  keywords: [
+    'mode femme', 'boutique en ligne',
+    'robe', 'sac', 'bijoux', 'chaussures',
+    'livraison Canada', 'livraison Haïti',
+    'dropshipping', 'Missa Shop',
+    'vêtements femme', 'accessoires mode',
+  ],
+  authors: [{ name: 'Missa Shop' }],
+  creator: 'Missa Shop',
+  publisher: 'Missa Shop',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'fr_CA',
+    url: 'https://missashop.com',
+    siteName: 'Missa Shop',
+    title: 'Missa Shop — Mode & Lifestyle Premium',
+    description: 
+      'Mode premium à petits prix. ' +
+      'Livraison Canada, USA, Haïti.',
+    images: [{
+      url: '/og-image.jpg',
+      width: 1200,
+      height: 630,
+      alt: 'Missa Shop',
+    }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Missa Shop',
+    description: 
+      'Mode premium à petits prix.',
+    images: ['/og-image.jpg'],
+    creator: '@missashop',
+  },
+  verification: {
+    // google: 'your-google-verification',
+  },
+  alternates: {
+    canonical: 'https://missashop.com',
+    languages: {
+      'fr-CA': 'https://missashop.com',
+      'fr-FR': 'https://missashop.com',
+      'en-US': 'https://missashop.com/en',
+    },
+  },
+  icons: {
+    icon: '/favicon.png',
+  },
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="fr" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <CartProvider>
+          <WishlistProvider>
+            {children}
+            <Toaster 
+              position="top-right"
+              richColors
+            />
+          </WishlistProvider>
+        </CartProvider>
+      </body>
+    </html>
+  )
+}

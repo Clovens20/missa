@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-scroll {
+  animation: scroll 25s linear infinite;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+:root {
+  --primary: #F97316;
+  --primary-dark: #EA6C0B;
+  --secondary: #22C55E;
+  --secondary-dark: #16A34A;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  color: #111827;
+  background: #ffffff;
+}
+
+@layer utilities {
+  .text-balance { 
+    text-wrap: balance; 
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
