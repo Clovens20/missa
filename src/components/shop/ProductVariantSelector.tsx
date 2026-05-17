@@ -5,24 +5,8 @@ import { motion, AnimatePresence }
   from 'framer-motion'
 import { Check, ChevronLeft,
   ChevronRight } from 'lucide-react'
+import { getColorHex } from '@/lib/colors'
 
-const COLOR_HEX_MAP: Record<
-  string, string
-> = {
-  'Rouge': '#EF4444', 'Red': '#EF4444',
-  'Bleu': '#3B82F6', 'Blue': '#3B82F6',
-  'Vert': '#22C55E', 'Green': '#22C55E',
-  'Noir': '#111111', 'Black': '#111111',
-  'Blanc': '#F9FAFB', 'White': '#F9FAFB',
-  'Rose': '#EC4899', 'Pink': '#EC4899',
-  'Jaune': '#EAB308', 'Yellow': '#EAB308',
-  'Violet': '#A855F7', 'Purple': '#A855F7',
-  'Orange': '#F97316',
-  'Gris': '#6B7280', 'Gray': '#6B7280',
-  'Beige': '#D2B48C',
-  'Marine': '#1E3A5F',
-  'Bordeaux': '#800020',
-}
 
 interface ProductVariantSelectorProps {
   product: any
@@ -95,20 +79,54 @@ ProductVariantSelector({
 
   // Current images for selected color
   const currentImages = (() => {
-    if (selectedColor &&
-      variantImages[selectedColor]
-        ?.length > 0) {
-      return variantImages[selectedColor]
-        .map((img: any) =>
-          typeof img === 'string'
-            ? img : img.url
-        )
+    let imgs: string[] = []
+    
+    const safeSelectedColor = (selectedColor || '').toLowerCase().trim()
+
+    // 1. Try dictionary (case-insensitive key match)
+    if (safeSelectedColor) {
+      const matchKey = Object.keys(variantImages).find(k => k.toLowerCase().trim() === safeSelectedColor)
+      if (matchKey && variantImages[matchKey]?.length > 0) {
+        imgs = variantImages[matchKey].map((img: any) => typeof img === 'string' ? img : img.url)
+      }
     }
-    return (product.images || [])
-      .map((img: any) =>
-        typeof img === 'string'
-          ? img : img.url
-      )
+
+    // 2. Fallback to all images
+    if (imgs.length === 0) {
+      imgs = (product.images || []).map((img: any) => typeof img === 'string' ? img : img.url)
+    }
+
+    // 3. Check if there is a specific image for this color in the variants array
+    let matchedImgUrl: string | null = null;
+    
+    const variantWithImage = (product.variants || []).find((v: any) => 
+      (v.color || '').toLowerCase().trim() === safeSelectedColor && 
+      (v.image || v.image_url || v.variantImage)
+    )
+    
+    if (variantWithImage) {
+      matchedImgUrl = variantWithImage.image || variantWithImage.image_url || variantWithImage.variantImage
+    }
+
+    // 4. Fuzzy fallback: if no direct variant image, search main images for the color name in URL or Alt text
+    if (!matchedImgUrl && safeSelectedColor) {
+      const fuzzyMatch = (product.images || []).find((img: any) => {
+        const url = (typeof img === 'string' ? img : img.url).toLowerCase();
+        const alt = (img.alt || '').toLowerCase();
+        return url.includes(safeSelectedColor) || alt.includes(safeSelectedColor);
+      });
+      if (fuzzyMatch) {
+        matchedImgUrl = typeof fuzzyMatch === 'string' ? fuzzyMatch : fuzzyMatch.url;
+      }
+    }
+
+    // Apply the matched image to the front of the gallery
+    if (matchedImgUrl) {
+      // Avoid duplicate images in the array
+      imgs = [matchedImgUrl, ...imgs.filter(i => i !== matchedImgUrl)]
+    }
+
+    return imgs.length > 0 ? imgs : ['/placeholder-product.jpg']
   })()
 
   // Notify parent when variant changes
@@ -256,18 +274,17 @@ ProductVariantSelector({
           <div className="flex gap-3
             flex-wrap">
             {colors.map(color => {
-              const hex =
-                COLOR_HEX_MAP[color] ||
-                '#888'
+              const hex = getColorHex(color)
               const isSelected =
                 selectedColor === color
               const hasOwnImages =
                 (variantImages[color]
                   ?.length || 0) > 0
               const isLight = [
-                'Blanc', 'White',
-                'Beige', 'Jaune',
-              ].includes(color)
+                'Blanc', 'White', 'blanc casse', 'creme', 'ivoire',
+                'Beige', 'Jaune', 'light yellow', 'champagne',
+              ].includes(color) || hex === '#f5f5f5' || hex === '#ffffff'
+
 
               return (
                 <button

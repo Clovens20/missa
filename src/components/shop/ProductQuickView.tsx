@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { X, Heart, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatPrice } from '@/lib/utils'
+import { getColorHex } from '@/lib/colors'
 
 interface Variant {
   id: string
@@ -31,6 +32,7 @@ interface ProductQuickViewProps {
   onAddToCart: (productId: string, variantId: string, quantity: number) => void
 }
 
+// Component starts...
 export default function ProductQuickView({
   product,
   isOpen,
@@ -220,21 +222,40 @@ export default function ProductQuickView({
                       <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">
                         Couleur {selectedColor && <span className="text-white ml-2 normal-case font-normal">— {selectedColor}</span>}
                       </p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-3">
                         {colors.map(v => (
-                          <button
-                            key={v.color}
-                            onClick={() => {
-                              setSelectedColor(c => c === v.color ? null : v.color!)
-                              setSelectedSize(null)
-                              if (v.image) {
-                                const idx = images.indexOf(v.image)
-                                if (idx !== -1) setSelectedImage(idx)
-                              }
-                            }}
-                            className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === v.color ? 'border-primary scale-110' : 'border-white/20'}`}
-                            style={{ backgroundColor: v.colorHex || v.color || '#888' }}
-                          />
+                          <div key={v.color} className="flex flex-col items-center gap-1">
+                            <button
+                              onClick={() => {
+                                setSelectedColor(c => c === v.color ? null : v.color!)
+                                setSelectedSize(null)
+                                if (v.image) {
+                                  const idx = images.indexOf(v.image)
+                                  if (idx !== -1) setSelectedImage(idx)
+                                }
+                              }}
+                              className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === v.color ? 'border-primary scale-110' : 'border-white/20'}`}
+                              style={{
+                                background: 
+                                  v.colorHex || 
+                                  getColorHex(v.color || '') ||
+                                  '#888',
+                                border: v.color?.toLowerCase()
+                                  .includes('blanc') || 
+                                  v.color?.toLowerCase()
+                                  .includes('white') || 
+                                  v.color?.toLowerCase()
+                                  .includes('creme') ||
+                                  v.color?.toLowerCase()
+                                  .includes('ivoire')
+                                    ? '2px solid #d4d4d4' 
+                                    : undefined
+                              }}
+                            />
+                            <span className="text-[9px] text-gray-500 text-center max-w-[40px] leading-tight truncate">
+                              {v.color}
+                            </span>
+                          </div>
                         ))}
                       </div>
                     </div>

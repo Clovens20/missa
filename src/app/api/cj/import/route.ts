@@ -8,6 +8,7 @@ import {
 import { createClient } from 
   '@supabase/supabase-js'
 import { slugify } from '@/lib/utils'
+import { getColorHex } from '@/lib/colors'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -156,6 +157,11 @@ export async function POST(
                     p.propertyName
                       ?.toLowerCase() === 'color'
                 )?.propertyValueEn,
+                color_hex: getColorHex(properties.find(
+                  (p: any) => 
+                    p.propertyName
+                      ?.toLowerCase() === 'color'
+                )?.propertyValueEn || ''),
                 image: v.variantImage || null,
                 stock: v.variantStock || 999,
                 cjPrice: parseFloat(
