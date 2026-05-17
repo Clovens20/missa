@@ -79,36 +79,28 @@ ProductVariantSelector({
 
   // Current images for selected color
   const currentImages = (() => {
-    let imgs: string[] = []
+    let imgs: string[] = (product.images || []).map((img: any) => typeof img === 'string' ? img : img.url)
     
     const safeSelectedColor = (selectedColor || '').toLowerCase().trim()
+    let matchedImgUrl: string | null = null;
 
-    // 1. Try dictionary (case-insensitive key match)
     if (safeSelectedColor) {
       const matchKey = Object.keys(variantImages).find(k => k.toLowerCase().trim() === safeSelectedColor)
       if (matchKey && variantImages[matchKey]?.length > 0) {
-        imgs = variantImages[matchKey].map((img: any) => typeof img === 'string' ? img : img.url)
+        matchedImgUrl = typeof variantImages[matchKey][0] === 'string' ? variantImages[matchKey][0] : variantImages[matchKey][0].url
       }
     }
 
-    // 2. Fallback to all images
-    if (imgs.length === 0) {
-      imgs = (product.images || []).map((img: any) => typeof img === 'string' ? img : img.url)
+    if (!matchedImgUrl) {
+      const variantWithImage = (product.variants || []).find((v: any) => 
+        (v.color || '').toLowerCase().trim() === safeSelectedColor && 
+        (v.image || v.image_url || v.variantImage)
+      )
+      if (variantWithImage) {
+        matchedImgUrl = variantWithImage.image || variantWithImage.image_url || variantWithImage.variantImage
+      }
     }
 
-    // 3. Check if there is a specific image for this color in the variants array
-    let matchedImgUrl: string | null = null;
-    
-    const variantWithImage = (product.variants || []).find((v: any) => 
-      (v.color || '').toLowerCase().trim() === safeSelectedColor && 
-      (v.image || v.image_url || v.variantImage)
-    )
-    
-    if (variantWithImage) {
-      matchedImgUrl = variantWithImage.image || variantWithImage.image_url || variantWithImage.variantImage
-    }
-
-    // 4. Fuzzy fallback: if no direct variant image, search main images for the color name in URL or Alt text
     if (!matchedImgUrl && safeSelectedColor) {
       const fuzzyMatch = (product.images || []).find((img: any) => {
         const url = (typeof img === 'string' ? img : img.url).toLowerCase();
@@ -120,10 +112,9 @@ ProductVariantSelector({
       }
     }
 
-    // Apply the matched image to the front of the gallery
-    if (matchedImgUrl) {
-      // Avoid duplicate images in the array
-      imgs = [matchedImgUrl, ...imgs.filter(i => i !== matchedImgUrl)]
+    // If a variant image was found but it's not in the main gallery, add it
+    if (matchedImgUrl && !imgs.includes(matchedImgUrl)) {
+      imgs = [matchedImgUrl, ...imgs]
     }
 
     return imgs.length > 0 ? imgs : ['/placeholder-product.jpg']
@@ -136,28 +127,59 @@ ProductVariantSelector({
       size: selectedSize,
       images: currentImages,
     })
-    setCurrentImgIdx(0)
+    
+    // Auto-select the image index for this color
+    const safeSelectedColor = (selectedColor || '').toLowerCase().trim()
+    let matchedImgUrl: string | null = null;
+
+    if (safeSelectedColor) {
+      const matchKey = Object.keys(variantImages).find(k => k.toLowerCase().trim() === safeSelectedColor)
+      if (matchKey && variantImages[matchKey]?.length > 0) {
+        matchedImgUrl = typeof variantImages[matchKey][0] === 'string' ? variantImages[matchKey][0] : variantImages[matchKey][0].url
+      }
+    }
+
+    if (!matchedImgUrl) {
+      const variantWithImage = (product.variants || []).find((v: any) => 
+        (v.color || '').toLowerCase().trim() === safeSelectedColor && 
+        (v.image || v.image_url || v.variantImage)
+      )
+      if (variantWithImage) matchedImgUrl = variantWithImage.image || variantWithImage.image_url || variantWithImage.variantImage
+    }
+
+    if (!matchedImgUrl && safeSelectedColor) {
+      const fuzzyMatch = (product.images || []).find((img: any) => {
+        const url = (typeof img === 'string' ? img : img.url).toLowerCase();
+        const alt = (img.alt || '').toLowerCase();
+        return url.includes(safeSelectedColor) || alt.includes(safeSelectedColor);
+      });
+      if (fuzzyMatch) matchedImgUrl = typeof fuzzyMatch === 'string' ? fuzzyMatch : fuzzyMatch.url;
+    }
+
+    if (matchedImgUrl) {
+      const idx = currentImages.indexOf(matchedImgUrl)
+      if (idx !== -1) setCurrentImgIdx(idx)
+    }
   }, [selectedColor, selectedSize])
 
   return (
     <div className="space-y-6">
 
       {/* ── IMAGE GALLERY ── */}
-      <div className="flex gap-4">
+      <div className="flex flex-col-reverse md:flex-row gap-4">
 
         {/* Thumbnails */}
         {currentImages.length > 1 && (
-          <div className="flex flex-col
-            gap-2 w-16 flex-shrink-0">
+          <div className="flex flex-row md:flex-col
+            gap-2 w-full md:w-16 flex-shrink-0 md:max-h-[500px] overflow-x-auto md:overflow-x-hidden md:overflow-y-auto pb-2 md:pb-0 md:pr-1 scrollbar-thin scrollbar-thumb-gray-300">
             {currentImages
-              .slice(0, 5)
               .map((img: string, i: number) => (
               <button
                 key={i}
                 type="button"
                 onClick={() =>
                   setCurrentImgIdx(i)}
-                className={`w-16 h-16
+                className={`w-16 h-16 flex-shrink-0
                   rounded-xl overflow-hidden
                   border-2 transition-all
                   ${currentImgIdx === i
