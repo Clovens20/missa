@@ -59,10 +59,10 @@ export const metadata: Metadata = {
       'Mode premium à petits prix. ' +
       'Livraison Canada, USA, Haïti.',
     images: [{
-      url: '/og-image.jpg',
+      url: 'https://www.missashopp.com/api/og',
       width: 1200,
       height: 630,
-      alt: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
+      alt: 'Missa Shop — Mode & Lifestyle Premium',
     }],
   },
   twitter: {
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     title: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
     description: 
       'Mode premium à petits prix.',
-    images: ['/og-image.jpg'],
+    images: ['https://www.missashopp.com/api/og'],
     creator: '@missashop',
   },
   verification: {
