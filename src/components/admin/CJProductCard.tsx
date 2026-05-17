@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Plus, Star, TrendingUp,
-  Eye, Award, Zap, Loader, Package
+  Eye, Award, Zap, Loader, Package,
+  X, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import { formatPrice, getSafeImageUrl } from '@/lib/utils'
 import SupplierInfoCard from 
@@ -24,6 +25,30 @@ export default function CJProductCard({
 }: CJProductCardProps) {
   const [showSupplier, setShowSupplier] = 
     useState(false)
+  const [showGallery, setShowGallery] = useState(false)
+  const [galleryImages, setGalleryImages] = useState<any[]>([])
+  const [loadingGallery, setLoadingGallery] = useState(false)
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
+
+  async function openGallery(e: React.MouseEvent) {
+    e.stopPropagation()
+    setShowGallery(true)
+    setLoadingGallery(true)
+    try {
+      const res = await fetch(`/api/cj/media?pid=${pid}`)
+      const data = await res.json()
+      if (data.images && data.images.length > 0) {
+        setGalleryImages(data.images)
+      } else {
+        setGalleryImages([{ url: mainImage }])
+      }
+      setActiveImageIndex(0)
+    } catch (err) {
+      setGalleryImages([{ url: mainImage }])
+    } finally {
+      setLoadingGallery(false)
+    }
+  }
 
   const pid = product.pid || 
     product.productId
@@ -88,17 +113,24 @@ export default function CJProductCard({
         
         <div className="flex gap-4 p-4">
           {/* Image */}
-          <div className="w-24 h-24 
-            rounded-xl overflow-hidden 
-            bg-gray-800 flex-shrink-0">
+          <div 
+            onClick={openGallery}
+            className="w-24 h-24 
+              rounded-xl overflow-hidden 
+              bg-gray-800 flex-shrink-0
+              cursor-zoom-in relative group/img"
+            title="Aperçu des photos">
             {mainImage && (
               <img
                 src={getSafeImageUrl(mainImage)}
                 alt={product.productNameEn}
                 className="w-full h-full 
-                  object-cover"
+                  object-cover group-hover/img:scale-105 transition-transform duration-300"
               />
             )}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+              <Eye className="w-5 h-5 text-white drop-shadow" />
+            </div>
           </div>
 
           {/* Info */}
@@ -238,9 +270,12 @@ export default function CJProductCard({
         flex flex-col">
       
       {/* Image */}
-      <div className="relative 
-        aspect-square bg-gray-800 
-        overflow-hidden">
+      <div 
+        onClick={openGallery}
+        className="relative 
+          aspect-square bg-gray-800 
+          overflow-hidden cursor-zoom-in group/img"
+        title="Aperçu des photos">
         {mainImage && (
           <img
             src={getSafeImageUrl(mainImage)}
@@ -253,6 +288,12 @@ export default function CJProductCard({
               duration-300"
           />
         )}
+        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+          <div className="bg-gray-950/90 backdrop-blur-md border border-gray-850 px-4 py-2.5 rounded-2xl flex items-center gap-2 text-white font-extrabold text-[11px] shadow-2xl scale-90 group-hover/img:scale-100 transition-transform duration-200">
+            <Eye className="w-4 h-4 text-primary" />
+            Voir les photos
+          </div>
+        </div>
         
         {/* Top badges */}
         <div className="absolute top-2 
@@ -421,6 +462,162 @@ export default function CJProductCard({
           </button>
         </div>
       </div>
+
+      {/* ── HIGH-FIDELITY PRODUCT MEDIA LIGHTBOX MODAL ── */}
+      {showGallery && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowGallery(false)
+          }}
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          
+          {/* Close button */}
+          <button 
+            onClick={() => setShowGallery(false)}
+            className="absolute top-6 right-6 p-3 bg-gray-900/80 hover:bg-gray-800 text-gray-400 hover:text-white rounded-full transition-all border border-gray-850 z-[70] hover:scale-105"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-6 items-stretch h-[80vh] bg-gray-950/40 border border-gray-850 rounded-3xl p-6 overflow-hidden animate-in fade-in zoom-in duration-300">
+            
+            {/* Left Column: Media display */}
+            <div className="flex-1 flex flex-col items-center justify-center relative bg-gray-950/60 rounded-2xl border border-gray-900 overflow-hidden min-h-[40vh] lg:min-h-0">
+              {loadingGallery ? (
+                <div className="flex flex-col items-center gap-3">
+                  <Loader className="w-10 h-10 text-primary animate-spin" />
+                  <p className="text-gray-400 text-xs font-semibold">Chargement de la galerie haute résolution...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Main view */}
+                  <div className="w-full h-full flex items-center justify-center p-4">
+                    {galleryImages[activeImageIndex]?.url ? (
+                      <motion.img 
+                        key={activeImageIndex}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        src={getSafeImageUrl(galleryImages[activeImageIndex].url)} 
+                        alt={product.productNameEn} 
+                        className="max-w-full max-h-[50vh] lg:max-h-[60vh] object-contain rounded-xl shadow-2xl"
+                      />
+                    ) : (
+                      <p className="text-gray-500">Aucune image disponible</p>
+                    )}
+                  </div>
+
+                  {/* Navigation arrows */}
+                  {galleryImages.length > 1 && (
+                    <>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1)
+                        }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-gray-900/80 hover:bg-gray-800 text-white rounded-full transition-all border border-gray-800 hover:scale-105"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1)
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-gray-900/80 hover:bg-gray-800 text-white rounded-full transition-all border border-gray-800 hover:scale-105"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Media Count Badge */}
+                  <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/60 backdrop-blur-md border border-gray-800 rounded-xl text-white text-xs font-bold">
+                    {activeImageIndex + 1} / {galleryImages.length}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Right Column: Product details + Thumbnails list + Quick Import */}
+            <div className="w-full lg:w-96 flex flex-col gap-5 overflow-y-auto pr-1">
+              <div>
+                <span className="text-[10px] uppercase tracking-wider font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-md">
+                  Aperçu CJDropshipping
+                </span>
+                <h3 className="text-white font-black text-lg mt-3 line-clamp-3 leading-snug">
+                  {product.productNameEn || product.productName}
+                </h3>
+                <p className="text-gray-500 text-xs mt-1.5 font-mono">ID CJ: {pid}</p>
+              </div>
+
+              {/* Pricing Info */}
+              <div className="bg-gray-900/60 border border-gray-850 rounded-2xl p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">Prix CJ :</span>
+                  <span className="text-white font-black text-base">{formatPrice(price)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400 font-medium">Prix de vente suggéré :</span>
+                  <span className="text-secondary font-black text-base">{formatPrice(suggestedPrice)}</span>
+                </div>
+                <div className="h-px bg-gray-800" />
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400 font-semibold">Marge bénéficiaire :</span>
+                  <span className="text-secondary bg-secondary/10 px-2.5 py-1 rounded-lg font-black text-sm">
+                    +{formatPrice(profit)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Thumbnails grid */}
+              {!loadingGallery && galleryImages.length > 0 && (
+                <div className="space-y-2.5">
+                  <p className="text-xs font-bold text-gray-400">Galerie de photos ({galleryImages.length}) :</p>
+                  <div className="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto pr-1">
+                    {galleryImages.map((img, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setActiveImageIndex(i)}
+                        className={`aspect-square rounded-xl overflow-hidden border-2 transition-all relative ${
+                          activeImageIndex === i 
+                            ? 'border-primary ring-2 ring-primary/20 ring-offset-2 ring-offset-gray-900 scale-95' 
+                            : 'border-gray-800 hover:border-gray-700 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={getSafeImageUrl(img.url)} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Import Action */}
+              <div className="mt-auto pt-4 flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setShowGallery(false)
+                    onImport(product)
+                  }}
+                  disabled={importing}
+                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-black py-3 rounded-2xl text-sm transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                >
+                  {importing ? <Loader className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Importer sur Missa Shop
+                </button>
+                
+                <button
+                  onClick={() => setShowGallery(false)}
+                  className="w-full text-center text-xs font-bold text-gray-500 hover:text-gray-300 py-2 transition-colors"
+                >
+                  Fermer l'aperçu
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }
