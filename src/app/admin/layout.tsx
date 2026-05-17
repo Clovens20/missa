@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { 
-  LayoutDashboard, Package, ShoppingCart, Users, Tag, Image, BarChart3, Settings, LogOut, Menu, X, ChevronRight, Shield, Bell, ExternalLink, Megaphone, FileText, UserCog, Activity, Building2, Globe, Star, Zap, Share2, Mail
+  LayoutDashboard, Package, ShoppingCart, Users, Tag, Image, BarChart3, Settings, LogOut, Menu, X, ChevronRight, Shield, Bell, ExternalLink, Megaphone, FileText, UserCog, Activity, Building2, Globe, Star, Zap, Share2, Mail, Percent
 } from 'lucide-react'
 
 interface AdminLayoutProps {
@@ -117,6 +117,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { href: '/admin/activity', icon: Activity, label: 'Activité', permission: null, superOnly: true },
         { href: '/admin/settings/social-links', icon: Share2, label: 'Réseaux Sociaux', permission: 'settings' },
         { href: '/admin/settings/footer', icon: Settings, label: 'Footer & Légal', permission: 'settings' },
+        { href: '/admin/settings/tax', icon: Percent, label: 'Taxes', permission: 'settings' },
         { href: '/admin/settings', icon: Settings, label: 'Paramètres', permission: 'settings', highlight: true },
       ]
     }

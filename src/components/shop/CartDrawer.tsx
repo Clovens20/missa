@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useCart } from '@/contexts/CartContext'
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react'
 import { useSettings } from '@/contexts/SettingsContext'
@@ -16,6 +17,48 @@ export default function CartDrawer() {
     updateQty, clearCart 
   } = useCart()
   const { getSetting } = useSettings()
+
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleCheckout = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch(
+        '/api/checkout/create-session',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            items: items.map(i => ({
+              product_id: i.product.id,
+              name: i.product.name,
+              price: i.product.price,
+              quantity: i.quantity,
+              image: i.product.images?.[0]?.url || null,
+              variant: i.variant || null,
+              is_dropship: i.product.is_dropship || false,
+              variant_id: i.variant?.id || null
+            })),
+          }),
+        }
+      )
+
+      const data = await res.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      window.location.href = data.url
+
+    } catch (err: any) {
+      alert('Erreur: ' + err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const FREE_SHIPPING_THRESHOLD = getSetting('free_shipping_threshold', 50)
 
@@ -145,12 +188,24 @@ export default function CartDrawer() {
                   <span>Total</span>
                   <span className="text-primary">{formatPrice(total)}</span>
                 </div>
-                <Link
-                  href="/checkout"
-                  onClick={toggleCart}
-                  className="block w-full bg-primary hover:bg-primary-dark text-white text-center py-3.5 rounded-xl font-bold text-base transition-colors active:scale-95">
-                  Commander maintenant →
-                </Link>
+                <button
+                  onClick={handleCheckout}
+                  disabled={isLoading || items.length === 0}
+                  className="w-full bg-orange-500 hover:bg-orange-400 text-white font-black py-4 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-base active:scale-95 shadow-lg shadow-orange-500/20">
+                  {isLoading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+                      Redirection...
+                    </>
+                  ) : (
+                    <>
+                      🔒 Payer maintenant
+                      <span className="text-sm opacity-80">
+                        (Stripe)
+                      </span>
+                    </>
+                  )}
+                </button>
                 <button
                   onClick={toggleCart}
                   className="block w-full text-center text-gray-500 hover:text-primary text-sm font-medium transition-colors">

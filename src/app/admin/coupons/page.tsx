@@ -11,17 +11,34 @@ import { formatPrice } from '@/lib/utils'
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<any[]>([])
+  const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     code: '', discount_type: 'percentage', discount_value: 10,
-    min_purchase_amount: 0, max_uses: '', is_active: true, expires_at: ''
+    min_purchase_amount: 0, max_uses: '', is_active: true, expires_at: '',
+    product_id: ''
   })
 
-  useEffect(() => { loadCoupons() }, [])
+  useEffect(() => {
+    loadCoupons()
+    loadProducts()
+  }, [])
+
+  async function loadProducts() {
+    const { data } = await supabase
+      .from('products')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name', { ascending: true })
+    setProducts(data || [])
+  }
 
   async function loadCoupons() {
-    const { data } = await supabase.from('coupons').select('*').order('created_at', { ascending: false })
+    const { data } = await supabase
+      .from('coupons')
+      .select('*, products(name)')
+      .order('created_at', { ascending: false })
     setCoupons(data || [])
     setLoading(false)
   }
@@ -30,7 +47,12 @@ export default function CouponsPage() {
     e.preventDefault()
     if (!formData.code) return
     
-    const data = { ...formData, code: formData.code.toUpperCase(), max_uses: formData.max_uses ? parseInt(formData.max_uses as any) : null }
+    const data = { 
+      ...formData, 
+      code: formData.code.toUpperCase(), 
+      max_uses: formData.max_uses ? parseInt(formData.max_uses as any) : null,
+      product_id: formData.product_id || null
+    }
     
     try {
       if (editingId) {
@@ -41,7 +63,7 @@ export default function CouponsPage() {
         toast.success('Nouveau coupon créé')
       }
       setEditingId(null)
-      setFormData({ code: '', discount_type: 'percentage', discount_value: 10, min_purchase_amount: 0, max_uses: '', is_active: true, expires_at: '' })
+      setFormData({ code: '', discount_type: 'percentage', discount_value: 10, min_purchase_amount: 0, max_uses: '', is_active: true, expires_at: '', product_id: '' })
       loadCoupons()
     } catch (err: any) { toast.error(err.message) }
   }
@@ -95,6 +117,15 @@ export default function CouponsPage() {
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-2">Expire le (optionnel)</label>
                 <input type="date" value={formData.expires_at} onChange={e => setFormData({...formData, expires_at: e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none"/>
               </div>
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-2">Applicable sur</label>
+                <select value={formData.product_id} onChange={e => setFormData({...formData, product_id: e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none">
+                  <option value="">Tous les produits</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white font-black py-3.5 rounded-2xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
@@ -122,6 +153,11 @@ export default function CouponsPage() {
                       <span className="w-1 h-1 bg-gray-700 rounded-full"/>
                       {c.used_count || 0} utilisations
                     </p>
+                    {c.products?.name && (
+                      <p className="text-primary text-[10px] font-black mt-1 bg-primary/10 px-2 py-0.5 rounded-lg inline-block">
+                        🎯 Limité à : {c.products.name}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -131,7 +167,7 @@ export default function CouponsPage() {
                     {c.expires_at && <p className="text-gray-500 text-[10px] mt-0.5 flex items-center gap-1 justify-end"><Clock className="w-3 h-3"/> {new Date(c.expires_at).toLocaleDateString()}</p>}
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => {setEditingId(c.id); setFormData({code:c.code, discount_type:c.discount_type, discount_value:c.discount_value, min_purchase_amount:c.min_purchase_amount, max_uses:c.max_uses || '', is_active:c.is_active, expires_at:c.expires_at ? c.expires_at.split('T')[0] : ''})}} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all"><Pencil className="w-4 h-4"/></button>
+                    <button onClick={() => {setEditingId(c.id); setFormData({code:c.code, discount_type:c.discount_type, discount_value:c.discount_value, min_purchase_amount:c.min_purchase_amount, max_uses:c.max_uses || '', is_active:c.is_active, expires_at:c.expires_at ? c.expires_at.split('T')[0] : '', product_id:c.product_id || ''})}} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all"><Pencil className="w-4 h-4"/></button>
                     <button onClick={() => deleteCoupon(c.id)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-all"><Trash2 className="w-4 h-4"/></button>
                   </div>
                 </div>

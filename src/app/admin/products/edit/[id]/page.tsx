@@ -745,14 +745,29 @@ export default function EditProductPage() {
             <h2 className="text-lg font-bold text-white flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-500"/>Tarification</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Prix</label>
-                <input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white font-black"/>
+                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Prix de vente (CA$)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">CA$</span>
+                  <input 
+                    type="number" step="0.01" value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-12 pr-4 py-2.5 text-white font-black outline-none focus:border-green-500"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Prix barré</label>
-                <input type="number" step="0.01" value={formData.compare_price} onChange={(e) => setFormData({ ...formData, compare_price: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-gray-400 line-through"/>
+                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Prix barré (CA$)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">CA$</span>
+                  <input 
+                    type="number" step="0.01" value={formData.compare_price}
+                    onChange={(e) => setFormData({ ...formData, compare_price: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-12 pr-4 py-2.5 text-gray-400 line-through outline-none focus:border-red-500"
+                  />
+                </div>
               </div>
             </div>
+            <p className="text-[11px] text-gray-400">Entrez le prix en dollars canadiens (CAD)</p>
 
             {/* Prix d'achat & Rentabilité */}
             <div className="pt-4 border-t border-gray-800 space-y-4">

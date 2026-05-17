@@ -31,6 +31,12 @@ export async function GET(req: Request) {
     // Geographic filtering
     if (country !== 'UNKNOWN') {
       const upperCountry = country.toUpperCase()
+      
+      // If client country is not CA or US, hide local manual products (only show dropship)
+      if (upperCountry !== 'CA' && upperCountry !== 'US') {
+        query = query.eq('is_dropship', true)
+      }
+
       // Filter logic:
       // 1. Worldwide products
       // 2. OR Countries containing '*'

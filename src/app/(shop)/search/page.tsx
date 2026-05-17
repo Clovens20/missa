@@ -18,7 +18,7 @@ import ProductCard
   from '@/components/shop/ProductCard'
 import Header from '@/components/shop/Header'
 import Footer from '@/components/shop/Footer'
-
+import { useCountry } from '@/contexts/CountryContext'
 function SearchResults() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -41,6 +41,8 @@ function SearchResults() {
     sizes: [],
     priceRange: { min: 0, max: 500 },
   })
+
+  const { country: visitorCountry } = useCountry()
 
   const fetchResults = useCallback(
     async (
@@ -69,6 +71,7 @@ function SearchResults() {
           ...(f.categories.length > 0 && {
             categories: f.categories.join(',')
           }),
+          country: visitorCountry || 'UNKNOWN'
         })
 
         const res = await fetch(
@@ -96,7 +99,7 @@ function SearchResults() {
       } finally {
         setLoading(false)
       }
-    }, []
+    }, [visitorCountry]
   )
 
   // Fetch when query or filters change

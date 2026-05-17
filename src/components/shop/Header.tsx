@@ -11,6 +11,7 @@ import {
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSettings } from '@/contexts/SettingsContext'
+import { useCurrency, SUPPORTED_CURRENCIES } from '@/contexts/CurrencyContext'
 import { supabase } from '@/lib/supabase'
 import { formatPrice, getSafeImageUrl } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -21,6 +22,7 @@ export default function Header() {
   const { count, toggleCart, total } = useCart()
   const { count: wishCount } = useWishlist()
   const { getSetting } = useSettings()
+  const { currency, setCurrency } = useCurrency()
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const router = useRouter()
@@ -94,6 +96,22 @@ export default function Header() {
               <Truck className="w-3.5 h-3.5 text-primary"/>
               <span>Suivre commande</span>
             </Link>
+            
+            {/* Devise active */}
+            <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 text-gray-200 text-[11px] font-bold rounded-lg px-2 py-1 focus-within:border-primary focus-within:text-white transition-all ml-2">
+              <span className="text-xs">{SUPPORTED_CURRENCIES.find(c => c.code === currency)?.flag || '🇺🇸'}</span>
+              <select 
+                value={currency} 
+                onChange={(e) => setCurrency(e.target.value)}
+                className="bg-transparent text-gray-200 font-bold focus:outline-none cursor-pointer pr-1 text-[11px]"
+              >
+                {SUPPORTED_CURRENCIES.map(curr => (
+                  <option key={curr.code} value={curr.code} className="bg-gray-900 text-white font-bold">
+                    {curr.code} ({curr.symbol})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -249,6 +267,28 @@ export default function Header() {
               <span>🔥 Promotions du jour</span>
               <ArrowRight className="w-4 h-4"/>
             </Link>
+
+            {/* Currency Selector inside Mobile Menu */}
+            <div className="pt-4 mt-4 border-t border-gray-100 px-3">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Devise et Région</p>
+              <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-2xl">
+                <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                  <span>{SUPPORTED_CURRENCIES.find(c => c.code === currency)?.flag || '🇺🇸'}</span>
+                  <span>Devise active : {currency}</span>
+                </span>
+                <select 
+                  value={currency} 
+                  onChange={(e) => { setCurrency(e.target.value); setMenuOpen(false) }}
+                  className="bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-800 focus:outline-none focus:border-primary cursor-pointer shadow-sm"
+                >
+                  {SUPPORTED_CURRENCIES.map(curr => (
+                    <option key={curr.code} value={curr.code}>
+                      {curr.flag} {curr.code} ({curr.symbol})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       )}

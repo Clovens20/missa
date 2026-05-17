@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
+import { useCountry } from '@/contexts/CountryContext'
 
 const TRENDING = [
   'Robe été',
@@ -35,6 +36,7 @@ export default function SmartSearchBar({
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const { country: visitorCountry } = useCountry()
   
   const [query, setQuery] = useState('')
   const [focused, setFocused] = 
@@ -99,7 +101,8 @@ export default function SmartSearchBar({
         const res = await fetch(
           `/api/shop/search?q=` +
           `${encodeURIComponent(q)}` +
-          `&suggestions=true`
+          `&suggestions=true` +
+          `&country=${encodeURIComponent(visitorCountry || 'UNKNOWN')}`
         )
         const data = await res.json()
         setSuggestions(data)
@@ -108,7 +111,7 @@ export default function SmartSearchBar({
       } finally {
         setLoading(false)
       }
-    }, []
+    }, [visitorCountry]
   )
 
   function handleChange(

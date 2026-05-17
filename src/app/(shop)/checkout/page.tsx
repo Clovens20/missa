@@ -1,10 +1,11 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/contexts/CartContext'
+import { useCurrency } from '@/contexts/CurrencyContext'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/shop/Header'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, getTaxRate } from '@/lib/utils'
 import { Mail, User, Phone, MapPin, CreditCard, Lock, ChevronRight, ShoppingBag, CheckCircle, Shield } from 'lucide-react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
@@ -28,14 +29,95 @@ interface FormData {
   notes: string
 }
 
+const WORLDWIDE_COUNTRIES = [
+  { code: 'CA', name: '🇨🇦 Canada' },
+  { code: 'US', name: '🇺🇸 États-Unis' },
+  { code: 'HT', name: '🇭🇹 Haïti' },
+  { code: 'FR', name: '🇫🇷 France' },
+  { code: 'BE', name: '🇧🇪 Belgique' },
+  { code: 'CH', name: '🇨🇭 Suisse' },
+  { code: 'GB', name: '🇬🇧 Royaume-Uni' },
+  { code: 'DE', name: '🇩🇪 Allemagne' },
+  { code: 'IT', name: '🇮🇹 Italie' },
+  { code: 'ES', name: '🇪🇸 Espagne' },
+  { code: 'NL', name: '🇳🇱 Pays-Bas' },
+  { code: 'PT', name: '🇵🇹 Portugal' },
+  { code: 'IE', name: '🇮🇪 Irlande' },
+  { code: 'AT', name: '🇦🇹 Autriche' },
+  { code: 'DK', name: '🇩🇰 Danemark' },
+  { code: 'SE', name: '🇸🇪 Suède' },
+  { code: 'NO', name: '🇳🇴 Norvège' },
+  { code: 'FI', name: '🇫🇮 Finlande' },
+  { code: 'LU', name: '🇱🇺 Luxembourg' },
+  { code: 'MC', name: '🇲🇨 Monaco' },
+  { code: 'GP', name: '🇬🇵 Guadeloupe' },
+  { code: 'MQ', name: '🇲🇶 Martinique' },
+  { code: 'GF', name: '🇬🇫 Guyane Française' },
+  { code: 'RE', name: '🇷🇪 La Réunion' },
+  { code: 'YT', name: '🇾🇹 Mayotte' },
+  { code: 'PF', name: '🇵🇫 Polynésie Française' },
+  { code: 'NC', name: '🇳🇨 Nouvelle-Calédonie' },
+  { code: 'CI', name: '🇨🇮 Côte d\'Ivoire' },
+  { code: 'SN', name: '🇸🇳 Sénégal' },
+  { code: 'MA', name: '🇲🇦 Maroc' },
+  { code: 'DZ', name: '🇩🇿 Algérie' },
+  { code: 'TN', name: '🇹🇳 Tunisie' },
+  { code: 'CD', name: '🇨🇩 R.D. Congo' },
+  { code: 'CM', name: '🇨🇲 Cameroun' },
+  { code: 'GA', name: '🇬🇦 Gabon' },
+  { code: 'CG', name: '🇨🇬 Congo' },
+  { code: 'BJ', name: '🇧🇯 Bénin' },
+  { code: 'TG', name: '🇹🇬 Togo' },
+  { code: 'GN', name: '🇬🇳 Guinée' },
+  { code: 'ML', name: '🇲🇱 Mali' }
+]
+
 export default function CheckoutPage() {
   const { items, total, clearCart, guestEmail, setGuestEmail } = useCart()
+  const { currency, setCurrency } = useCurrency()
   const router = useRouter()
-  
+
   const [step, setStep] = useState<Step>('email')
+
   const [loading, setLoading] = useState(false)
   const [orderNumber, setOrderNumber] = useState<string>('')
+
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState('')
   
+  const [taxSettings, setTaxSettings] = useState<{
+    tax_enabled: boolean
+    tax_rates: Record<string, { name: string, rate: number, enabled: boolean }>
+  } | null>(null)
+
+  useEffect(() => {
+    async function loadTax() {
+      try {
+        const res = await fetch('/api/shop/tax-settings')
+        if (res.ok) {
+          const data = await res.json()
+          setTaxSettings(data)
+        }
+      } catch (err) {
+        console.error('Failed to load tax settings:', err)
+      }
+    }
+    loadTax()
+  }, [])
+
+  const hasLocalProducts = items.some(item => !item.product?.is_dropship)
+  
+  const countryOptions = hasLocalProducts
+    ? [
+        { code: 'CA', name: '🇨🇦 Canada' },
+        { code: 'US', name: '🇺🇸 États-Unis' },
+        { code: 'HT', name: '🇭🇹 Haïti' },
+        { code: 'FR', name: '🇫🇷 France' }
+      ]
+    : WORLDWIDE_COUNTRIES
+
   const [form, setForm] = useState<FormData>({
     email: guestEmail || '',
     firstName: '',
@@ -54,6 +136,8 @@ export default function CheckoutPage() {
     setForm(prev => ({ ...prev, [field]: value }))
   }
 
+
+
   if (items.length === 0 && step !== 'confirm') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -66,9 +150,43 @@ export default function CheckoutPage() {
     )
   }
 
-  const shipping = total >= 50 ? 0 : 8.99
-  const tax = total * 0.15
-  const grandTotal = total + shipping + tax
+  let discountAmount = 0
+  if (appliedCoupon) {
+    if (appliedCoupon.product_id) {
+      // restricted to specific product
+      const restrictedItems = items.filter(item => item.product.id === appliedCoupon.product_id)
+      const restrictedSubtotal = restrictedItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0)
+      if (appliedCoupon.discount_type === 'percentage') {
+        discountAmount = restrictedSubtotal * (appliedCoupon.discount_value / 100)
+      } else {
+        discountAmount = Math.min(appliedCoupon.discount_value, restrictedSubtotal)
+      }
+    } else {
+      // global coupon
+      if (appliedCoupon.discount_type === 'percentage') {
+        discountAmount = total * (appliedCoupon.discount_value / 100)
+      } else {
+        discountAmount = Math.min(appliedCoupon.discount_value, total)
+      }
+    }
+  }
+
+  const shipping = total >= 100 ? 0 : 8.99
+  
+  let taxRate = 0
+  let taxLabel = 'Taxes'
+  
+  if (taxSettings && taxSettings.tax_enabled && form.country === 'CA') {
+    const key = `CA_${form.state?.toUpperCase() || 'QC'}`
+    const prov = taxSettings.tax_rates[key]
+    if (prov && prov.enabled) {
+      taxRate = prov.rate / 100
+      taxLabel = prov.name || 'Taxes'
+    }
+  }
+
+  const tax = Math.max(0, total - discountAmount) * taxRate
+  const grandTotal = Math.max(0, total - discountAmount) + shipping + tax
 
   const steps = [
     { id: 'email', label: 'Email' },
@@ -150,70 +268,145 @@ export default function CheckoutPage() {
     }
   }
 
-  async function handlePlaceOrder() {
-    setLoading(true)
+  async function handleApplyCoupon() {
+    if (!couponCode) return
+    setCouponLoading(true)
+    setCouponError('')
     try {
-      const number = generateOrderNumber()
-      
-      const orderData = {
-        order_number: number,
-        session_id: getSessionId(),
-        email: form.email,
-        first_name: form.firstName,
-        last_name: form.lastName,
-        phone: form.phone,
-        items: items.map(item => ({
-          product_id: item.product.id,
-          name: item.product.name,
-          price: item.product.price,
-          qty: item.quantity,
-          image: item.product.images?.[0]?.url,
-          variant: item.variant,
-        })),
-        subtotal: total,
-        shipping: shipping,
-        tax: tax,
-        total: grandTotal,
-        shipping_address: {
-          address: form.address,
-          city: form.city,
-          state: form.state,
-          zip: form.zip,
-          country: form.country,
-        },
-        payment_method: 'card',
-        payment_status: 'paid',
-        order_status: 'confirmed',
-        notes: form.notes,
+      const { data, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', couponCode.toUpperCase().trim())
+        .eq('is_active', true)
+        .single()
+
+      if (error || !data) {
+        setCouponError('Code promo invalide')
+        return
       }
 
-      const { error } = await supabase.from('guest_orders').insert(orderData)
-      if (error) throw error
+      // Check expiry date
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        setCouponError('Ce code promo a expiré')
+        return
+      }
 
-      clearCart()
-      setOrderNumber(number)
-      setStep('confirm')
-      
-      // Track Purchase
-      trackPurchase(orderData)
+      // Check max uses
+      if (data.max_uses !== null && data.used_count >= data.max_uses) {
+        setCouponError("Ce code promo a atteint sa limite d'utilisation")
+        return
+      }
 
-      // Mark cart as recovered
-      await markCartRecovered(form.email, number)
+      // Check product_id restriction!
+      if (data.product_id) {
+        const hasRestrictedProduct = items.some(item => item.product.id === data.product_id)
+        if (!hasRestrictedProduct) {
+          setCouponError("Ce code promo n'est pas applicable aux articles de votre panier")
+          return
+        }
+      }
 
-      await fetch('/api/orders/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: form.email,
-          firstName: form.firstName,
-          orderNumber: number,
-          items: orderData.items,
-          total: grandTotal,
-        })
-      })
+      // Check min purchase amount
+      if (data.min_purchase_amount && total < data.min_purchase_amount) {
+        setCouponError(`Montant d'achat minimum requis : ${formatPrice(data.min_purchase_amount)}`)
+        return
+      }
 
-    } catch (err) {
-      toast.error('Erreur lors de la commande')
+      setAppliedCoupon(data)
+      toast.success('Code promo appliqué !')
+    } catch {
+      setCouponError('Erreur de validation du coupon')
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setAppliedCoupon(null)
+    setCouponCode('')
+    setCouponError('')
+  }
+
+  async function handleStripeCheckout() {
+    setLoading(true)
+    try {
+      const res = await fetch(
+        '/api/checkout/create-session',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customerEmail: form.email,
+            items: items.map(i => {
+              let itemPrice = i.product.price
+              if (appliedCoupon) {
+                if (appliedCoupon.product_id) {
+                  if (i.product.id === appliedCoupon.product_id) {
+                    if (appliedCoupon.discount_type === 'percentage') {
+                      itemPrice = i.product.price * (1 - appliedCoupon.discount_value / 100)
+                    } else {
+                      const itemTotal = i.product.price * i.quantity
+                      const disc = Math.min(appliedCoupon.discount_value, itemTotal)
+                      itemPrice = (itemTotal - disc) / i.quantity
+                    }
+                  }
+                } else {
+                  if (appliedCoupon.discount_type === 'percentage') {
+                    itemPrice = i.product.price * (1 - appliedCoupon.discount_value / 100)
+                  } else {
+                    const proportion = (i.product.price * i.quantity) / total
+                    const itemTotal = i.product.price * i.quantity
+                    const disc = appliedCoupon.discount_value * proportion
+                    itemPrice = (itemTotal - disc) / i.quantity
+                  }
+                }
+              }
+
+              return {
+                product_id: i.product.id,
+                name: i.product.name + (appliedCoupon && (i.product.id === appliedCoupon.product_id || !appliedCoupon.product_id) ? ` (${appliedCoupon.code})` : ''),
+                price: itemPrice,
+                quantity: i.quantity,
+                image: i.product.images?.[0]?.url || null,
+                variant: i.variant || null,
+                is_dropship: i.product.is_dropship || false,
+                variant_id: i.variant?.id || null
+              }
+            }),
+            shippingDetails: {
+              firstName: form.firstName,
+              lastName: form.lastName,
+              phone: form.phone,
+              address: form.address,
+              city: form.city,
+              state: form.state,
+              zip: form.zip,
+              country: form.country,
+              notes: form.notes
+            },
+            currency
+          }),
+        }
+      )
+
+      const data = await res.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      // Track initiate checkout
+      trackInitiateCheckout(grandTotal)
+
+      // Capture/recovery capture before redirecting
+      await captureCartForRecovery(form.email, `${form.firstName} ${form.lastName}`)
+
+      window.location.href = data.url
+
+    } catch (err: any) {
+      toast.error('Erreur: ' + err.message)
     } finally {
       setLoading(false)
     }
@@ -301,13 +494,67 @@ export default function CheckoutPage() {
                       <div><label className="block text-sm font-bold text-gray-700 mb-2">Adresse *</label><input type="text" value={form.address} onChange={e => update('address', e.target.value)} placeholder="123 Rue Principale" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"/></div>
                       <div className="grid grid-cols-2 gap-4">
                         <div><label className="block text-sm font-bold text-gray-700 mb-2">Ville *</label><input type="text" value={form.city} onChange={e => update('city', e.target.value)} placeholder="Montréal" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"/></div>
-                        <div><label className="block text-sm font-bold text-gray-700 mb-2">Province/État</label><input type="text" value={form.state} onChange={e => update('state', e.target.value)} placeholder="QC" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"/></div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Province/État *</label>
+                          {form.country === 'CA' ? (
+                            <select 
+                              value={form.state || 'QC'} 
+                              onChange={e => update('state', e.target.value)} 
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none bg-white transition-colors font-bold text-gray-800"
+                            >
+                              <option value="QC">Québec (14.975%)</option>
+                              <option value="ON">Ontario (13%)</option>
+                              <option value="BC">Colombie-Britannique (12%)</option>
+                              <option value="AB">Alberta (5%)</option>
+                              <option value="MB">Manitoba (12%)</option>
+                              <option value="NB">Nouveau-Brunswick (15%)</option>
+                              <option value="NL">Terre-Neuve-et-Labrador (15%)</option>
+                              <option value="NS">Nouvelle-Écosse (15%)</option>
+                              <option value="PE">Île-du-Prince-Édouard (15%)</option>
+                              <option value="SK">Saskatchewan (11%)</option>
+                              <option value="NT">Territoires du Nord-Ouest (5%)</option>
+                              <option value="NU">Nunavut (5%)</option>
+                              <option value="YT">Yukon (5%)</option>
+                            </select>
+                          ) : (
+                            <input 
+                              type="text" 
+                              value={form.state} 
+                              onChange={e => update('state', e.target.value)} 
+                              placeholder="État / Province" 
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"
+                            />
+                          )}
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-sm font-bold text-gray-700 mb-2">Code postal *</label><input type="text" value={form.zip} onChange={e => update('zip', e.target.value)} placeholder="H1A 1A1" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"/></div>
-                        <div><label className="block text-sm font-bold text-gray-700 mb-2">Pays *</label><select value={form.country} onChange={e => update('country', e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none bg-white transition-colors"><option value="CA">🇨🇦 Canada</option><option value="US">🇺🇸 États-Unis</option><option value="HT">🇭🇹 Haïti</option><option value="FR">🇫🇷 France</option></select></div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Code postal *</label>
+                          <input 
+                            type="text" 
+                            value={form.zip} 
+                            onChange={e => update('zip', e.target.value)} 
+                            placeholder="H1A 1A1" 
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Pays *</label>
+                          <select 
+                            value={form.country} 
+                            onChange={e => {
+                              const val = e.target.value
+                              setForm(prev => ({ ...prev, country: val, state: val === 'CA' ? 'QC' : '' }))
+                            }} 
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none bg-white transition-colors font-bold text-gray-800"
+                          >
+                            {countryOptions.map(c => (
+                              <option key={c.code} value={c.code}>{c.name}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
-                      <div className="border-2 border-gray-100 rounded-2xl p-4"><p className="font-bold text-gray-700 text-sm mb-3">Mode de livraison</p><div className={`flex items-center justify-between p-3 rounded-xl border-2 ${total >= 50 ? 'border-secondary bg-secondary/10' : 'border-primary bg-primary/10'}`}><div><p className="font-bold text-sm">Livraison standard (5-7 jours)</p><p className="text-xs text-gray-500">{total >= 50 ? '✅ Gratuite!' : 'Standard'}</p></div><span className={`font-black ${total >= 50 ? 'text-secondary' : 'text-primary'}`}>{total >= 50 ? 'GRATUIT' : formatPrice(8.99)}</span></div></div>
+                      <div className="border-2 border-gray-100 rounded-2xl p-4"><p className="font-bold text-gray-700 text-sm mb-3">Mode de livraison</p><div className={`flex items-center justify-between p-3 rounded-xl border-2 ${total >= 100 ? 'border-secondary bg-secondary/10' : 'border-primary bg-primary/10'}`}><div><p className="font-bold text-sm">Livraison standard (5-7 jours)</p><p className="text-xs text-gray-500">{total >= 100 ? '✅ Gratuite!' : 'Standard'}</p></div><span className={`font-black ${total >= 100 ? 'text-secondary' : 'text-primary'}`}>{total >= 100 ? 'GRATUIT' : formatPrice(8.99)}</span></div></div>
                       <div className="flex gap-3 pt-2"><button onClick={() => setStep('info')} className="px-6 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-600 hover:border-primary hover:text-primary transition-all">← Retour</button><button onClick={() => { if (!form.address || !form.city || !form.zip) { toast.error('Adresse complète requise'); return } setStep('payment'); trackInitiateCheckout(grandTotal) }} className="flex-1 bg-primary hover:bg-primary-dark text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all">Paiement <ChevronRight className="w-4 h-4"/></button></div>
                     </div>
                   </motion.div>
@@ -315,15 +562,13 @@ export default function CheckoutPage() {
                 {step === 'payment' && (
                   <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
                     <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2"><CreditCard className="w-5 h-5 text-primary"/>Paiement sécurisé</h2>
-                    <div className="bg-secondary/10 border border-secondary/30 rounded-2xl p-4 mb-6 flex items-center gap-3"><Lock className="w-5 h-5 text-secondary flex-shrink-0"/><p className="text-sm text-secondary font-medium">Vos informations de paiement sont 100% sécurisées and chiffrées.</p></div>
+                    <div className="bg-secondary/10 border border-secondary/30 rounded-2xl p-4 mb-6 flex items-center gap-3"><Lock className="w-5 h-5 text-secondary flex-shrink-0"/><p className="text-sm text-secondary font-medium">Vous allez être redirigé vers la page sécurisée de Stripe pour finaliser votre paiement en toute sécurité.</p></div>
                     <div className="space-y-4">
-                      <div><label className="block text-sm font-bold text-gray-700 mb-2">Nom sur la carte *</label><input type="text" value={form.cardName} onChange={e => update('cardName', e.target.value)} placeholder="JEAN TREMBLAY" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors uppercase"/></div>
-                      <div><label className="block text-sm font-bold text-gray-700 mb-2">Numéro de carte *</label><input type="text" placeholder="1234 5678 9012 3456" maxLength={19} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"/></div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-sm font-bold text-gray-700 mb-2">Expiration *</label><input type="text" placeholder="MM/AA" maxLength={5} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"/></div>
-                        <div><label className="block text-sm font-bold text-gray-700 mb-2">CVV *</label><input type="text" placeholder="123" maxLength={4} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors"/></div>
+                      <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-2">
+                        <div className="flex justify-between text-sm"><span className="text-gray-500">Nom du client:</span><span className="font-semibold text-gray-900">{form.firstName} {form.lastName}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500">Adresse de livraison:</span><span className="font-semibold text-gray-900">{form.address}, {form.city}, {form.zip}</span></div>
                       </div>
-                      <div className="flex gap-3 pt-2"><button onClick={() => setStep('shipping')} className="px-6 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-600 hover:border-primary hover:text-primary transition-all">← Retour</button><button onClick={handlePlaceOrder} disabled={loading} className="flex-1 bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/30 text-base">{loading ? (<div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>) : (<><Lock className="w-5 h-5"/>Confirmer la commande — {formatPrice(grandTotal)}</>)}</button></div>
+                      <div className="flex gap-3 pt-2"><button onClick={() => setStep('shipping')} className="px-6 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-600 hover:border-primary hover:text-primary transition-all">← Retour</button><button onClick={handleStripeCheckout} disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-500/20 text-base">{loading ? (<div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>) : (<><Lock className="w-5 h-5"/>🔒 Payer maintenant (Stripe) — {formatPrice(grandTotal)}</>)}</button></div>
                     </div>
                   </motion.div>
                 )}
@@ -338,7 +583,57 @@ export default function CheckoutPage() {
                     <div key={item.id} className="flex gap-3 items-center"><div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">{item.product.images?.[0]?.url && (<Image src={item.product.images[0].url} alt={item.product.name} fill className="object-cover"/>)}<span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs font-black rounded-full flex items-center justify-center">{item.quantity}</span></div><div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-800 line-clamp-1">{item.product.name}</p>{item.variant?.size && (<p className="text-xs text-gray-400">Taille: {item.variant.size}</p>)}</div><span className="font-bold text-sm text-gray-900 flex-shrink-0">{formatPrice(item.product.price * item.quantity)}</span></div>
                   ))}
                 </div>
-                <div className="space-y-2 border-t border-gray-100 pt-4"><div className="flex justify-between text-sm text-gray-600"><span>Sous-total</span><span>{formatPrice(total)}</span></div><div className="flex justify-between text-sm text-gray-600"><span>Livraison</span><span className={shipping === 0 ? 'text-secondary font-bold' : ''}>{shipping === 0 ? 'GRATUIT' : formatPrice(shipping)}</span></div><div className="flex justify-between text-sm text-gray-600"><span>Taxes (15%)</span><span>{formatPrice(tax)}</span></div><div className="flex justify-between font-black text-xl pt-2 border-t border-gray-200 mt-2"><span>Total</span><span className="text-primary">{formatPrice(grandTotal)}</span></div></div>
+                <div className="space-y-2 border-t border-gray-100 pt-4">
+                  <div className="flex justify-between text-sm text-gray-600"><span>Sous-total</span><span>{formatPrice(total)}</span></div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-secondary font-bold">
+                      <span>Remise {appliedCoupon?.code && `(${appliedCoupon.code})`}</span>
+                      <span>-{formatPrice(discountAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm text-gray-600"><span>Livraison</span><span className={shipping === 0 ? 'text-secondary font-bold' : ''}>{shipping === 0 ? 'GRATUIT' : formatPrice(shipping)}</span></div>
+                  <div className="flex justify-between text-sm text-gray-600"><span>{taxLabel} ({(taxRate * 100).toFixed(3).replace(/\.?0+$/, '')}%)</span><span>{formatPrice(tax)}</span></div>
+                  <div className="flex justify-between font-black text-xl pt-2 border-t border-gray-200 mt-2"><span>Total</span><span className="text-primary">{formatPrice(grandTotal)}</span></div>
+                </div>
+
+                {/* Panel Code Promo */}
+                <div className="border-t border-gray-100 pt-4 mt-4">
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Code promo" 
+                      value={couponCode} 
+                      onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                      disabled={appliedCoupon !== null}
+                      className="flex-1 bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-primary focus:outline-none transition-colors uppercase font-bold text-gray-800"
+                    />
+                    {appliedCoupon ? (
+                      <button 
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        className="bg-red-50 hover:bg-red-100 text-red-500 font-bold px-4 py-2.5 rounded-xl text-sm transition-all"
+                      >
+                        Retirer
+                      </button>
+                    ) : (
+                      <button 
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading || !couponCode}
+                        className="bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all"
+                      >
+                        {couponLoading ? '...' : 'Appliquer'}
+                      </button>
+                    )}
+                  </div>
+                  {couponError && <p className="text-red-500 text-xs mt-1.5 font-bold">❌ {couponError}</p>}
+                  {appliedCoupon && (
+                    <p className="text-secondary text-xs mt-1.5 font-black flex items-center gap-1">
+                      ✅ Code promo appliqué avec succès !
+                    </p>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-gray-100"><div className="flex items-center gap-1 text-xs text-gray-400"><Lock className="w-3 h-3"/>SSL Sécurisé</div><div className="flex items-center gap-1 text-xs text-gray-400"><Shield className="w-3 h-3"/>100% Sécurisé</div></div>
               </div>
             </div>

@@ -44,27 +44,38 @@ export async function GET(req: Request) {
     const suggestions = 
       searchParams.get('suggestions') === 
       'true'
+    const country = 
+      searchParams.get('country') || 'UNKNOWN'
+    const upperCountry = country.toUpperCase()
+    const isRestrictedCountry = 
+      upperCountry !== 'UNKNOWN' && 
+      upperCountry !== 'CA' && 
+      upperCountry !== 'US'
 
     // ── SUGGESTIONS MODE ───────────────
     if (suggestions && q.length >= 2) {
       
       // Get matching products
-      const { data: products } = 
-        await supabase
-          .from('products')
-          .select('id, name, slug, price, images, category')
-          .eq('is_active', true)
-          .ilike('name', `%${q}%`)
-          .limit(5)
+      const productsQuery = supabase
+        .from('products')
+        .select('id, name, slug, price, images, category')
+        .eq('is_active', true)
+        .ilike('name', `%${q}%`)
+      if (isRestrictedCountry) {
+        productsQuery.eq('is_dropship', true)
+      }
+      const { data: products } = await productsQuery.limit(5)
 
       // Get matching categories
-      const { data: cats } = 
-        await supabase
-          .from('products')
-          .select('category')
-          .eq('is_active', true)
-          .ilike('category', `%${q}%`)
-          .limit(3)
+      const catsQuery = supabase
+        .from('products')
+        .select('category')
+        .eq('is_active', true)
+        .ilike('category', `%${q}%`)
+      if (isRestrictedCountry) {
+        catsQuery.eq('is_dropship', true)
+      }
+      const { data: cats } = await catsQuery.limit(3)
 
       // Get popular searches
       const { data: popular } = 
@@ -103,6 +114,10 @@ export async function GET(req: Request) {
       .eq('is_active', true)
       .gte('price', minPrice)
       .lte('price', maxPrice)
+
+    if (isRestrictedCountry) {
+      query = query.eq('is_dropship', true)
+    }
 
     // Text search
     if (q.trim()) {
@@ -202,14 +217,17 @@ export async function GET(req: Request) {
 
     // Get available filters 
     // for current results
-    const { data: filterData } = 
-      await supabase
-        .from('products')
-        .select(
-          'category, available_colors, available_sizes, price'
-        )
-        .eq('is_active', true)
-        .ilike('name', q ? `%${q}%` : '%')
+    const filterQuery = supabase
+      .from('products')
+      .select(
+        'category, available_colors, available_sizes, price'
+      )
+      .eq('is_active', true)
+      .ilike('name', q ? `%${q}%` : '%')
+    if (isRestrictedCountry) {
+      filterQuery.eq('is_dropship', true)
+    }
+    const { data: filterData } = await filterQuery
 
     const allCategories = [
       ...new Set(

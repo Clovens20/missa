@@ -5,6 +5,7 @@ import { CartProvider } from '@/contexts/CartContext'
 import { WishlistProvider } from '@/contexts/WishlistContext'
 import { CountryProvider } from '@/contexts/CountryContext'
 import { SettingsProvider } from '@/contexts/SettingsContext'
+import { CurrencyProvider } from '@/contexts/CurrencyContext'
 import { Toaster } from 'sonner'
 
 const inter = Inter({ 
@@ -97,17 +98,19 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <SettingsProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <CountryProvider>
-                {children}
-                <Toaster 
-                  position="top-right"
-                  richColors
-                />
-              </CountryProvider>
-            </WishlistProvider>
-          </CartProvider>
+          <CurrencyProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <CountryProvider>
+                  {children}
+                  <Toaster 
+                    position="top-right"
+                    richColors
+                  />
+                </CountryProvider>
+              </WishlistProvider>
+            </CartProvider>
+          </CurrencyProvider>
         </SettingsProvider>
       </body>
     </html>

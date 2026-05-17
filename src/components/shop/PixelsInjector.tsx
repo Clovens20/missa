@@ -100,7 +100,7 @@ export function trackAddToCart(product: any, quantity = 1) {
       content_name: product.name,
       content_type: 'product',
       value,
-      currency: 'USD',
+      currency: 'CAD',
     })
   }
   // TikTok
@@ -110,7 +110,7 @@ export function trackAddToCart(product: any, quantity = 1) {
       content_name: product.name,
       quantity,
       value,
-      currency: 'USD',
+      currency: 'CAD',
     })
   }
   // Pinterest
@@ -118,7 +118,7 @@ export function trackAddToCart(product: any, quantity = 1) {
     (window as any).pintrk('track', 'addtocart', {
       value,
       order_quantity: quantity,
-      currency: 'USD',
+      currency: 'CAD',
     })
   }
 }
@@ -131,21 +131,21 @@ export function trackPurchase(order: any) {
   if ((window as any).fbq) {
     (window as any).fbq('track', 'Purchase', {
       value,
-      currency: 'USD',
+      currency: 'CAD',
       content_type: 'product',
       content_ids: order.items?.map((i: any) => i.product_id),
     })
   }
   // TikTok
   if ((window as any).ttq) {
-    (window as any).ttq.track('PlaceAnOrder', { value, currency: 'USD' })
+    (window as any).ttq.track('PlaceAnOrder', { value, currency: 'CAD' })
   }
   // Google
   if ((window as any).gtag) {
     (window as any).gtag('event', 'purchase', {
       transaction_id: order.order_number,
       value,
-      currency: 'USD',
+      currency: 'CAD',
       items: order.items?.map((i: any) => ({
         item_id: i.product_id,
         item_name: i.product_name || i.name,
@@ -158,7 +158,7 @@ export function trackPurchase(order: any) {
   if ((window as any).snaptr) {
     (window as any).snaptr('track', 'PURCHASE', {
       price: value,
-      currency: 'USD',
+      currency: 'CAD',
       transaction_id: order.order_number,
     })
   }
@@ -169,13 +169,13 @@ export function trackInitiateCheckout(cartTotal: number) {
   if ((window as any).fbq) {
     (window as any).fbq('track', 'InitiateCheckout', {
       value: cartTotal,
-      currency: 'USD',
+      currency: 'CAD',
     })
   }
   if ((window as any).ttq) {
     (window as any).ttq.track('InitiateCheckout', {
       value: cartTotal,
-      currency: 'USD',
+      currency: 'CAD',
     })
   }
 }

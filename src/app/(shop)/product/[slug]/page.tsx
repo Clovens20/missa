@@ -41,8 +41,13 @@ export async function generateMetadata({
     .trim()
     .substring(0, 160) || `Découvrez ${product.name} sur ${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'}.`
 
+  const formattedPrice = new Intl.NumberFormat('fr-CA', {
+    style: 'currency',
+    currency: 'CAD',
+  }).format(product.price)
+
   return {
-    title: `${product.name} — $${product.price}`,
+    title: `${product.name} — ${formattedPrice}`,
     description: cleanDesc,
     keywords: [product.name, process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop', 'boutique en ligne'],
     openGraph: {
@@ -69,7 +74,7 @@ export async function generateMetadata({
     },
     other: {
       'product:price:amount': product.price.toString(),
-      'product:price:currency': 'USD',
+      'product:price:currency': 'CAD',
       'product:availability': (product.stock_quantity || 0) > 0 ? 'in stock' : 'out of stock',
     },
   }
@@ -93,7 +98,7 @@ function ProductSchema({ product }: { product: any }) {
     offers: {
       '@type': 'Offer',
       url: `${siteUrl}/product/${product.slug}`,
-      priceCurrency: 'USD',
+      priceCurrency: 'CAD',
       price: product.price,
       priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       availability: (product.stock_quantity || 0) > 0

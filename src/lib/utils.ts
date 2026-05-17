@@ -6,12 +6,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(
-  price: number, 
-  currency = 'USD'
+  price: number,
+  _showCode: boolean = false,
+  _currency?: string
 ): string {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('fr-CA', {
     style: 'currency',
-    currency,
+    currency: 'CAD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(price)
 }
 
@@ -138,5 +141,36 @@ export function getSafeImageUrl(
     return fallback
   } catch (err) {
     return fallback
+  }
+}
+
+export function getTaxRate(country: string, provinceCode: string): number {
+  if (!country || country.toUpperCase() !== 'CA') {
+    return 0
+  }
+
+  const prov = (provinceCode || 'QC').toUpperCase().trim()
+  switch (prov) {
+    case 'QC': // Quebec
+      return 0.14975
+    case 'ON': // Ontario
+      return 0.13
+    case 'BC': // British Columbia
+    case 'MB': // Manitoba
+      return 0.12
+    case 'SK': // Saskatchewan
+      return 0.11
+    case 'NB': // New Brunswick
+    case 'NL': // Newfoundland and Labrador
+    case 'NS': // Nova Scotia
+    case 'PE': // Prince Edward Island
+      return 0.15
+    case 'AB': // Alberta
+    case 'NT': // Northwest Territories
+    case 'NU': // Nunavut
+    case 'YT': // Yukon
+      return 0.05
+    default:
+      return 0.15
   }
 }

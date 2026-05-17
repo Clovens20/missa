@@ -27,9 +27,19 @@ export function isProductAvailable(
   product: {
     availability_type?: string
     available_countries?: string[]
+    is_dropship?: boolean
   },
   visitorCountry: string
 ): boolean {
+  const upperVisitor = visitorCountry?.toUpperCase() || 'UNKNOWN'
+
+  // Local/manual products (is_dropship === false) are only visible/deliverable to CA and US
+  if (product.is_dropship === false) {
+    if (upperVisitor !== 'UNKNOWN' && upperVisitor !== 'CA' && upperVisitor !== 'US') {
+      return false
+    }
+  }
+
   // If no geo info or worldwide -> always available
   if (
     !product.availability_type ||
@@ -43,7 +53,7 @@ export function isProductAvailable(
   if (product.availability_type === 'restricted') {
     return (
       product.available_countries?.includes(
-        visitorCountry.toUpperCase()
+        upperVisitor
       ) || false
     )
   }
