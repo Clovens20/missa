@@ -51,7 +51,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const { count: orderCount } = await supabase
       .from('guest_orders')
       .select('*', { count: 'exact', head: true })
-      .eq('order_status', 'pending')
+      .in('order_status', ['pending', 'confirmed'])
     setNotifications(orderCount || 0)
 
     const { count: reviewCount } = await supabase

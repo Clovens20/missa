@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import { 
-  ArrowLeft, Package, Truck, CheckCircle, Printer, Send, ExternalLink, MapPin, Mail, Phone, ShoppingBag, AlertTriangle, QrCode
+  ArrowLeft, Package, Truck, CheckCircle, Printer, Send, ExternalLink, MapPin, Mail, Phone, ShoppingBag, AlertTriangle, QrCode, XCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -67,6 +67,18 @@ export default function OrderDetailPage() {
     } catch (err: any) { toast.error(err.message) } finally { setProcessing(false) }
   }
 
+  async function cancelOrder() {
+    if (!confirm('Êtes-vous sûr de vouloir annuler cette commande ?')) return
+    setProcessing(true)
+    try {
+      const { error } = await supabase.from('guest_orders').update({ order_status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', id)
+      if (error) throw error
+      setOrder((prev: any) => ({ ...prev, order_status: 'cancelled' }))
+      await supabase.from('admin_logs').insert({ admin_email: 'admin', action: 'ORDER_CANCELLED', entity: 'orders', entity_id: id as string, details: { order_number: order.order_number } })
+      toast.success('❌ Commande annulée avec succès !')
+    } catch (err: any) { toast.error(err.message) } finally { setProcessing(false) }
+  }
+
   function printShippingLabel() {
     if (!order) return
     const labelWindow = window.open('', '_blank', 'width=400,height=600'); if (!labelWindow) return
@@ -84,7 +96,18 @@ export default function OrderDetailPage() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4"><Link href="/admin/orders" className="p-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-gray-400 hover:text-white transition-colors"><ArrowLeft className="w-5 h-5"/></Link><div><h1 className="text-xl font-black text-white">{order.order_number}</h1><p className="text-gray-500 text-sm">{new Date(order.created_at).toLocaleString('fr-CA')}</p></div></div>
-        <button onClick={printShippingLabel} className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"><Printer className="w-4 h-4"/>Imprimer étiquette 4×6</button>
+        <div className="flex items-center gap-2">
+          {status !== 'cancelled' && status !== 'delivered' && (
+            <button 
+              onClick={cancelOrder} 
+              disabled={processing}
+              className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
+              <XCircle className="w-4 h-4"/>
+              Annuler la commande
+            </button>
+          )}
+          <button onClick={printShippingLabel} className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"><Printer className="w-4 h-4"/>Imprimer étiquette 4×6</button>
+        </div>
       </div>
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
         <h2 className="font-black text-white mb-6 flex items-center gap-2">⚡ Traitement de la commande</h2>
@@ -100,6 +123,12 @@ export default function OrderDetailPage() {
             <div className="bg-secondary/10 border border-secondary/30 rounded-2xl p-5"><div className="flex items-center gap-4"><div className="w-12 h-12 bg-secondary/20 rounded-xl flex items-center justify-center flex-shrink-0"><Truck className="w-6 h-6 text-secondary"/></div><div className="flex-1"><h3 className="font-black text-white">✅ Commande expédiée!</h3><p className="text-gray-400 text-sm mt-1">Numéro de suivi: <strong className="text-white font-mono">{order.tracking_number}</strong></p><p className="text-secondary text-sm mt-1">📧 Email de suivi envoyé au client</p></div><a href={`https://www.canadapost-postescanada.ca/track-reperage/en#/search?searchFor=${order.tracking_number}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"><ExternalLink className="w-4 h-4"/>Suivre</a></div></div>
           )}
           {status === 'delivered' && <div className="bg-secondary/10 border border-secondary/30 rounded-2xl p-4 flex items-center gap-3"><CheckCircle className="w-6 h-6 text-secondary"/><span className="font-bold text-secondary">✅ Commande livrée avec succès!</span></div>}
+          {status === 'cancelled' && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 flex items-center gap-3">
+              <XCircle className="w-6 h-6 text-red-400"/>
+              <span className="font-bold text-red-400">❌ Cette commande a été annulée.</span>
+            </div>
+          )}
         </div>
       </div>
       
