@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200],
     remotePatterns: [
+      { protocol: 'https', hostname: 'cf.cjdropshipping.com' },
+      { protocol: 'https', hostname: '*.cjdropshipping.com' },
       { protocol: 'https', hostname: '**' },
     ],
   },

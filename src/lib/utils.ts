@@ -68,7 +68,9 @@ export function getSafeImageUrl(
       try {
         imageArray = JSON.parse(images)
       } catch (e) {
-        // Just return the original string if it is somewhat URL-like, else fallback
+        // Strip brackets and quotes if it was a stringified array that failed parsing
+        const cleanedStr = images.replace(/^[\["']+|[\]"']+$/g, '').trim()
+        if (cleanedStr.startsWith('http')) return cleanedStr
         return images.includes('/') ? images : fallback
       }
     }
@@ -79,7 +81,12 @@ export function getSafeImageUrl(
         if (typeof imageArray.url === 'string' && imageArray.url.startsWith('[')) {
            try { 
              const parsed = JSON.parse(imageArray.url)
-             return Array.isArray(parsed) ? (parsed[0] || fallback) : (parsed.url || fallback)
+             const resUrl = Array.isArray(parsed) ? (parsed[0] || fallback) : (parsed.url || fallback)
+             if (typeof resUrl === 'string') {
+               const cleanedStr = resUrl.replace(/^[\["']+|[\]"']+$/g, '').trim()
+               if (cleanedStr.startsWith('http')) return cleanedStr
+             }
+             return resUrl
            } catch(e){}
         }
         return imageArray.url
@@ -90,29 +97,42 @@ export function getSafeImageUrl(
     const item = imageArray[index] || imageArray[0]
     if (!item) return fallback
 
+    let finalUrl = fallback
+
     // Handle string in array
     if (typeof item === 'string') {
       // Check if the string itself is a JSON array or object
       if (item.startsWith('[')) {
         try {
           const parsed = JSON.parse(item)
-          if (Array.isArray(parsed)) return parsed[0] || fallback
-          if (typeof parsed === 'object') return parsed.url || fallback
-        } catch(e) {}
+          if (Array.isArray(parsed)) finalUrl = parsed[0] || fallback
+          else if (typeof parsed === 'object') finalUrl = parsed.url || fallback
+        } catch(e) {
+          finalUrl = item
+        }
+      } else {
+        finalUrl = item
       }
-      return item
-    }
-
-    // Handle object in array
-    if (item.url) {
+    } else if (item && item.url) {
+      // Handle object in array
       if (typeof item.url === 'string' && item.url.startsWith('[')) {
         try {
           const parsed = JSON.parse(item.url)
-          if (Array.isArray(parsed)) return parsed[0] || fallback
-          if (typeof parsed === 'object') return parsed.url || fallback
-        } catch(e) {}
+          if (Array.isArray(parsed)) finalUrl = parsed[0] || fallback
+          else if (typeof parsed === 'object') finalUrl = parsed.url || fallback
+        } catch(e) {
+          finalUrl = item.url
+        }
+      } else {
+        finalUrl = item.url
       }
-      return item.url
+    }
+
+    // Absolutely make sure we clean any bracket/quote wraps that can slip through JSON parse failures
+    if (typeof finalUrl === 'string') {
+      const cleaned = finalUrl.replace(/^[\["']+|[\]"']+$/g, '').trim()
+      if (cleaned.startsWith('http')) return cleaned
+      return finalUrl
     }
 
     return fallback
