@@ -1,8 +1,12 @@
 'use client'
 import Header from '@/components/shop/Header'
 import Footer from '@/components/shop/Footer'
+import { useSettings } from '@/contexts/SettingsContext'
 
 export default function PolitiqueExpedition() {
+  const { getSetting } = useSettings()
+  const threshold = getSetting('free_shipping_threshold', 100)
+
   return (
     <>
       <Header />
@@ -15,7 +19,7 @@ export default function PolitiqueExpedition() {
           </div>
 
           <div style={{ background: "#fdf8f2", border: "1px solid #e8d5b0", borderRadius: 8, padding: "20px 24px", marginBottom: 48, fontSize: 15 }}>
-            🚚 <strong>Livraison gratuite</strong> sur toutes les commandes de <strong>50$ CAD et plus</strong>. Nous livrons dans le monde entier !
+            🚚 <strong>Livraison gratuite</strong> sur toutes les commandes de <strong>{threshold}$ CAD et plus</strong>. Nous livrons dans le monde entier !
           </div>
 
           <Section title="1. Traitement des commandes">
@@ -34,9 +38,9 @@ export default function PolitiqueExpedition() {
               </thead>
               <tbody>
                 {[
-                  ["🇨🇦 Canada", "7 – 14 jours ouvrables", "Gratuit dès 50$ / sinon 9,99$"],
-                  ["🇺🇸 États-Unis", "7 – 15 jours ouvrables", "Gratuit dès 50$ / sinon 12,99$"],
-                  ["🇭🇹 Haïti", "14 – 21 jours ouvrables", "Gratuit dès 50$ / sinon 14,99$"],
+                  ["🇨🇦 Canada", "7 – 14 jours ouvrables", `Gratuit dès ${threshold}$ / sinon 9,99$`],
+                  ["🇺🇸 États-Unis", "7 – 15 jours ouvrables", `Gratuit dès ${threshold}$ / sinon 12,99$`],
+                  ["🇭🇹 Haïti", "14 – 21 jours ouvrables", `Gratuit dès ${threshold}$ / sinon 14,99$`],
                   ["🌍 Europe", "10 – 20 jours ouvrables", "Calculé au checkout"],
                   ["🌏 Asie / Pacifique", "14 – 25 jours ouvrables", "Calculé au checkout"],
                   ["🌎 Reste du monde", "14 – 30 jours ouvrables", "Calculé au checkout"],

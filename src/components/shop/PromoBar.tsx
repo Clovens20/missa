@@ -1,14 +1,18 @@
 'use client'
 import { Truck, Tag, RotateCcw, Zap } from 'lucide-react'
-
-const promos = [
-  { icon: Truck, text: '🚚 Livraison GRATUITE dès 50$' },
-  { icon: Tag, text: '🏷️ Jusqu\'à -60% sur les promos' },
-  { icon: RotateCcw, text: '↩️ Retours gratuits 30 jours' },
-  { icon: Zap, text: '⚡ Nouveaux produits chaque semaine' },
-]
+import { useSettings } from '@/contexts/SettingsContext'
 
 export default function PromoBar() {
+  const { getSetting } = useSettings()
+  const threshold = getSetting('free_shipping_threshold', 100)
+
+  const promos = [
+    { icon: Truck, text: `🚚 Livraison GRATUITE dès ${threshold}$` },
+    { icon: Tag, text: '🏷️ Jusqu\'à -60% sur les promos' },
+    { icon: RotateCcw, text: '↩️ Retours gratuits 30 jours' },
+    { icon: Zap, text: '⚡ Nouveaux produits chaque semaine' },
+  ]
+
   return (
     <div className="bg-secondary py-2.5 overflow-hidden relative">
       <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-secondary to-transparent z-10 pointer-events-none"/>

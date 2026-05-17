@@ -201,7 +201,7 @@ export default function HomePage() {
 
         {/* ── TOP BANNER (compact) ── */}
         <div className="bg-gradient-to-r from-primary to-orange-500 text-white text-center py-2 px-4 text-xs font-bold hidden sm:block">
-          🚚 Livraison gratuite dès {getSetting('free_shipping_threshold', 50)}$ · 🔒 Paiement sécurisé · ↩️ Retour 30 jours
+          🚚 Livraison gratuite dès {getSetting('free_shipping_threshold', 100)}$ · 🔒 Paiement sécurisé · ↩️ Retour 30 jours
         </div>
 
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 space-y-4">

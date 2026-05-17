@@ -85,11 +85,11 @@ export default function Header() {
       <div className="bg-gray-900 text-white py-2">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-xs">
           <div className="flex items-center gap-4 hidden md:flex">
-            <div className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5 text-secondary"/><span>🚚 Livraison gratuite dès {getSetting('free_shipping_threshold', 50)}$</span></div>
+            <div className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5 text-secondary"/><span>🚚 Livraison gratuite dès {getSetting('free_shipping_threshold', 100)}$</span></div>
             <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-secondary"/><span>🔒 Paiement 100% sécurisé</span></div>
             <div className="flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-secondary"/><span>📦 Retours faciles 30 jours</span></div>
           </div>
-          <div className="md:hidden text-center w-full text-[10px] sm:text-xs px-2 truncate sm:whitespace-normal">🚚 Livraison gratuite +{getSetting('free_shipping_threshold', 50)}$ | 🔒 Paiement sécurisé</div>
+          <div className="md:hidden text-center w-full text-[10px] sm:text-xs px-2 truncate sm:whitespace-normal">🚚 Livraison gratuite +{getSetting('free_shipping_threshold', 100)}$ | 🔒 Paiement sécurisé</div>
           <div className="hidden md:flex items-center gap-4">
             <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-secondary"/><span>Support 24/7</span></div>
             <Link href="/track" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors ml-2 border-l border-gray-700 pl-4">

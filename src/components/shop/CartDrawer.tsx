@@ -60,7 +60,7 @@ export default function CartDrawer() {
     }
   }
 
-  const FREE_SHIPPING_THRESHOLD = getSetting('free_shipping_threshold', 50)
+  const FREE_SHIPPING_THRESHOLD = getSetting('free_shipping_threshold', 100)
 
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - total)
   const progress = Math.min(100, (total / FREE_SHIPPING_THRESHOLD) * 100)
