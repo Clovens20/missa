@@ -86,6 +86,7 @@ export default function EditProductPage() {
   const [currentTag, setCurrentTag] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [defaultVariantStock, setDefaultVariantStock] = useState<number>(0)
   
   // Switch Supplier states
   const [showSwitchModal, setShowSwitchModal] = useState(false)
@@ -171,7 +172,55 @@ export default function EditProductPage() {
   }
 
   function handleNameChange(name: string) {
-    setFormData(prev => ({ ...prev, name, slug: slugify(name) }))
+    const newSlug = slugify(name)
+    setFormData(prev => {
+      let newSku = prev.sku
+      if (!newSku && newSlug) {
+        const initials = newSlug.split('-').map(w => w[0]).join('').substring(0, 3).toUpperCase()
+        const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+        newSku = `MS-${initials}-${randomNum}`
+      }
+      return { ...prev, name, slug: newSlug, sku: newSku }
+    })
+  }
+
+  function generateCombinations() {
+    if (formData.colors.length === 0 && formData.sizes.length === 0) {
+      toast.error('Ajoutez d\'abord des couleurs ou tailles')
+      return
+    }
+
+    const newVariants: any[] = []
+    const baseSku = formData.sku || 'PROD'
+    const colors = formData.colors.length > 0 ? formData.colors : ['']
+    const sizes = formData.sizes.length > 0 ? formData.sizes : ['']
+
+    colors.forEach(c => {
+      sizes.forEach(s => {
+        const exists = variants.find(v => (v.color || '') === c && (v.size || '') === s)
+        if (exists) {
+          newVariants.push(exists)
+        } else {
+          const sizePart = s.toUpperCase().replace(/\s+/g, '')
+          const colorPart = c.toUpperCase().replace(/\s+/g, '')
+          let gen = baseSku
+          if (sizePart) gen += `-${sizePart}`
+          if (colorPart) gen += `-${colorPart}`
+          
+          newVariants.push({
+            id: Math.random().toString(),
+            size: s,
+            color: c,
+            stock: defaultVariantStock,
+            sku: gen,
+            price: formData.price
+          })
+        }
+      })
+    })
+
+    setVariants(newVariants)
+    toast.success(`${newVariants.length} variantes prêtes !`)
   }
 
   function addVariant() {
@@ -604,15 +653,25 @@ export default function EditProductPage() {
                 <Hash className="w-5 h-5 text-orange-500"/>
                 Stock par variante
               </h2>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
+                <input 
+                  type="number" 
+                  value={defaultVariantStock} 
+                  onChange={(e) => setDefaultVariantStock(parseInt(e.target.value) || 0)}
+                  placeholder="Qté/variante" 
+                  className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-primary"
+                />
                 <button 
                   onClick={regenerateAllSkus}
                   className="text-[10px] font-black bg-gray-900 text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 transition-all flex items-center gap-1"
                 >
                   🪄 Régénérer SKUs
                 </button>
+                <button onClick={generateCombinations} className="text-xs font-black bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg border border-primary/20 transition-all flex items-center gap-1">
+                  🪄 Générer combinaisons
+                </button>
                 <button onClick={addVariant} className="text-xs font-black bg-gray-800 text-gray-300 hover:text-white px-3 py-1.5 rounded-lg border border-gray-700 transition-all flex items-center gap-1">
-                  <Plus className="w-3 h-3"/>Ajouter stock variant
+                  <Plus className="w-3 h-3"/>Ajouter
                 </button>
               </div>
             </div>
