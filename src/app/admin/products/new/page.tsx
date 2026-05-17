@@ -40,6 +40,7 @@ interface ProductFormData {
   images: ProductImage[]
   availability_type: string
   available_countries: string[]
+  sold_count: number
 }
 
 export default function NewProductPage() {
@@ -71,7 +72,8 @@ export default function NewProductPage() {
     variant_images: {} as Record<string, ProductImage[]>,
     images: [] as ProductImage[],
     availability_type: 'worldwide',
-    available_countries: ['*']
+    available_countries: ['*'],
+    sold_count: Math.floor(Math.random() * 150) + 20,
   })
 
   const [imageUrl, setImageUrl] = useState('')
@@ -241,6 +243,9 @@ export default function NewProductPage() {
         variant_images: formData.variant_images,
         availability_type: formData.availability_type,
         available_countries: formData.available_countries,
+        sold_count: formData.sold_count,
+        rating: parseFloat((Math.random() * 0.5 + 4.5).toFixed(1)),
+        review_count: Math.floor(formData.sold_count * (Math.random() * 0.3 + 0.1)),
         updated_at: new Date().toISOString()
       }
 
@@ -311,6 +316,17 @@ export default function NewProductPage() {
                     value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                     placeholder="MS-001"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:border-primary outline-none"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-gray-500 uppercase mb-2">Nombre vendus (Factice / Réel)</label>
+                  <input 
+                    type="number" 
+                    value={formData.sold_count}
+                    onChange={(e) => setFormData({ ...formData, sold_count: parseInt(e.target.value) || 0 })}
                     className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:border-primary outline-none"
                   />
                 </div>

@@ -14,15 +14,20 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const { data: product } = await supabase
+  let { data: product } = await supabase
     .from('products')
-    .select(`
-      id, name, description, short_description, meta_description,
-      price, compare_price, images, slug,
-      review_avg, review_count, stock_quantity
-    `)
+    .select('*')
     .eq('slug', slug)
     .single()
+
+  if (!product) {
+    const { data: dropshipProduct } = await supabase
+      .from('dropship_products')
+      .select('*')
+      .eq('slug', slug)
+      .single()
+    if (dropshipProduct) product = dropshipProduct as any
+  }
 
   if (!product) return { title: 'Produit introuvable | Missa Shop' }
 
@@ -126,11 +131,22 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { data: product } = await supabase
+  let { data: product } = await supabase
     .from('products')
     .select('*, category:categories(id, name, slug)')
     .eq('slug', slug)
     .single()
+
+  if (!product) {
+    const { data: dropshipProduct } = await supabase
+      .from('dropship_products')
+      .select('*')
+      .eq('slug', slug)
+      .single()
+    if (dropshipProduct) {
+      product = { ...dropshipProduct, is_dropship: true }
+    }
+  }
 
   if (!product) notFound()
 

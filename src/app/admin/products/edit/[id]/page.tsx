@@ -43,6 +43,7 @@ interface ProductFormData {
   images: ProductImage[]
   availability_type: string
   available_countries: string[]
+  sold_count: number
 }
 
 export default function EditProductPage() {
@@ -77,7 +78,8 @@ export default function EditProductPage() {
     variant_images: {} as Record<string, ProductImage[]>,
     images: [] as ProductImage[],
     availability_type: 'worldwide',
-    available_countries: ['*']
+    available_countries: ['*'],
+    sold_count: 0
   })
 
   const [imageUrl, setImageUrl] = useState('')
@@ -134,7 +136,8 @@ export default function EditProductPage() {
         variant_images: p.variant_images || {},
         images: p.images || [],
         availability_type: p.availability_type || 'worldwide',
-        available_countries: p.available_countries || ['*']
+        available_countries: p.available_countries || ['*'],
+        sold_count: p.sold_count || 0
       })
       setImageUrl(p.images?.[0]?.url || '')
       setAdditionalImages(p.images?.slice(1) || [])
@@ -406,6 +409,7 @@ export default function EditProductPage() {
         variant_images: formData.variant_images,
         availability_type: formData.availability_type,
         available_countries: formData.available_countries,
+        sold_count: formData.sold_count,
         updated_at: new Date().toISOString()
       }
 
@@ -595,6 +599,17 @@ export default function EditProductPage() {
                         return { ...v, sku: gen }
                       }))
                     }}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:border-primary outline-none"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-gray-500 uppercase mb-2">Nombre vendus (Factice / Réel)</label>
+                  <input 
+                    type="number" 
+                    value={formData.sold_count}
+                    onChange={(e) => setFormData({ ...formData, sold_count: parseInt(e.target.value) || 0 })}
                     className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:border-primary outline-none"
                   />
                 </div>

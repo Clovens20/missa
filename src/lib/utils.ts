@@ -68,12 +68,20 @@ export function getSafeImageUrl(
       try {
         imageArray = JSON.parse(images)
       } catch (e) {
-        return fallback
+        // Just return the original string if it is somewhat URL-like, else fallback
+        return images.includes('/') ? images : fallback
       }
     }
 
     if (!Array.isArray(imageArray)) {
       if (typeof imageArray === 'object' && imageArray?.url) {
+        // recursively clean if url is a stringified array
+        if (typeof imageArray.url === 'string' && imageArray.url.startsWith('[')) {
+           try { 
+             const parsed = JSON.parse(imageArray.url)
+             return Array.isArray(parsed) ? (parsed[0] || fallback) : (parsed.url || fallback)
+           } catch(e){}
+        }
         return imageArray.url
       }
       return fallback
@@ -84,11 +92,11 @@ export function getSafeImageUrl(
 
     // Handle string in array
     if (typeof item === 'string') {
-      // Check if the string itself is a JSON array
-      if (item.startsWith('["') || item.startsWith('{"')) {
+      // Check if the string itself is a JSON array or object
+      if (item.startsWith('[')) {
         try {
           const parsed = JSON.parse(item)
-          if (Array.isArray(parsed)) return parsed[0]
+          if (Array.isArray(parsed)) return parsed[0] || fallback
           if (typeof parsed === 'object') return parsed.url || fallback
         } catch(e) {}
       }
@@ -96,7 +104,18 @@ export function getSafeImageUrl(
     }
 
     // Handle object in array
-    return item.url || fallback
+    if (item.url) {
+      if (typeof item.url === 'string' && item.url.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(item.url)
+          if (Array.isArray(parsed)) return parsed[0] || fallback
+          if (typeof parsed === 'object') return parsed.url || fallback
+        } catch(e) {}
+      }
+      return item.url
+    }
+
+    return fallback
   } catch (err) {
     return fallback
   }

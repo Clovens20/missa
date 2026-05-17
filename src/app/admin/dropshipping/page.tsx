@@ -9,13 +9,14 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, getSafeImageUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import CJImportDrawer from '@/components/admin/CJImportDrawer'
 import SupplierMessagePanel from '@/components/admin/SupplierMessagePanel'
 import CJImageSearch from '@/components/admin/CJImageSearch'
 import CJProductCard from '@/components/admin/CJProductCard'
-import { LayoutGrid, List, Layers, Image as ImageIcon } from 'lucide-react'
+import EditDropshipModal from '@/components/admin/EditDropshipModal'
+import { LayoutGrid, List, Layers, Image as ImageIcon, Edit3 } from 'lucide-react'
 
 const CJ_CATEGORIES = [
   { id: '', name: 'Toutes catégories' },
@@ -240,6 +241,7 @@ export default function DropshippingPage() {
   })
 
   const [searchMode, setSearchMode] = useState<'text' | 'image'>('text')
+  const [editingProduct, setEditingProduct] = useState<any>(null)
   const [imageSearchPreview, setImageSearchPreview] = useState<string>('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchInfo, setSearchInfo] = useState<any>(null)
@@ -353,7 +355,10 @@ export default function DropshippingPage() {
         return
       }
 
-      setSelectedProduct(product)
+      // Merge the full data to ensure description and other details are available in the Drawer
+      const fullData = data?.data || data || {}
+      setSelectedProduct({ ...product, ...fullData })
+      
       // Pre-fill import price with 2.5x CJ price
       const cjPrice = parseFloat(product.sellPrice || product.productPrice || 0)
       setImportPrice((Math.ceil(cjPrice * 2.5 * 2) / 2).toFixed(2))
@@ -403,6 +408,7 @@ export default function DropshippingPage() {
 
   async function toggleProductActive(id: string, isActive: boolean) {
     await supabase.from('dropship_products').update({ is_active: isActive }).eq('id', id)
+    await supabase.from('products').update({ is_active: isActive }).eq('id', id)
     setImportedProducts(prev => prev.map(p => p.id === id ? { ...p, is_active: isActive } : p))
     toast.success(isActive ? '✅ Produit visible sur le shop!' : '⏸️ Produit masqué')
   }
@@ -412,6 +418,7 @@ export default function DropshippingPage() {
       selling_price: price,
       profit_margin: price - (importedProducts.find(p => p.id === id)?.cj_price || 0)
     }).eq('id', id)
+    await supabase.from('products').update({ price: price }).eq('id', id)
     toast.success('Prix mis à jour!')
   }
 
@@ -429,6 +436,9 @@ export default function DropshippingPage() {
       .from('dropship_products')
       .delete()
       .eq('id', id)
+
+    // Delete from main products table too
+    await supabase.from('products').delete().eq('id', id)
 
     if (error) {
       toast.error('Erreur: ' + error.message)
@@ -697,7 +707,7 @@ export default function DropshippingPage() {
                 <tbody>
                   {importedProducts.map(p => (
                     <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                      <td className="px-5 py-4"><div className="flex items-center gap-3"><div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">{p.images?.[0]?.url && <img src={p.images[0].url} alt={p.name} className="w-full h-full object-cover"/>}</div><div className="min-w-0"><p className="text-white font-semibold text-sm line-clamp-1">{p.name}</p><p className="text-gray-500 text-xs">CJ: {p.cj_product_id?.substring(0, 12)}... <span className="text-gray-600 ml-2">{p.active_variants_count || p.variants?.length || 0}/{p.variants_count || p.variants?.length || 0} var.</span></p><p className="text-blue-400 text-xs">🚚 {p.shipping_time}</p><ProductStatusBadge product={p}/></div></div></td>
+                      <td className="px-5 py-4"><div className="flex items-center gap-3"><div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">{p.images && <img src={getSafeImageUrl(p.images)} alt={p.name} className="w-full h-full object-cover"/>}</div><div className="min-w-0"><p className="text-white font-semibold text-sm line-clamp-1">{p.name}</p><p className="text-gray-500 text-xs">CJ: {p.cj_product_id?.substring(0, 12)}... <span className="text-gray-600 ml-2">{p.active_variants_count || p.variants?.length || 0}/{p.variants_count || p.variants?.length || 0} var.</span></p><p className="text-blue-400 text-xs">🚚 {p.shipping_time}</p><ProductStatusBadge product={p}/></div></div></td>
                       <td className="px-5 py-4"><span className="text-gray-400 font-bold">{formatPrice(p.cj_price)}</span></td>
                       <td className="px-5 py-4">
                         <PriceMarginEditor
@@ -706,7 +716,13 @@ export default function DropshippingPage() {
                         />
                       </td>
                       <td className="px-5 py-4"><span className={`px-3 py-1 rounded-full text-xs font-bold ${p.is_active ? 'bg-secondary/20 text-secondary' : 'bg-gray-700 text-gray-500'}`}>{p.is_active ? '✅ Visible' : '⏸️ Masqué'}</span></td>
-                      <td className="px-5 py-4"><div className="flex items-center gap-2"><button onClick={() => toggleProductActive(p.id, !p.is_active)} className={`p-2 rounded-xl transition-colors ${p.is_active ? 'bg-gray-800 hover:bg-gray-700 text-gray-400' : 'bg-secondary/20 hover:bg-secondary/30 text-secondary'}`} title={p.is_active ? 'Masquer' : 'Activer'}>{p.is_active ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button><Link href={`/admin/dropshipping/${p.id}/variants`} className="p-2 bg-gray-800 hover:bg-primary/20 hover:text-primary text-gray-400 rounded-xl transition-colors" title="Gérer les variantes"><Layers className="w-4 h-4"/></Link><a href={`https://cjdropshipping.com/product-detail.html?id=${p.cj_product_id}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-xl transition-colors relative group" title="Voir sur CJ"><ExternalLink className="w-4 h-4"/><div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-700 text-white text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">Voir sur CJ</div></a><button onClick={() => deleteImportedProduct(p.id, p.name)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl transition-colors" title="Supprimer ce produit"><Trash2 className="w-4 h-4"/></button></div></td>
+                      <td className="px-5 py-4"><div className="flex items-center gap-2">
+                        <button onClick={() => toggleProductActive(p.id, !p.is_active)} className={`p-2 rounded-xl transition-colors ${p.is_active ? 'bg-gray-800 hover:bg-gray-700 text-gray-400' : 'bg-secondary/20 hover:bg-secondary/30 text-secondary'}`} title={p.is_active ? 'Masquer' : 'Activer'}>{p.is_active ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                        <button onClick={() => setEditingProduct(p)} className="p-2 bg-gray-800 hover:bg-primary/20 hover:text-primary text-gray-400 rounded-xl transition-colors" title="Modifier infos"><Edit3 className="w-4 h-4"/></button>
+                        <Link href={`/admin/dropshipping/${p.id}/variants`} className="p-2 bg-gray-800 hover:bg-primary/20 hover:text-primary text-gray-400 rounded-xl transition-colors" title="Gérer les variantes"><Layers className="w-4 h-4"/></Link>
+                        <a href={`https://cjdropshipping.com/product-detail.html?id=${p.cj_product_id}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-xl transition-colors relative group" title="Voir sur CJ"><ExternalLink className="w-4 h-4"/><div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-700 text-white text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">Voir sur CJ</div></a>
+                        <button onClick={() => deleteImportedProduct(p.id, p.name)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl transition-colors" title="Supprimer ce produit"><Trash2 className="w-4 h-4"/></button>
+                      </div></td>
                     </tr>
                   ))}
                 </tbody>

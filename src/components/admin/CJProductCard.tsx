@@ -5,7 +5,7 @@ import {
   Plus, Star, TrendingUp,
   Eye, Award, Zap, Loader, Package
 } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, getSafeImageUrl } from '@/lib/utils'
 import SupplierInfoCard from 
   './SupplierInfoCard'
 
@@ -93,7 +93,7 @@ export default function CJProductCard({
             bg-gray-800 flex-shrink-0">
             {mainImage && (
               <img
-                src={mainImage}
+                src={getSafeImageUrl(mainImage)}
                 alt={product.productNameEn}
                 className="w-full h-full 
                   object-cover"
@@ -243,7 +243,7 @@ export default function CJProductCard({
         overflow-hidden">
         {mainImage && (
           <img
-            src={mainImage}
+            src={getSafeImageUrl(mainImage)}
             alt={product.productNameEn || 
               product.productName}
             className="w-full h-full 

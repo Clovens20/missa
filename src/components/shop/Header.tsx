@@ -87,7 +87,7 @@ export default function Header() {
             <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-secondary"/><span>🔒 Paiement 100% sécurisé</span></div>
             <div className="flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-secondary"/><span>📦 Retours faciles 30 jours</span></div>
           </div>
-          <div className="md:hidden text-center w-full text-xs">🚚 Livraison gratuite +{getSetting('free_shipping_threshold', 50)}$ | 🔒 Paiement sécurisé</div>
+          <div className="md:hidden text-center w-full text-[10px] sm:text-xs px-2 truncate sm:whitespace-normal">🚚 Livraison gratuite +{getSetting('free_shipping_threshold', 50)}$ | 🔒 Paiement sécurisé</div>
           <div className="hidden md:flex items-center gap-4">
             <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-secondary"/><span>Support 24/7</span></div>
             <Link href="/track" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors ml-2 border-l border-gray-700 pl-4">
@@ -100,8 +100,8 @@ export default function Header() {
 
       {/* ── MAIN HEADER ── */}
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-          <Link href="/" className="flex-shrink-0 flex items-center gap-2 group">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap md:flex-nowrap items-center justify-between gap-3 md:gap-4">
+          <Link href="/" className="flex-shrink-0 flex items-center gap-2 group order-1">
             <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
               <Image
                 src="/logo.png"
@@ -126,12 +126,13 @@ export default function Header() {
             </div>
           </Link>
 
-          <SmartSearchBar
-            placeholder="Rechercher des produits, catégories..."
-            className="flex-1 max-w-2xl"
-          />
+          <div className="w-full md:w-auto md:flex-1 max-w-2xl order-3 md:order-2">
+            <SmartSearchBar
+              placeholder="Rechercher des produits, catégories..."
+            />
+          </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1.5 flex-shrink-0 order-2 md:order-3">
             <Link href="/wishlist" className="hidden md:flex flex-col items-center p-2 hover:bg-gray-50 rounded-xl transition-colors relative group"><div className="relative"><Heart className="w-5 h-5 text-gray-600 group-hover:text-red-500 transition-colors"/>{wishCount > 0 && <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-black">{wishCount}</span>}</div><span className="text-[10px] text-gray-500 mt-0.5 font-medium">Favoris</span></Link>
             
             {/* Cart Button with label on desktop, icon only on mobile (since we have bottom nav) */}

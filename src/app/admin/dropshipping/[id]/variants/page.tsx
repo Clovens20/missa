@@ -13,7 +13,7 @@ import {
   Plus
 } from 'lucide-react'
 import Link from 'next/link'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, getSafeImageUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import UrgencySettings from '@/components/admin/UrgencySettings'
 
@@ -238,12 +238,12 @@ export default function VariantManagerPage() {
       <div className="bg-gray-900 
         border border-gray-800 
         rounded-2xl p-5 flex gap-4">
-        {product.images?.[0]?.url && (
+        {product.images && (
           <div className="w-20 h-20 
             rounded-xl overflow-hidden 
             bg-gray-800 flex-shrink-0">
             <img
-              src={product.images[0].url}
+              src={getSafeImageUrl(product.images)}
               alt={product.name}
               className="w-full h-full 
                 object-cover"
@@ -501,7 +501,7 @@ export default function VariantManagerPage() {
                   border border-gray-600">
                   {v.image ? (
                     <img
-                      src={v.image}
+                      src={getSafeImageUrl(v.image)}
                       alt={v.size || 'variant'}
                       className="w-full h-full 
                         object-cover"
