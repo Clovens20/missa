@@ -83,7 +83,7 @@ export default function PolitiqueCookies() {
           <Section title="7. Contact">
             Pour toute question relative aux cookies :<br /><br />
             <strong>Missa Shop</strong><br />
-            Email : <strong>privacy@missashop.com</strong>
+            Email : <strong>privacy@www.missashopp.com</strong>
           </Section>
         </div>
       </div>

@@ -301,7 +301,7 @@ export default function TrackPage() {
               <div className="text-center py-4 border-t border-gray-800">
                 <p className="text-gray-500 text-sm mb-3">Un problème avec votre commande?</p>
                 <div className="flex gap-3 justify-center">
-                  <a href="mailto:contact@missashop.com" className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">📧 Email</a>
+                  <a href="mailto:contact@www.missashopp.com" className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">📧 Email</a>
                   <a href="https://wa.me/15141234567" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">💬 WhatsApp</a>
                 </div>
               </div>

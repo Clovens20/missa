@@ -78,7 +78,7 @@ export function getLowStockEmail(
       <td style="padding:12px 16px;
         border-bottom:1px solid #1f2937;
         text-align:right">
-        <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://missashop.com'}/admin/products/${a.productId}/edit"
+        <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.missashopp.com'}/admin/products/${a.productId}/edit"
           style="display:inline-block;
             background:#FF6B35;
             color:#ffffff;
@@ -244,7 +244,7 @@ export function getLowStockEmail(
           <tr>
             <td style="padding:0 40px 40px;
               text-align:center">
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://missashop.com'}/admin/inventaire"
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.missashopp.com'}/admin/inventaire"
                 style="display:inline-block;
                   background:#FF6B35;
                   color:#ffffff;

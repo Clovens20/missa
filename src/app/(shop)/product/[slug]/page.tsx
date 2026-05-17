@@ -26,7 +26,7 @@ export async function generateMetadata({
 
   if (!product) return { title: 'Produit introuvable | Missa Shop' }
 
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com'
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com'
   const productUrl = `${siteUrl}/product/${product.slug}`
   const imageUrl = product.images?.[0]?.url || `${siteUrl}/og-default.jpg`
   
@@ -71,7 +71,7 @@ export async function generateMetadata({
 }
 
 function ProductSchema({ product }: { product: any }) {
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com'
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com'
 
   const schema = {
     '@context': 'https://schema.org',

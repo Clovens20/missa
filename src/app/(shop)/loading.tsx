@@ -5,10 +5,10 @@ import {
 
 export default function Loading() {
   return (
-    <div className="fixed inset-0 bg-white/80 
-      backdrop-blur-md z-[100] flex 
-      flex-col items-center justify-center 
-      gap-4">
+    <div className="fixed bottom-4 right-4 bg-white/90 
+      backdrop-blur-md shadow-2xl rounded-2xl p-4 z-[100] 
+      flex flex-col items-center justify-center gap-3 
+      border border-gray-100 max-w-[200px] scale-75 origin-bottom-right">
       
       {/* Animated logo/loader */}
       <div className="relative">

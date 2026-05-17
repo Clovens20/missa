@@ -13,14 +13,14 @@ export async function generateMetadata({
   
   const title = category
     ? `${category} — Missa Shop`
-    : 'Catalogue Complet — Missa Shop'
+    : 'Catalogue — Missa Shop'
   
   const description = category
     ? `Découvrez notre collection ${category}. Mode premium à petits prix. Livraison rapide au Canada, USA et Haïti.`
     : 'Tout notre catalogue mode: robes, sacs, bijoux, chaussures et accessoires. Prix abordables, qualité premium.'
 
   return {
-    title,
+    title: { absolute: title },
     description,
     openGraph: {
       title,
@@ -29,8 +29,8 @@ export async function generateMetadata({
     },
     alternates: {
       canonical: category
-        ? `https://missashop.com/catalog?category=${encodeURIComponent(category)}`
-        : 'https://missashop.com/catalog',
+        ? `https://www.missashopp.com/catalog?category=${encodeURIComponent(category)}`
+        : 'https://www.missashopp.com/catalog',
     },
   }
 }

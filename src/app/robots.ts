@@ -5,7 +5,7 @@ export default function robots():
   
   const siteUrl = 
     process.env.NEXT_PUBLIC_SITE_URL || 
-    'https://missashop.com'
+    'https://www.missashopp.com'
 
   return {
     rules: [

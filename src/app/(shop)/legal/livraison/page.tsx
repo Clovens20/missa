@@ -67,7 +67,7 @@ export default function PolitiqueExpedition() {
           </Section>
 
           <Section title="6. Colis perdus ou endommagés">
-            <strong>Colis perdu :</strong> Si votre commande n'arrive pas dans le délai maximum estimé, contactez-nous à <strong>support@missashop.com</strong>. Nous ouvrirons une enquête. Si le colis est confirmé perdu, nous vous proposerons un réenvoi ou un remboursement complet.<br /><br />
+            <strong>Colis perdu :</strong> Si votre commande n'arrive pas dans le délai maximum estimé, contactez-nous à <strong>support@www.missashopp.com</strong>. Nous ouvrirons une enquête. Si le colis est confirmé perdu, nous vous proposerons un réenvoi ou un remboursement complet.<br /><br />
             <strong>Colis endommagé :</strong> Si vous recevez un colis visiblement endommagé, photographiez-le avant de l'ouvrir et contactez-nous immédiatement avec les photos. Nous traiterons votre dossier en priorité.
           </Section>
 
@@ -78,8 +78,8 @@ export default function PolitiqueExpedition() {
           <Section title="8. Contact">
             Pour toute question relative à la livraison de votre commande :<br /><br />
             <strong>Missa Shop — Service Expédition</strong><br />
-            Email : <strong>support@missashop.com</strong><br />
-            Page suivi : <a href="/track" style={{ color: "#c9a96e" }}>www.missashop.com/track</a>
+            Email : <strong>support@www.missashopp.com</strong><br />
+            Page suivi : <a href="/track" style={{ color: "#c9a96e" }}>www.www.missashopp.com/track</a>
           </Section>
         </div>
       </div>

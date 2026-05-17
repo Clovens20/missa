@@ -74,7 +74,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="text-xs font-black text-gray-400 uppercase mb-1">Email Support</p>
-                      <p className="text-gray-900 font-bold">{getSetting('contact_email', 'support@missashop.com')}</p>
+                      <p className="text-gray-900 font-bold">{getSetting('contact_email', 'support@www.missashopp.com')}</p>
                     </div>
                   </div>
                   

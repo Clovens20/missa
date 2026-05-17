@@ -16,14 +16,14 @@ export default function MentionsLegales() {
 
           <Section title="1. Éditeur du site">
             <strong>Nom de la boutique :</strong> Missa Shop<br />
-            <strong>Site web :</strong> www.missashop.com<br />
-            <strong>Email :</strong> contact@missashop.com<br />
+            <strong>Site web :</strong> www.www.missashopp.com<br />
+            <strong>Email :</strong> contact@www.missashopp.com<br />
             <strong>Pays d'exploitation :</strong> Canada<br />
             <strong>Langue principale :</strong> Français
           </Section>
 
           <Section title="2. Hébergement">
-            Ce site est hébergé par des infrastructures cloud modernes garantissant disponibilité, performance et sécurité. Pour toute demande légale concernant l'hébergement, contactez-nous à <strong>legal@missashop.com</strong>.
+            Ce site est hébergé par des infrastructures cloud modernes garantissant disponibilité, performance et sécurité. Pour toute demande légale concernant l'hébergement, contactez-nous à <strong>legal@www.missashopp.com</strong>.
           </Section>
 
           <Section title="3. Propriété intellectuelle">
@@ -47,7 +47,7 @@ export default function MentionsLegales() {
 
           <Section title="7. Données personnelles">
             Conformément à la Loi sur la protection des renseignements personnels dans le secteur privé (Loi 25) du Québec et à la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE) du Canada, vous disposez d'un droit d'accès, de rectification et de suppression de vos données personnelles.<br /><br />
-            Pour exercer ces droits, veuillez consulter notre <a href="/legal/confidentialite" style={{ color: "#c9a96e" }}>Politique de Confidentialité</a> ou nous contacter à <strong>privacy@missashop.com</strong>.
+            Pour exercer ces droits, veuillez consulter notre <a href="/legal/confidentialite" style={{ color: "#c9a96e" }}>Politique de Confidentialité</a> ou nous contacter à <strong>privacy@www.missashopp.com</strong>.
           </Section>
 
           <Section title="8. Cookies">
@@ -61,8 +61,8 @@ export default function MentionsLegales() {
           <Section title="10. Contact">
             Pour toute question légale ou administrative :<br /><br />
             <strong>Missa Shop</strong><br />
-            Email : <strong>legal@missashop.com</strong><br />
-            Site web : <strong>www.missashop.com</strong>
+            Email : <strong>legal@www.missashopp.com</strong><br />
+            Site web : <strong>www.www.missashopp.com</strong>
           </Section>
         </div>
       </div>

@@ -16,7 +16,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || 
-    'https://missashop.com'
+    'https://www.missashopp.com'
   ),
   title: {
     default: `${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'} — Mode & Lifestyle Premium`,
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'fr_CA',
-    url: process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com',
     siteName: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
     title: `${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'} — Mode & Lifestyle Premium`,
     description: 
@@ -76,11 +76,11 @@ export const metadata: Metadata = {
     // google: 'your-google-verification',
   },
   alternates: {
-    canonical: process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com',
+    canonical: process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com',
     languages: {
-      'fr-CA': process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com',
-      'fr-FR': process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com',
-      'en-US': (process.env.NEXT_PUBLIC_APP_URL || 'https://missashop.com') + '/en',
+      'fr-CA': process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com',
+      'fr-FR': process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com',
+      'en-US': (process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com') + '/en',
     },
   },
   icons: {

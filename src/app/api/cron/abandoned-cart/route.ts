@@ -72,7 +72,7 @@ export async function GET(req: Request) {
         getAbandonedCartEmail1(cart)
       
       await resend.emails.send({
-        from: 'Missa Shop <hello@missashop.com>',
+        from: 'Missa Shop <hello@www.missashopp.com>',
         to: cart.customer_email,
         subject,
         html,
@@ -148,7 +148,7 @@ export async function GET(req: Request) {
         )
 
       await resend.emails.send({
-        from: 'Missa Shop <hello@missashop.com>',
+        from: 'Missa Shop <hello@www.missashopp.com>',
         to: cart.customer_email,
         subject,
         html,
@@ -200,7 +200,7 @@ export async function GET(req: Request) {
         )
 
       await resend.emails.send({
-        from: 'Missa Shop <hello@missashop.com>',
+        from: 'Missa Shop <hello@www.missashopp.com>',
         to: cart.customer_email,
         subject,
         html,

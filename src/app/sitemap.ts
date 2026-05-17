@@ -12,7 +12,7 @@ export default async function sitemap():
   
   const siteUrl = 
     process.env.NEXT_PUBLIC_SITE_URL || 
-    'https://missashop.com'
+    'https://www.missashopp.com'
 
   // Static pages
   const staticPages: 

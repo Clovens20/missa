@@ -15,7 +15,7 @@ const resend = new Resend(
 
 const ADMIN_EMAIL = 
   process.env.ADMIN_EMAIL || 
-  'admin@missashop.com'
+  'admin@www.missashopp.com'
 
 export async function GET(req: Request) {
   // Verify cron secret
@@ -175,7 +175,7 @@ export async function GET(req: Request) {
         getLowStockEmail(alerts)
 
       await resend.emails.send({
-        from: 'Missa Shop <alerts@missashop.com>',
+        from: 'Missa Shop <alerts@www.missashopp.com>',
         to: ADMIN_EMAIL,
         subject,
         html,

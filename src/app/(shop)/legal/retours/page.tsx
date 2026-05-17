@@ -43,7 +43,7 @@ export default function PolitiqueRetour() {
 
           <Section title="3. Procédure de retour">
             <strong>Étape 1 — Contactez-nous</strong><br />
-            Envoyez un courriel à <strong>retours@missashop.com</strong> avec :
+            Envoyez un courriel à <strong>retours@www.missashopp.com</strong> avec :
             <ul>
               <li>Votre numéro de commande (ex : #MS-XXXXX)</li>
               <li>Le ou les article(s) que vous souhaitez retourner</li>
@@ -73,7 +73,7 @@ export default function PolitiqueRetour() {
           </Section>
 
           <Section title="5. Articles défectueux ou erronés">
-            Si vous avez reçu un article défectueux, endommagé lors du transport, ou ne correspondant pas à votre commande, contactez-nous immédiatement à <strong>support@missashop.com</strong> avec des photos de l'article et de l'emballage.<br /><br />
+            Si vous avez reçu un article défectueux, endommagé lors du transport, ou ne correspondant pas à votre commande, contactez-nous immédiatement à <strong>support@www.missashopp.com</strong> avec des photos de l'article et de l'emballage.<br /><br />
             Dans ce cas :
             <ul>
               <li>Nous prenons en charge les frais de retour</li>
@@ -87,13 +87,13 @@ export default function PolitiqueRetour() {
           </Section>
 
           <Section title="7. Commandes non livrées ou perdues">
-            Si votre colis n'est pas arrivé après le délai estimé, contactez-nous à <strong>support@missashop.com</strong> avec votre numéro de commande. Nous ouvrirons une enquête auprès du transporteur. Si le colis est déclaré perdu, nous vous proposerons un réenvoi gratuit ou un remboursement complet.
+            Si votre colis n'est pas arrivé après le délai estimé, contactez-nous à <strong>support@www.missashopp.com</strong> avec votre numéro de commande. Nous ouvrirons une enquête auprès du transporteur. Si le colis est déclaré perdu, nous vous proposerons un réenvoi gratuit ou un remboursement complet.
           </Section>
 
           <Section title="8. Contact">
             Pour toute question concernant votre retour ou remboursement :<br /><br />
             <strong>Missa Shop — Service Retours</strong><br />
-            Email : <strong>retours@missashop.com</strong><br />
+            Email : <strong>retours@www.missashopp.com</strong><br />
             Réponse sous 24-48h ouvrables
           </Section>
         </div>

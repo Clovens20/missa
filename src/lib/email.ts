@@ -6,7 +6,7 @@ export const resend = new Resend(
 
 export const FROM =
   `${process.env.RESEND_FROM_NAME || 'Missa Shop'} ` +
-  `<${process.env.RESEND_FROM_EMAIL || 'contact@missashop.com'}>`
+  `<${process.env.RESEND_FROM_EMAIL || 'contact@www.missashopp.com'}>`
 
 export const ADMIN_EMAIL =
   process.env.ADMIN_EMAIL!
