@@ -10,6 +10,37 @@ import { createClient } from
 import { slugify } from '@/lib/utils'
 import { getColorHex } from '@/lib/colors'
 
+function cleanHtml(html: string): string {
+  if (!html) return ''
+  
+  let text = html
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]*>/g, ' ')
+  
+  // Decode common HTML entities
+  text = text
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&rsquo;/g, "'")
+    .replace(/&ldquo;/g, '"')
+    .replace(/&rdquo;/g, '"')
+  
+  // Clean line spaces and filter out consecutive empty lines
+  return text
+    .split('\n')
+    .map(line => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+}
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -175,12 +206,13 @@ export async function POST(
       cjProduct.productNameEn || 
       cjProduct.productName
 
-    // Build description
-    const finalDescription = 
+    // Build and clean description (stripping raw HTML tags for clean text formatting)
+    const rawDescription = 
       customDescription || 
       cjProduct.description || 
       cjProduct.productNameEn ||
       ''
+    const finalDescription = cleanHtml(rawDescription)
 
     // Build tags
     const finalTags = tags?.length > 0 
