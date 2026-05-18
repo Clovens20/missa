@@ -768,6 +768,17 @@ export default function DropshippingPage() {
         </div>
       )}
 
+      <EditDropshipModal
+        product={editingProduct}
+        categories={categories}
+        isOpen={!!editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSaved={(updated) => {
+          setImportedProducts(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p))
+          loadInitialData()
+        }}
+      />
+
       <CJImportDrawer
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}

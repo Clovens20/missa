@@ -239,8 +239,8 @@ export async function POST(
       cjProduct.productNameEn ||
       ''
     
-    const translatedDescription = customDescription ? rawDescription : await translateToFr(rawDescription);
-    const finalDescription = cleanHtml(translatedDescription)
+    const cleanedDescription = cleanHtml(rawDescription)
+    const finalDescription = customDescription ? cleanedDescription : await translateToFr(cleanedDescription)
 
     // Build tags
     const finalTags = tags?.length > 0 
