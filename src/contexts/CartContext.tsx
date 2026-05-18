@@ -63,6 +63,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const cartData = {
       session_id: sessionId,
       email: guestEmail,
+      customer_email: guestEmail?.toLowerCase() || null,
       items: cartItems.map(item => ({
         product_id: item.product.id,
         name: item.product.name,
@@ -73,8 +74,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         slug: item.product.slug,
       })),
       total,
+      cart_total: total,
       converted: false,
+      recovered: false,
       updated_at: new Date().toISOString(),
+      last_seen_at: new Date().toISOString(),
     }
 
     await supabase.from('abandoned_carts').upsert(cartData, { onConflict: 'session_id' })
@@ -87,7 +91,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (sessionId) {
       await supabase
         .from('abandoned_carts')
-        .update({ email, updated_at: new Date().toISOString() })
+        .update({ 
+          email, 
+          customer_email: email.toLowerCase(),
+          updated_at: new Date().toISOString(),
+          last_seen_at: new Date().toISOString()
+        })
         .eq('session_id', sessionId)
     }
   }
