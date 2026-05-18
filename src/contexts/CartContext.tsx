@@ -47,16 +47,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('missa-cart', JSON.stringify(items))
     
-    if (sessionId) {
+    // Only capture abandoned carts if user provided an email and has items
+    if (sessionId && guestEmail && items.length > 0) {
       const timer = setTimeout(() => {
         syncCartToSupabase(items)
       }, 1000)
       return () => clearTimeout(timer)
     }
-  }, [items, sessionId])
+  }, [items, sessionId, guestEmail])
 
   async function syncCartToSupabase(cartItems: CartItem[]) {
-    if (!sessionId) return
+    if (!sessionId || !guestEmail || cartItems.length === 0) return
     
     const total = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
 
@@ -87,18 +88,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   async function setGuestEmail(email: string) {
     setGuestEmailState(email)
     localStorage.setItem('missa-guest-email', email)
-    
-    if (sessionId) {
-      await supabase
-        .from('abandoned_carts')
-        .update({ 
-          email, 
-          customer_email: email.toLowerCase(),
-          updated_at: new Date().toISOString(),
-          last_seen_at: new Date().toISOString()
-        })
-        .eq('session_id', sessionId)
-    }
+    // The useEffect will automatically trigger syncCartToSupabase (which does an upsert) 
+    // now that guestEmailState is updated.
   }
 
   const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)

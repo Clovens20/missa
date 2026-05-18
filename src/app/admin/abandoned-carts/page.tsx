@@ -368,24 +368,6 @@ export default function AbandonedCartsPage() {
         </table>
       </div>
 
-      {/* Setup note */}
-      <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-5 flex gap-3">
-        <Mail className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5"/>
-        <div className="text-sm text-blue-300 space-y-1">
-          <p className="font-bold">
-            Configuration requise pour le suivi automatique :
-          </p>
-          <p>
-            Ajouter dans Vercel Cron Jobs :
-          </p>
-          <code className="bg-blue-500/10 px-2 py-1 rounded text-xs block mt-2">
-            /api/cron/abandoned-cart → toutes les heures
-          </code>
-          <p className="text-xs text-blue-400 mt-2">
-            Et ajouter dans .env : CRON_SECRET=votre_secret
-          </p>
-        </div>
-      </div>
     </div>
   )
 }
