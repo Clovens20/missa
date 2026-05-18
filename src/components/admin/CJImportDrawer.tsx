@@ -89,6 +89,34 @@ export default function CJImportDrawer({
 
   async function loadProductMedia() {
     if (!product) return
+    
+    // For Eprolo products, map images and variants directly from product payload
+    if (product.supplier === 'eprolo') {
+      const initialImages = Array.isArray(product.images)
+        ? product.images.map((url: any, i: number) => ({
+            url: typeof url === 'string' ? url : url.url,
+            type: 'gallery' as const,
+            alt: product.productName || product.title,
+            selected: true
+          }))
+        : [{ url: product.productImage || product.image, type: 'main' as const, alt: product.productName || product.title, selected: true }]
+        
+      setAllImages(initialImages)
+      if (initialImages.length > 0) {
+        setPreviewImg(initialImages[0].url)
+      }
+      
+      if (Array.isArray(product.variants)) {
+        setVariants(
+          product.variants.map((v: any) => ({
+            ...v,
+            selected: true
+          }))
+        )
+      }
+      return
+    }
+
     setMediaLoading(true)
     
     try {
@@ -355,8 +383,12 @@ export default function CJImportDrawer({
       const pid = product.pid || 
         product.productId
       
+      const endpoint = product.supplier === 'eprolo'
+        ? '/api/admin/eprolo/import'
+        : '/api/cj/import'
+
       const res = await fetch(
-        '/api/cj/import',
+        endpoint,
         {
           method: 'POST',
           headers: { 
@@ -468,7 +500,7 @@ export default function CJImportDrawer({
               <div>
                 <h2 className="font-black 
                   text-white text-lg">
-                  Importer de CJDropshipping
+                  Importer de {product.supplier === 'eprolo' ? 'EPROLO' : 'CJDropshipping'}
                 </h2>
                 <p className="text-gray-500 
                   text-xs">

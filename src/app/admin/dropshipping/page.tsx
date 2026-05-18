@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -204,7 +205,22 @@ function ProductStatusBadge({
   return null
 }
 
-export default function DropshippingPage() {
+function DropshippingContent() {
+  const searchParams = useSearchParams()
+  const urlSupplier = searchParams.get('supplier')
+  const [selectedSupplier, setSelectedSupplier] = useState<'cj' | 'eprolo'>(urlSupplier === 'eprolo' ? 'eprolo' : 'cj')
+
+  useEffect(() => {
+    if (urlSupplier === 'eprolo' || urlSupplier === 'cj') {
+      setSelectedSupplier(urlSupplier)
+      // Reset search state when switching supplier
+      setSearchResults([])
+      setPage(1)
+      setSearchInfo(null)
+      setSearchMode('text')
+    }
+  }, [urlSupplier])
+
   const [activeTab, setActiveTab] = useState<'search' | 'imported' | 'orders' | 'messages'>('search')
   const [featureOn, setFeatureOn] = useState(false)
   const [categories, setCategories] = useState<any[]>([])
@@ -278,13 +294,17 @@ export default function DropshippingPage() {
     const imported = importedRes.data || []
     setImportedProducts(imported)
     setDropshipOrders(ordersRes.data || [])
-    
-    setStats({
-      totalImported: imported.length,
-      activeProducts: imported.filter(p => p.is_active).length,
-      pendingOrders: (ordersRes.data || []).filter(o => o.status === 'submitted' || o.status === 'processing').length,
-      totalRevenue: 0,
-    })
+  }
+
+  // Derived state based on selectedSupplier
+  const filteredImported = importedProducts.filter(p => p.supplier === selectedSupplier || (selectedSupplier === 'cj' && !p.supplier))
+  const filteredOrders = dropshipOrders.filter(o => o.supplier === selectedSupplier || (selectedSupplier === 'cj' && !o.supplier))
+
+  const supplierStats = {
+    totalImported: filteredImported.length,
+    activeProducts: filteredImported.filter(p => p.is_active).length,
+    pendingOrders: filteredOrders.filter(o => o.status === 'submitted' || o.status === 'processing').length,
+    totalRevenue: 0,
   }
 
   async function toggleFeature() {
@@ -314,7 +334,8 @@ export default function DropshippingPage() {
         ...(maxPrice && { maxPrice }),
       })
 
-      const res = await fetch(`/api/cj/search?${params}`)
+      const endpoint = selectedSupplier === 'cj' ? '/api/cj/search' : '/api/admin/eprolo/catalog'
+      const res = await fetch(`${endpoint}?${params}`)
       const data = await res.json()
       
       if (data.error) {
@@ -343,6 +364,13 @@ export default function DropshippingPage() {
     setImporting(pid)
     
     try {
+      if (product.supplier === 'eprolo') {
+        setSelectedProduct(product)
+        const eproloPrice = parseFloat(product.productPrice || product.price || 0)
+        setImportPrice((Math.ceil(eproloPrice * 2.5 * 2) / 2).toFixed(2))
+        return
+      }
+
       // ✅ VERIFY STATUS BEFORE IMPORT
       const res = await fetch(`/api/cj/product?pid=${pid}`)
       const data = await res.json()
@@ -470,13 +498,12 @@ export default function DropshippingPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-              <Globe className="w-5 h-5 text-blue-400"/>
-            </div>
-            Dropshipping CJDropshipping
+          <h1 className="text-2xl font-black text-white">
+            {selectedSupplier === 'eprolo' ? 'Dropshipping EPROLO' : 'Dropshipping CJ'}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Importez des produits et gérez vos commandes CJDropshipping</p>
+          <p className="text-gray-400 text-sm mt-1">
+            Recherchez et importez des produits depuis {selectedSupplier === 'eprolo' ? 'Eprolo' : 'CJ Dropshipping'}
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -501,10 +528,10 @@ export default function DropshippingPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Produits importés', value: stats.totalImported, icon: Package, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-          { label: 'Actifs sur le shop', value: stats.activeProducts, icon: Eye, color: 'text-secondary', bg: 'bg-secondary/10' },
-          { label: 'Commandes en cours', value: stats.pendingOrders, icon: Truck, color: 'text-primary', bg: 'bg-primary/10' },
-          { label: 'Revenu dropship', value: formatPrice(stats.totalRevenue), icon: DollarSign, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+          { label: 'Produits importés', value: supplierStats.totalImported, icon: Package, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+          { label: 'Actifs sur le shop', value: supplierStats.activeProducts, icon: Eye, color: 'text-secondary', bg: 'bg-secondary/10' },
+          { label: 'Commandes en cours', value: supplierStats.pendingOrders, icon: Truck, color: 'text-primary', bg: 'bg-primary/10' },
+          { label: 'Revenu dropship', value: formatPrice(supplierStats.totalRevenue), icon: DollarSign, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
         ].map((s, i) => (
           <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
             <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center mb-3`}><s.icon className={`w-5 h-5 ${s.color}`}/></div>
@@ -515,48 +542,100 @@ export default function DropshippingPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-800 pb-0">
+      <div className="flex gap-2 border-b border-gray-800 pb-0 overflow-x-auto">
         {[
           ['search', '🔍 Rechercher produits'],
-          ['imported', `📦 Importés (${importedProducts.length})`],
-          ['orders', `🚚 Commandes (${dropshipOrders.length})`],
-          ['messages', '💬 Instructions CJ'],
+          ['imported', `📦 Importés (${filteredImported.length})`],
+          ['orders', `🚚 Commandes (${filteredOrders.length})`],
+          ['messages', `💬 Instructions ${selectedSupplier === 'eprolo' ? 'EPROLO' : 'CJ'}`],
         ].map(([tab, label]) => (
           <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-5 py-3 font-bold text-sm border-b-2 -mb-px transition-all ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-gray-400 hover:text-white'}`}>{label}</button>
         ))}
       </div>
+
+      {/* ── TAB: IMPORTED ── */}
+      {activeTab === 'imported' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white">Vos produits importés de {selectedSupplier === 'eprolo' ? 'Eprolo' : 'CJ Dropshipping'}</h2>
+            <div className="text-sm text-gray-400">
+              {filteredImported.length} produits trouvés
+            </div>
+          </div>
+
+          {filteredImported.length === 0 ? (
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-16 text-center"><Package className="w-16 h-16 text-gray-700 mx-auto mb-4"/><p className="text-gray-400 font-semibold text-lg mb-2">Aucun produit importé</p><p className="text-gray-600 text-sm mb-6">Recherchez et importez des produits depuis {selectedSupplier === 'eprolo' ? 'Eprolo' : 'CJ Dropshipping'}</p><button onClick={() => setActiveTab('search')} className="bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">Rechercher des produits</button></div>
+          ) : (
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-x-auto">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-gray-800">{['Produit', selectedSupplier === 'eprolo' ? 'Coût Eprolo' : 'Coût CJ', 'Prix & Marge Live', 'Statut', 'Actions'].map(h => <th key={h} className="text-left px-5 py-3.5 text-xs font-black text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {filteredImported.map(p => (
+                    <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                      <td className="px-5 py-4"><div className="flex items-center gap-3"><div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">{p.images && <img src={getSafeImageUrl(p.images)} alt={p.name} className="w-full h-full object-cover"/>}</div><div className="min-w-0"><p className="text-white font-semibold text-sm line-clamp-1">{p.name}</p><p className="text-gray-500 text-xs">{selectedSupplier === 'eprolo' ? 'Eprolo' : 'CJ'}: {p.cj_product_id?.substring(0, 12)}... <span className="text-gray-600 ml-2">{p.active_variants_count || p.variants?.length || 0}/{p.variants_count || p.variants?.length || 0} var.</span></p><p className="text-blue-400 text-xs">🚚 {p.shipping_time}</p><ProductStatusBadge product={p}/></div></div></td>
+                      <td className="px-5 py-4"><span className="text-gray-400 font-bold">{formatPrice(p.cj_price)}</span></td>
+                      <td className="px-5 py-4">
+                        <PriceMarginEditor
+                          product={p}
+                          onSave={updatePrice}
+                        />
+                      </td>
+                      <td className="px-5 py-4"><span className={`px-3 py-1 rounded-full text-xs font-bold ${p.is_active ? 'bg-secondary/20 text-secondary' : 'bg-gray-700 text-gray-500'}`}>{p.is_active ? '✅ Visible' : '⏸️ Masqué'}</span></td>
+                      <td className="px-5 py-4"><div className="flex items-center gap-2">
+                        <button onClick={() => toggleProductActive(p.id, !p.is_active)} className={`p-2 rounded-xl transition-colors ${p.is_active ? 'bg-gray-800 hover:bg-gray-700 text-gray-400' : 'bg-secondary/20 hover:bg-secondary/30 text-secondary'}`} title={p.is_active ? 'Masquer' : 'Activer'}>{p.is_active ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                        <button onClick={() => setEditingProduct(p)} className="p-2 bg-gray-800 hover:bg-primary/20 hover:text-primary text-gray-400 rounded-xl transition-colors" title="Modifier infos"><Edit3 className="w-4 h-4"/></button>
+                        <Link href={`/admin/dropshipping/${p.id}/variants`} className="p-2 bg-gray-800 hover:bg-primary/20 hover:text-primary text-gray-400 rounded-xl transition-colors" title="Gérer les variantes"><Layers className="w-4 h-4"/></Link>
+                        {selectedSupplier === 'eprolo' ? null : (
+                          <a href={`https://cjdropshipping.com/product-detail.html?id=${p.cj_product_id}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-xl transition-colors relative group" title="Voir sur CJ"><ExternalLink className="w-4 h-4"/><div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-700 text-white text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">Voir sur CJ</div></a>
+                        )}
+                        <button onClick={() => deleteImportedProduct(p.id, p.name)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl transition-colors" title="Supprimer ce produit"><Trash2 className="w-4 h-4"/></button>
+                      </div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── TAB: SEARCH ── */}
       {activeTab === 'search' && (
         <div className="space-y-4">
           
           {/* Search mode toggle */}
-          <div className="flex items-center justify-between mb-4">
-            {/* Text vs Image toggle */}
-            <div className="flex gap-2 bg-gray-800 rounded-xl p-1">
-              <button
-                onClick={() => setSearchMode('text')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
-                  ${searchMode === 'text'
-                    ? 'bg-primary text-white'
-                    : 'text-gray-400 hover:text-white'
-                  }`}>
-                <Search className="w-4 h-4"/>
-                Recherche texte
-              </button>
-              <button
-                onClick={() => setSearchMode('image')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
-                  ${searchMode === 'image'
-                    ? 'bg-primary text-white'
-                    : 'text-gray-400 hover:text-white'
-                  }`}>
-                <ImageIcon className="w-4 h-4"/>
-                Recherche par image
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
-                  IA
-                </span>
-              </button>
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* Text vs Image toggle */}
+              <div className="flex gap-2 bg-gray-800 rounded-xl p-1">
+                <button
+                  onClick={() => setSearchMode('text')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
+                    ${searchMode === 'text'
+                      ? 'bg-primary text-white'
+                      : 'text-gray-400 hover:text-white'
+                    }`}>
+                  <Search className="w-4 h-4"/>
+                  Recherche texte
+                </button>
+                {selectedSupplier === 'cj' && (
+                  <button
+                    onClick={() => setSearchMode('image')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
+                      ${searchMode === 'image'
+                        ? 'bg-primary text-white'
+                        : 'text-gray-400 hover:text-white'
+                      }`}>
+                    <ImageIcon className="w-4 h-4"/>
+                    Recherche par image
+                    <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
+                      IA
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* View mode toggle */}
@@ -590,13 +669,19 @@ export default function DropshippingPage() {
               <div className="flex gap-3 flex-wrap">
                 <div className="flex-1 min-w-64 relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"/>
-                  <input type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Nom, ID CJ, ou lien (Alibaba/AliExpress)..." className="w-full pl-11 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none"/>
+                  <input type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder={selectedSupplier === 'eprolo' ? "Nom de produit Eprolo..." : "Nom, ID CJ, ou lien (Alibaba/AliExpress)..."} className="w-full pl-11 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none"/>
                 </div>
-                <select value={category} onChange={e => setCategory(e.target.value)} className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none">
-                  {CJ_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)} placeholder="Prix min $" className="w-28 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none"/>
-                <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="Prix max $" className="w-28 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none"/>
+                {selectedSupplier === 'cj' && (
+                  <select value={category} onChange={e => setCategory(e.target.value)} className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none">
+                    {CJ_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                )}
+                {selectedSupplier === 'cj' && (
+                  <>
+                    <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)} placeholder="Prix min $" className="w-28 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none"/>
+                    <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="Prix max $" className="w-28 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none"/>
+                  </>
+                )}
                 <button onClick={() => handleSearch()} disabled={searching} className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-6 py-3 rounded-xl text-sm transition-all disabled:opacity-50">{searching ? <Loader className="w-4 h-4 animate-spin"/> : <Search className="w-4 h-4"/>}Rechercher</button>
               </div>
             </div>
@@ -684,50 +769,11 @@ export default function DropshippingPage() {
           )}
 
           {!searching && searchResults.length === 0 && (
-            <div className="text-center py-20"><Globe className="w-16 h-16 text-gray-700 mx-auto mb-4"/><p className="text-gray-400 font-semibold text-lg mb-2">Recherchez des produits sur CJDropshipping</p><p className="text-gray-600 text-sm">Des milliers de produits disponibles pour votre shop</p></div>
+            <div className="text-center py-20"><Globe className="w-16 h-16 text-gray-700 mx-auto mb-4"/><p className="text-gray-400 font-semibold text-lg mb-2">Recherchez des produits sur {selectedSupplier === 'eprolo' ? 'EPROLO' : 'CJDropshipping'}</p><p className="text-gray-600 text-sm">Des milliers de produits disponibles pour votre shop</p></div>
           )}
 
           {hasMore && searchMode === 'text' && (
             <div className="text-center pt-4"><button onClick={() => { setPage(p => p + 1); handleSearch(false) }} disabled={searching} className="bg-gray-800 hover:bg-gray-700 text-white font-bold px-8 py-3 rounded-xl transition-colors disabled:opacity-50">Charger plus de produits</button></div>
-          )}
-        </div>
-      )}
-
-      {/* ── TAB: IMPORTED ── */}
-      {activeTab === 'imported' && (
-        <div className="space-y-4">
-          {importedProducts.length === 0 ? (
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-16 text-center"><Package className="w-16 h-16 text-gray-700 mx-auto mb-4"/><p className="text-gray-400 font-semibold text-lg mb-2">Aucun produit importé</p><p className="text-gray-600 text-sm mb-6">Recherchez et importez des produits CJDropshipping</p><button onClick={() => setActiveTab('search')} className="bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">Rechercher des produits</button></div>
-          ) : (
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-x-auto">
-              <table className="w-full min-w-[800px]">
-                <thead>
-                  <tr className="border-b border-gray-800">{['Produit', 'Coût CJ', 'Prix & Marge Live', 'Statut', 'Actions'].map(h => <th key={h} className="text-left px-5 py-3.5 text-xs font-black text-gray-500 uppercase tracking-wide">{h}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {importedProducts.map(p => (
-                    <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                      <td className="px-5 py-4"><div className="flex items-center gap-3"><div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">{p.images && <img src={getSafeImageUrl(p.images)} alt={p.name} className="w-full h-full object-cover"/>}</div><div className="min-w-0"><p className="text-white font-semibold text-sm line-clamp-1">{p.name}</p><p className="text-gray-500 text-xs">CJ: {p.cj_product_id?.substring(0, 12)}... <span className="text-gray-600 ml-2">{p.active_variants_count || p.variants?.length || 0}/{p.variants_count || p.variants?.length || 0} var.</span></p><p className="text-blue-400 text-xs">🚚 {p.shipping_time}</p><ProductStatusBadge product={p}/></div></div></td>
-                      <td className="px-5 py-4"><span className="text-gray-400 font-bold">{formatPrice(p.cj_price)}</span></td>
-                      <td className="px-5 py-4">
-                        <PriceMarginEditor
-                          product={p}
-                          onSave={updatePrice}
-                        />
-                      </td>
-                      <td className="px-5 py-4"><span className={`px-3 py-1 rounded-full text-xs font-bold ${p.is_active ? 'bg-secondary/20 text-secondary' : 'bg-gray-700 text-gray-500'}`}>{p.is_active ? '✅ Visible' : '⏸️ Masqué'}</span></td>
-                      <td className="px-5 py-4"><div className="flex items-center gap-2">
-                        <button onClick={() => toggleProductActive(p.id, !p.is_active)} className={`p-2 rounded-xl transition-colors ${p.is_active ? 'bg-gray-800 hover:bg-gray-700 text-gray-400' : 'bg-secondary/20 hover:bg-secondary/30 text-secondary'}`} title={p.is_active ? 'Masquer' : 'Activer'}>{p.is_active ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
-                        <button onClick={() => setEditingProduct(p)} className="p-2 bg-gray-800 hover:bg-primary/20 hover:text-primary text-gray-400 rounded-xl transition-colors" title="Modifier infos"><Edit3 className="w-4 h-4"/></button>
-                        <Link href={`/admin/dropshipping/${p.id}/variants`} className="p-2 bg-gray-800 hover:bg-primary/20 hover:text-primary text-gray-400 rounded-xl transition-colors" title="Gérer les variantes"><Layers className="w-4 h-4"/></Link>
-                        <a href={`https://cjdropshipping.com/product-detail.html?id=${p.cj_product_id}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-xl transition-colors relative group" title="Voir sur CJ"><ExternalLink className="w-4 h-4"/><div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-700 text-white text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">Voir sur CJ</div></a>
-                        <button onClick={() => deleteImportedProduct(p.id, p.name)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl transition-colors" title="Supprimer ce produit"><Trash2 className="w-4 h-4"/></button>
-                      </div></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           )}
         </div>
       )}
@@ -788,5 +834,17 @@ export default function DropshippingPage() {
         }}
       />
     </div>
+  )
+}
+
+export default function DropshippingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"/>
+      </div>
+    }>
+      <DropshippingContent />
+    </Suspense>
   )
 }

@@ -69,6 +69,8 @@ export default function CJProductCard({
   const profit = suggestedPrice - price
   const supplier = product.supplierInfo
   const status = product.productStatus || ''
+  const isEprolo = product.supplier === 'eprolo'
+  const supplierName = isEprolo ? 'Eprolo' : 'CJ'
 
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -158,7 +160,7 @@ export default function CJProductCard({
               gap-3 mb-2">
               <span className="text-primary 
                 font-black">
-                CJ: {formatPrice(price)}
+                {supplierName}: {formatPrice(price)}
               </span>
               <span className="text-gray-500 
                 text-xs">→</span>
@@ -306,11 +308,8 @@ export default function CJProductCard({
         {/* Top badges */}
         <div className="absolute top-2 
           left-2 flex flex-col gap-1">
-          <span className="bg-blue-600 
-            text-white text-[9px] 
-            font-black px-1.5 py-0.5 
-            rounded-md">
-            CJ
+          <span className={`text-white text-[9px] font-black px-1.5 py-0.5 rounded-md ${isEprolo ? 'bg-green-600' : 'bg-blue-600'}`}>
+            {supplierName}
           </span>
           {supplier?.shippingFromUS && (
             <span className="bg-green-600 
@@ -404,7 +403,7 @@ export default function CJProductCard({
           justify-between">
           <div>
             <p className="text-[10px] 
-              text-gray-500">Coût CJ:</p>
+              text-gray-500">Coût {supplierName}:</p>
             <p className="text-primary 
               font-black text-sm">
               {formatPrice(price)}
@@ -560,12 +559,12 @@ export default function CJProductCard({
             <div className="w-full lg:w-96 flex flex-col gap-5 overflow-y-auto pr-1">
               <div>
                 <span className="text-[10px] uppercase tracking-wider font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-md">
-                  Aperçu CJDropshipping
+                  Aperçu {isEprolo ? 'Eprolo' : 'CJDropshipping'}
                 </span>
                 <h3 className="text-white font-black text-lg mt-3 line-clamp-3 leading-snug">
                   {product.productNameEn || product.productName}
                 </h3>
-                <p className="text-gray-500 text-xs mt-1.5 font-mono">ID CJ: {pid}</p>
+                <p className="text-gray-500 text-xs mt-1.5 font-mono">ID {supplierName}: {pid}</p>
               </div>
 
               {/* Pricing Info */}
