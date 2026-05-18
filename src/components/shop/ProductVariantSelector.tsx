@@ -184,14 +184,14 @@ ProductVariantSelector({
 
         {/* Thumbnails */}
         {mediaItems.length > 1 && (
-          <div className="flex flex-row md:flex-col gap-2 w-full md:w-20 flex-shrink-0 md:max-h-[500px] overflow-x-auto md:overflow-x-hidden md:overflow-y-auto pb-2 md:pb-0 md:pr-1 scrollbar-hide">
+          <div className="flex flex-row md:flex-col gap-2 w-full md:w-20 flex-shrink-0 md:max-h-[500px] overflow-x-auto md:overflow-x-hidden md:overflow-y-auto pb-2 md:pb-0 md:pr-1 scrollbar-hide snap-x snap-mandatory">
             {mediaItems.map((item, i: number) => (
               <button
                 key={i}
                 type="button"
                 onClick={() =>
                   setCurrentImgIdx(i)}
-                className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all relative group
+                className={`flex-shrink-0 w-16 h-16 snap-start rounded-xl overflow-hidden border-2 transition-all relative group
                   ${currentImgIdx === i
                     ? 'border-primary shadow-md'
                     : 'border-transparent hover:border-gray-400'
@@ -226,7 +226,7 @@ ProductVariantSelector({
         )}
 
         {/* Main image / video */}
-        <div className="w-full md:flex-1 relative rounded-3xl overflow-hidden bg-gray-50" style={{ aspectRatio: '1/1' }}>
+        <div className="relative w-full md:flex-1 aspect-square sm:aspect-[4/5] md:aspect-square rounded-3xl overflow-hidden bg-gray-50">
           <AnimatePresence mode="wait">
             {mediaItems[currentImgIdx]?.type === 'image' ? (
               <motion.img

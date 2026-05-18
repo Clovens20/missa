@@ -150,8 +150,7 @@ export default function ProductCard({
         {/* ── IMAGE ZONE ── */}
         <Link
           href={`/product/${product.slug}`}
-          className="block relative overflow-hidden bg-gray-50 w-full"
-          style={{ aspectRatio: '1/1' }}>
+          className="block relative overflow-hidden bg-gray-50 w-full aspect-square sm:aspect-[4/5]">
 
           {/* Main image */}
           {mainImage ? (
