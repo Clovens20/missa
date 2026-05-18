@@ -39,7 +39,6 @@ export async function POST(req: Request) {
     }
 
     // Generate unique filename
-    const isVideo = file.type.startsWith('video/')
     const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')
     const folder = isVideo ? 'videos' : 'uploads'
     const filename = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
