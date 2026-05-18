@@ -4,7 +4,7 @@ import { useState, useEffect }
 import { motion, AnimatePresence }
   from 'framer-motion'
 import { Check, ChevronLeft,
-  ChevronRight, Film } from 'lucide-react'
+  ChevronRight, Film, Play } from 'lucide-react'
 import { getColorHex } from '@/lib/colors'
 
 
@@ -162,16 +162,17 @@ ProductVariantSelector({
     }
   }, [selectedColor, selectedSize])
 
-  // Unified media items (images + all videos)
+  // Unified media items (videos first, then images)
   const mediaItems = (() => {
     const items: { type: 'image' | 'video'; url: string }[] = [];
-    currentImages.forEach((img: string) => {
-      items.push({ type: 'image', url: img });
-    });
-    // Support both new video_urls[] and legacy video_url
+    // Gather videos (new video_urls[] and fallback legacy video_url)
     const videos: string[] = product.video_urls?.filter(Boolean) || [];
     if (videos.length === 0 && product.video_url) videos.push(product.video_url);
     videos.forEach((v: string) => items.push({ type: 'video', url: v }));
+    // Append images after videos
+    currentImages.forEach((img: string) => {
+      items.push({ type: 'image', url: img });
+    });
     return items;
   })();
 
@@ -193,7 +194,7 @@ ProductVariantSelector({
                   setCurrentImgIdx(i)}
                 className={`w-16 h-16 flex-shrink-0
                   rounded-xl overflow-hidden
-                  border-2 transition-all relative
+                  border-2 transition-all relative group
                   ${currentImgIdx === i
                     ? 'border-primary shadow-md'
                     : 'border-gray-200 hover:border-gray-400'
@@ -206,9 +207,19 @@ ProductVariantSelector({
                       object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-slate-950 flex flex-col items-center justify-center text-primary gap-0.5">
-                    <Film className="w-5 h-5 text-primary animate-pulse" />
-                    <span className="text-[9px] font-black uppercase tracking-wider text-primary">Vidéo</span>
+                  <div className="w-full h-full relative bg-black flex items-center justify-center">
+                    <video
+                      src={item.url}
+                      className="w-full h-full object-cover opacity-90"
+                      preload="metadata"
+                      muted
+                      playsInline
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/0 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-[1px] flex items-center justify-center shadow-md transform group-hover:scale-110 transition-all duration-300">
+                        <Play className="w-3.5 h-3.5 text-white fill-current translate-x-[1px]" />
+                      </div>
+                    </div>
                   </div>
                 )}
               </button>
