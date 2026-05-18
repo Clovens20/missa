@@ -33,7 +33,7 @@ export async function GET(req: Request) {
       const categoryName = (product.categories as any)?.name || ''
       const contextStr = `${categoryName} ${product.name} ${tagsList.join(' ')}`
       
-      const fakeReviewsData = generateFakeReviewsForProduct('DUMMY', contextStr)
+      const fakeReviewsData = generateFakeReviewsForProduct('DUMMY', contextStr, product.name)
       
       const reviewsToInsert = fakeReviewsData.reviews.map(r => ({
         ...r,

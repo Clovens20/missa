@@ -150,18 +150,21 @@ export default function Footer() {
           
           {/* Social Links */}
           <div className="flex gap-3">
-            {socialLinks.map((link) => (
-              <a 
-                key={link.platform} 
-                href={link.url} 
-                target="_blank"
-                rel="noopener noreferrer"
-                title={link.label}
-                className="w-10 h-10 bg-gray-800 hover:bg-primary rounded-xl flex items-center justify-center transition-all hover:scale-110 text-lg"
-              >
-                {PLATFORM_ICONS[link.platform] || '🔗'}
-              </a>
-            ))}
+            {socialLinks.map((link) => {
+              const url = getSetting(`social_${link.platform}`) || link.url;
+              return (
+                <a 
+                  key={link.platform} 
+                  href={url} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={link.label}
+                  className="w-10 h-10 bg-gray-800 hover:bg-primary rounded-xl flex items-center justify-center transition-all hover:scale-110 text-lg"
+                >
+                  {PLATFORM_ICONS[link.platform] || '🔗'}
+                </a>
+              );
+            })}
           </div>
         </div>
 
@@ -207,22 +210,22 @@ export default function Footer() {
           
           <h4 className="font-bold text-white mb-4">Contact</h4>
           <ul className="space-y-3 text-sm">
-            {contact.email && (
+            {(getSetting('contact_email') || contact.email) && (
               <li className="flex items-center gap-3 text-gray-400">
                 <Mail className="w-4 h-4 text-primary" />
-                <span>{contact.email}</span>
+                <span>{getSetting('contact_email') || contact.email}</span>
               </li>
             )}
-            {contact.phone && (
+            {(getSetting('contact_phone') || contact.phone) && (
               <li className="flex items-center gap-3 text-gray-400">
                 <Phone className="w-4 h-4 text-primary" />
-                <span>{contact.phone}</span>
+                <span>{getSetting('contact_phone') || contact.phone}</span>
               </li>
             )}
-            {contact.address && (
+            {(getSetting('contact_address') || contact.address) && (
               <li className="flex items-center gap-3 text-gray-400">
                 <MapPin className="w-4 h-4 text-primary" />
-                <span>{contact.address}</span>
+                <span>{getSetting('contact_address') || contact.address}</span>
               </li>
             )}
           </ul>

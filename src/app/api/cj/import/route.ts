@@ -243,21 +243,31 @@ export async function POST(
       return translatedChunks.join(' ');
     }
 
-    const rawProductName = customName || 
-      cjProduct.productNameEn || 
-      cjProduct.productName
+    const rawProductName = (cjProduct.productNameEn || cjProduct.productName || '').trim();
+    
+    // Si customName est identique au nom d'origine de CJ en anglais (ou vide), nous traduisons
+    const isCustomizedName = customName && 
+      customName.trim() !== rawProductName &&
+      customName.trim() !== (cjProduct.productNameEn || '').trim() &&
+      customName.trim() !== (cjProduct.productName || '').trim();
 
-    const productName = customName ? rawProductName : await translateToFr(rawProductName);
+    const productName = isCustomizedName 
+      ? customName 
+      : await translateToFr(rawProductName);
 
     // Build and clean description
-    const rawDescription = 
-      customDescription || 
-      cjProduct.description || 
-      cjProduct.productNameEn ||
-      ''
+    const rawDescription = cjProduct.description || cjProduct.productNameEn || '';
+    const cleanedDescription = cleanHtml(rawDescription);
     
-    const cleanedDescription = cleanHtml(rawDescription)
-    const finalDescription = customDescription ? cleanedDescription : await translateToFr(cleanedDescription)
+    // Si customDescription est identique à la description d'origine (ou vide), nous la traduisons
+    const isCustomizedDesc = customDescription && 
+      cleanHtml(customDescription) !== cleanedDescription &&
+      cleanHtml(customDescription) !== cleanHtml(cjProduct.description || '') &&
+      cleanHtml(customDescription) !== cleanHtml(cjProduct.productNameEn || '');
+
+    const finalDescription = isCustomizedDesc
+      ? cleanHtml(customDescription)
+      : await translateToFr(cleanedDescription);
 
     // Build tags
     const finalTags = tags?.length > 0 
@@ -276,7 +286,7 @@ export async function POST(
     // Generate random engagement metrics
     const randomSoldCount = Math.floor(Math.random() * 150) + 20; // 20 to 169
     const contextStr = `${cjProduct.categoryName || ''} ${productName} ${finalTags.join(' ')}`;
-    const fakeReviewsData = generateFakeReviewsForProduct("DUMMY_ID", contextStr);
+    const fakeReviewsData = generateFakeReviewsForProduct("DUMMY_ID", contextStr, productName);
     const randomReviewCount = fakeReviewsData.reviewCount;
     const randomRating = fakeReviewsData.reviewAvg;
 
@@ -336,16 +346,6 @@ export async function POST(
 
     if (error) throw error
 
-    // Insert the generated reviews
-    const reviewsToInsert = fakeReviewsData.reviews.map(r => ({
-      ...r,
-      product_id: inserted.id
-    }));
-    const { error: reviewsError } = await supabase.from('product_reviews').insert(reviewsToInsert);
-    if (reviewsError) {
-      console.error('Failed to insert fake reviews:', reviewsError);
-    }
-
     // ✅ Sync directly to main products table to appear on storefront immediately
     const { error: prodError } = await supabase
       .from('products')
@@ -381,11 +381,22 @@ export async function POST(
         rating: randomRating,
         review_count: randomReviewCount,
         review_avg: randomRating,
+        video_url: inserted.video_url,
       })
       
     if (prodError) {
       console.error('Failed to sync CJ product to main products table:', prodError)
       // We do not throw error so the dropship import isn't considered "failed", but we log it.
+    }
+
+    // Insert the generated reviews AFTER the product exists in the main products table to satisfy the ForeignKey constraint
+    const reviewsToInsert = fakeReviewsData.reviews.map(r => ({
+      ...r,
+      product_id: inserted.id
+    }));
+    const { error: reviewsError } = await supabase.from('product_reviews').insert(reviewsToInsert);
+    if (reviewsError) {
+      console.error('Failed to insert fake reviews:', reviewsError);
     }
 
     return NextResponse.json({

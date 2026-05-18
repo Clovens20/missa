@@ -4,7 +4,7 @@ import { useState, useEffect }
 import { motion, AnimatePresence }
   from 'framer-motion'
 import { Check, ChevronLeft,
-  ChevronRight } from 'lucide-react'
+  ChevronRight, Film } from 'lucide-react'
 import { getColorHex } from '@/lib/colors'
 
 
@@ -162,6 +162,18 @@ ProductVariantSelector({
     }
   }, [selectedColor, selectedSize])
 
+  // Unified media items (images + video if available)
+  const mediaItems = (() => {
+    const items: { type: 'image' | 'video'; url: string }[] = [];
+    currentImages.forEach((img: string) => {
+      items.push({ type: 'image', url: img });
+    });
+    if (product.video_url) {
+      items.push({ type: 'video', url: product.video_url });
+    }
+    return items;
+  })();
+
   return (
     <div className="space-y-6">
 
@@ -169,11 +181,10 @@ ProductVariantSelector({
       <div className="flex flex-col-reverse md:flex-row gap-4">
 
         {/* Thumbnails */}
-        {currentImages.length > 1 && (
+        {mediaItems.length > 1 && (
           <div className="flex flex-row md:flex-col
             gap-2 w-full md:w-16 flex-shrink-0 md:max-h-[500px] overflow-x-auto md:overflow-x-hidden md:overflow-y-auto pb-2 md:pb-0 md:pr-1 scrollbar-thin scrollbar-thumb-gray-300">
-            {currentImages
-              .map((img: string, i: number) => (
+            {mediaItems.map((item, i: number) => (
               <button
                 key={i}
                 type="button"
@@ -181,54 +192,81 @@ ProductVariantSelector({
                   setCurrentImgIdx(i)}
                 className={`w-16 h-16 flex-shrink-0
                   rounded-xl overflow-hidden
-                  border-2 transition-all
+                  border-2 transition-all relative
                   ${currentImgIdx === i
                     ? 'border-primary shadow-md'
                     : 'border-gray-200 hover:border-gray-400'
                   }`}>
-                <img
-                  src={img}
-                  alt=""
-                  className="w-full h-full
-                    object-cover"
-                />
+                {item.type === 'image' ? (
+                  <img
+                    src={item.url}
+                    alt=""
+                    className="w-full h-full
+                      object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-950 flex flex-col items-center justify-center text-primary gap-0.5">
+                    <Film className="w-5 h-5 text-primary animate-pulse" />
+                    <span className="text-[9px] font-black uppercase tracking-wider text-primary">Vidéo</span>
+                  </div>
+                )}
               </button>
             ))}
           </div>
         )}
 
-        {/* Main image */}
+        {/* Main image / video */}
         <div className="flex-1 relative
           aspect-square rounded-3xl
           overflow-hidden bg-gray-50">
           <AnimatePresence mode="wait">
-            <motion.img
-              key={
-                currentImages[currentImgIdx]
-              }
-              src={
-                currentImages[currentImgIdx]
-                || '/placeholder-product.jpg'
-              }
-              alt={product.name}
-              className="w-full h-full
-                object-cover"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            />
+            {mediaItems[currentImgIdx]?.type === 'image' ? (
+              <motion.img
+                key={
+                  mediaItems[currentImgIdx]?.url
+                }
+                src={
+                  mediaItems[currentImgIdx]?.url
+                  || '/placeholder-product.jpg'
+                }
+                alt={product.name}
+                className="w-full h-full
+                  object-cover"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              />
+            ) : (
+              <motion.div
+                key="video-player"
+                className="w-full h-full bg-black relative flex items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <video
+                  src={mediaItems[currentImgIdx]?.url}
+                  controls
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-contain"
+                />
+              </motion.div>
+            )}
           </AnimatePresence>
 
           {/* Prev/Next arrows */}
-          {currentImages.length > 1 && (
+          {mediaItems.length > 1 && (
             <>
               <button
                 type="button"
                 onClick={() =>
                   setCurrentImgIdx(
                     prev => prev === 0
-                      ? currentImages.length - 1
+                      ? mediaItems.length - 1
                       : prev - 1
                   )}
                 className="absolute left-3
@@ -248,7 +286,7 @@ ProductVariantSelector({
                   setCurrentImgIdx(
                     prev =>
                       (prev + 1) %
-                      currentImages.length
+                      mediaItems.length
                   )}
                 className="absolute right-3
                   top-1/2 -translate-y-1/2

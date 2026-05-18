@@ -256,7 +256,7 @@ export default function NewProductPage() {
 
       // Generate fake text reviews
       const contextStr = `${formData.name} ${formData.tags.join(' ')}`;
-      const fakeReviewsData = generateFakeReviewsForProduct('DUMMY', contextStr);
+      const fakeReviewsData = generateFakeReviewsForProduct('DUMMY', contextStr, formData.name);
 
       const reviewsToInsert = fakeReviewsData.reviews.map(r => ({
         ...r,

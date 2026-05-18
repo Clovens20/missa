@@ -105,6 +105,9 @@ export default function CJImportDrawer({
       
       setAllImages(data.images || [])
       setVideo(data.video || null)
+      if (data.video) {
+        setIncludeVideo(true)
+      }
       
       // Set first image as preview
       if (data.images?.length > 0) {
@@ -171,7 +174,37 @@ export default function CJImportDrawer({
       .trim()
   }
 
-  function prefillForm() {
+  async function translateToFr(text: string) {
+    if (!text || text.length < 3) return text;
+    
+    const translateChunk = async (chunk: string) => {
+      try {
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=fr&dt=t&q=${encodeURIComponent(chunk)}`);
+        const data = await res.json();
+        let translated = '';
+        if (data && data[0]) {
+          data[0].forEach((item: any) => { if (item[0]) translated += item[0]; });
+        }
+        return translated || chunk;
+      } catch (err) {
+        console.error("Translation error on chunk:", err);
+        return chunk;
+      }
+    };
+
+    if (text.length <= 1500) {
+      return await translateChunk(text);
+    }
+
+    const chunks = text.match(/.{1,1500}(?:\s|$)/g) || [text];
+    const translatedChunks = [];
+    for (const chunk of chunks) {
+      translatedChunks.push(await translateChunk(chunk));
+    }
+    return translatedChunks.join(' ');
+  }
+
+  async function prefillForm() {
     if (!product) return
     
     const cjPrice = parseFloat(
@@ -180,15 +213,17 @@ export default function CJImportDrawer({
     )
     const suggestedPrice = 
       Math.ceil(cjPrice * 2.5 * 2) / 2
+
+    const rawName = product.productNameEn || product.productName || ''
+    const rawDescription = cleanHtml(
+      product.productDescription || 
+      product.description || ''
+    )
     
     setForm({
-      name: product.productNameEn || 
-        product.productName || '',
-      description: cleanHtml(
-        product.productDescription || 
-        product.description || ''
-      ),
-      shortDescription: '',
+      name: rawName,
+      description: rawDescription,
+      shortDescription: rawDescription.substring(0, 150) + '...',
       sellingPrice: 
         suggestedPrice.toFixed(2),
       comparePrice: 
@@ -200,6 +235,22 @@ export default function CJImportDrawer({
       ].filter(Boolean),
       newTag: '',
     })
+
+    try {
+      const [translatedName, translatedDesc] = await Promise.all([
+        translateToFr(rawName),
+        translateToFr(rawDescription)
+      ]);
+      
+      setForm(prev => ({
+        ...prev,
+        name: translatedName,
+        description: translatedDesc,
+        shortDescription: translatedDesc.substring(0, 150) + '...',
+      }));
+    } catch (err) {
+      console.error('Background translation failed:', err);
+    }
   }
 
   function toggleImage(index: number) {

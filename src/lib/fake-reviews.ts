@@ -251,11 +251,56 @@ function identifyCategory(contextStr: string): string[] {
   return COMMENTS_GENERAL;
 }
 
-export function generateFakeReviewsForProduct(productId: string, productContext: string = "") {
+export const PRODUCT_AWARE_TEMPLATES = [
+  "Super ravi de mon achat ! {ce} {product} est d'une excellente qualité et correspond parfaitement aux photos.",
+  "Je recommande vivement {ce} {product}. Il est très pratique au quotidien et la livraison a été ultra rapide.",
+  "Excellent rapport qualité/prix pour {ce} {product}. Rien à redire, c'est conforme à la description.",
+  "Très satisfaite de mon {product}, la matière est agréable et les finitions sont soignées.",
+  "Un très bel achat. {ce} {product} est magnifique et fonctionne à merveille.",
+  "Je l'ai reçu en seulement 3 jours. {ce} {product} est d'une grande qualité pour ce tarif !",
+  "Produit conforme et bien emballé. {ce} {product} est exactement ce que je cherchais.",
+  "J'adore mon nouveau {product} ! Je ne regrette pas du tout mon choix et je repasserai commande.",
+  "Très bon produit, {ce} {product} répond parfaitement à mes attentes. Service de livraison impeccable.",
+  "Parfait ! La qualité de {ce} {product} dépasse mes espérances pour le prix."
+];
+
+function getDemonstrativePronoun(word: string): string {
+  if (!word) return "ce";
+  const firstChar = word.trim().charAt(0).toLowerCase();
+  const vowels = ['a', 'e', 'i', 'o', 'u', 'y', 'é', 'è', 'à', 'â', 'ê', 'î', 'ô', 'û', 'h'];
+  if (vowels.includes(firstChar)) {
+    return "cet";
+  }
+  return "ce";
+}
+
+function cleanProductNameForReview(name: string): string {
+  if (!name || name === "DUMMY" || name === "DUMMY_ID") return "produit";
+  // Enlever les termes superflus d'import comme "For Home", "USB", "Mini", "Portable" etc.
+  let cleaned = name.split('—')[0].split('|')[0].trim();
+  // Prendre les 4 premiers mots s'il est très long
+  const words = cleaned.split(' ');
+  if (words.length > 5) {
+    cleaned = words.slice(0, 5).join(' ');
+  }
+  return cleaned.toLowerCase();
+}
+
+export function generateFakeReviewsForProduct(productId: string, productContext: string = "", productName?: string) {
   // Between 10 and 25 reviews
   const reviewCount = Math.floor(Math.random() * 16) + 10;
 
   const selectedCommentsBank = identifyCategory(productContext);
+
+  // Extract clean name for injecting in templates
+  let cleanName = "produit";
+  if (productName && productName !== "DUMMY" && productName !== "DUMMY_ID") {
+    cleanName = cleanProductNameForReview(productName);
+  } else if (productContext) {
+    cleanName = cleanProductNameForReview(productContext);
+  }
+
+  const cePronoun = getDemonstrativePronoun(cleanName);
 
   const reviewsToInsert = [];
   let totalRating = 0;
@@ -275,17 +320,27 @@ export function generateFakeReviewsForProduct(productId: string, productContext:
     // Pick title
     const title = REVIEW_TITLES_BANK[Math.floor(Math.random() * REVIEW_TITLES_BANK.length)];
 
-    // Pick comment (mix between selected category, general, and delivery)
+    // Pick comment (mix between product-aware, category, general, and delivery)
     let commentPool;
     const poolRoll = Math.random();
-    if (poolRoll < 0.5 && selectedCommentsBank.length > 0) {
+    
+    // 40% chance of product-aware template, 30% of category bank, 20% general, 10% delivery
+    if (poolRoll < 0.4) {
+      commentPool = PRODUCT_AWARE_TEMPLATES;
+    } else if (poolRoll < 0.7 && selectedCommentsBank.length > 0) {
       commentPool = selectedCommentsBank;
-    } else if (poolRoll < 0.8) {
+    } else if (poolRoll < 0.9) {
       commentPool = COMMENTS_GENERAL;
     } else {
       commentPool = COMMENTS_LIVRAISON;
     }
-    const comment = commentPool[Math.floor(Math.random() * commentPool.length)];
+    
+    let rawComment = commentPool[Math.floor(Math.random() * commentPool.length)];
+    
+    // Inject variables if it's a product-aware template
+    let comment = rawComment
+      .replace(/{product}/g, cleanName)
+      .replace(/{ce}/g, cePronoun);
 
     // Random date within the last 60 days
     const daysAgo = Math.floor(Math.random() * 60);

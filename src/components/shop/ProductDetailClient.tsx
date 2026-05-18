@@ -92,9 +92,13 @@ export default function ProductDetailClient({
     toast.success('Lien copié! 🔗')
   }
 
-  const avgRating = reviews.length > 0
-    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-    : 0
+  const avgRating = typeof product.review_avg === 'number' && product.review_avg > 0
+    ? product.review_avg 
+    : (reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0);
+
+  const totalReviewCount = typeof product.review_count === 'number' && product.review_count > 0
+    ? product.review_count
+    : reviews.length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -154,7 +158,7 @@ export default function ProductDetailClient({
                     ))}
                   </div>
                   <span className="text-sm font-bold text-gray-900">{avgRating.toFixed(1)}</span>
-                  <span className="text-sm text-gray-400">({reviews.length} avis)</span>
+                  <span className="text-sm text-gray-400">({totalReviewCount} avis)</span>
                 </div>
                 <span className="w-1.5 h-1.5 rounded-full bg-gray-200" />
                 <span className="text-sm text-gray-500 font-medium">{product.sold_count || 0} vendus</span>
@@ -245,7 +249,7 @@ export default function ProductDetailClient({
       {/* TABS */}
       <div className="mb-16">
         <div className="flex border-b border-gray-200 mb-8">
-          {([ ['desc', '📋 Description'], ['specs', '📐 Spécifications'], ['reviews', `⭐ Avis (${reviews.length})`] ] as const).map(([tab, label]) => (
+          {([ ['desc', '📋 Description'], ['specs', '📐 Spécifications'], ['reviews', `⭐ Avis (${totalReviewCount})`] ] as const).map(([tab, label]) => (
             <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-6 py-4 font-bold text-sm border-b-2 -mb-px transition-all ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>{label}</button>
           ))}
         </div>

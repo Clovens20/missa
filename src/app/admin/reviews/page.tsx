@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import {
   Star, Check, X, MessageSquare,
   Eye, Filter, RefreshCw,
-  Trash2, Reply
+  Trash2, Reply, Edit
 } from 'lucide-react'
 import { StarRating } 
   from '@/components/shop/ProductReviews'
@@ -25,6 +25,14 @@ export default function ReviewsAdminPage() {
     useState<string | null>(null)
   const [replyText, setReplyText] = 
     useState('')
+  const [editingReview, setEditingReview] = useState<any | null>(null)
+  const [editForm, setEditForm] = useState({
+    customer_name: '',
+    rating: 5,
+    title: '',
+    body: '',
+    is_verified: true,
+  })
 
   useEffect(() => {
     loadReviews()
@@ -102,6 +110,42 @@ export default function ReviewsAdminPage() {
       prev.filter(r => r.id !== id)
     )
     toast.success('Avis supprimé')
+  }
+
+  function startEdit(review: any) {
+    setEditingReview(review)
+    setEditForm({
+      customer_name: review.customer_name || '',
+      rating: review.rating || 5,
+      title: review.title || '',
+      body: review.body || '',
+      is_verified: review.is_verified ?? true,
+    })
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingReview) return
+
+    const { error } = await supabase
+      .from('product_reviews')
+      .update({
+        customer_name: editForm.customer_name,
+        rating: editForm.rating,
+        title: editForm.title,
+        body: editForm.body,
+        is_verified: editForm.is_verified,
+      })
+      .eq('id', editingReview.id)
+
+    if (!error) {
+      toast.success('✅ Avis mis à jour avec succès !')
+      setEditingReview(null)
+      loadReviews()
+    } else {
+      toast.error("Erreur lors de la modification de l'avis")
+      console.error(error)
+    }
   }
 
   const pendingCount = reviews.length
@@ -284,9 +328,24 @@ export default function ReviewsAdminPage() {
                       text-gray-400 
                       hover:text-white 
                       rounded-xl 
-                      transition-colors">
+                      transition-colors"
+                    title="Répondre"
+                  >
                     <Reply 
                       className="w-4 h-4"/>
+                  </button>
+                  <button
+                    onClick={() => startEdit(review)}
+                    className="p-1.5 
+                      bg-gray-800 
+                      hover:bg-gray-700 
+                      text-gray-400 
+                      hover:text-white 
+                      rounded-xl 
+                      transition-colors"
+                    title="Modifier l'avis"
+                  >
+                    <Edit className="w-4 h-4"/>
                   </button>
                   <button
                     onClick={() => 
@@ -377,6 +436,112 @@ export default function ReviewsAdminPage() {
               )}
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {editingReview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 w-full max-w-lg shadow-2xl relative space-y-4">
+            <button 
+              onClick={() => setEditingReview(null)}
+              className="absolute top-4 right-4 p-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <Star className="w-6 h-6 text-primary fill-primary" />
+              Modifier l'avis
+            </h3>
+            
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Nom du Client</label>
+                <input 
+                  type="text" 
+                  required
+                  value={editForm.customer_name}
+                  onChange={e => setEditForm({ ...editForm, customer_name: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Note (Étoiles)</label>
+                  <div className="flex gap-1 mt-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, rating: star })}
+                        className="transition-transform active:scale-95"
+                      >
+                        <Star 
+                          className={`w-6 h-6 ${
+                            star <= editForm.rating 
+                              ? 'text-primary fill-primary' 
+                              : 'text-gray-600'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center pt-6">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input 
+                      type="checkbox"
+                      checked={editForm.is_verified}
+                      onChange={e => setEditForm({ ...editForm, is_verified: e.target.checked })}
+                      className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-secondary focus:ring-secondary/20 focus:ring-offset-gray-900 transition-colors"
+                    />
+                    <span className="text-xs font-bold text-gray-300">Achat vérifié</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Titre de l'avis (Optionnel)</label>
+                <input 
+                  type="text" 
+                  value={editForm.title}
+                  onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+                  placeholder="Ex: Excellent produit !"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Commentaire</label>
+                <textarea 
+                  rows={4}
+                  required
+                  value={editForm.body}
+                  onChange={e => setEditForm({ ...editForm, body: e.target.value })}
+                  placeholder="Écrivez le commentaire de l'avis..."
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="submit"
+                  className="flex-1 bg-primary hover:bg-primary-dark text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-primary/25 active:scale-95 text-sm"
+                >
+                  Sauvegarder les modifications
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setEditingReview(null)}
+                  className="px-5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-xl transition-all text-sm"
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
