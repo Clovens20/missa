@@ -92,6 +92,10 @@ export default function EditProductPage() {
   const [videoUrl, setVideoUrl] = useState('')
   const [uploadingVideo, setUploadingVideo] = useState(false)
   const [defaultVariantStock, setDefaultVariantStock] = useState<number>(0)
+  const [aiVideoGenerating, setAiVideoGenerating] = useState(false)
+  const [showAiPanel, setShowAiPanel] = useState(false)
+  const [aiPreset, setAiPreset] = useState('rotate')
+  const [aiError, setAiError] = useState('')
   
   // Switch Supplier states
   const [showSwitchModal, setShowSwitchModal] = useState(false)
@@ -319,6 +323,42 @@ export default function EditProductPage() {
     } finally {
       setUploadingVideo(false)
       if (videoFileRef.current) videoFileRef.current.value = ''
+    }
+  }
+
+  async function generateAiVideo() {
+    const referenceImage = imageUrl || product?.images?.[0]?.url || formData.images?.[0]?.url
+    if (!referenceImage) {
+      toast.error('Ajoutez d\'abord une image produit comme référence')
+      return
+    }
+    setAiVideoGenerating(true)
+    setAiError('')
+    try {
+      const res = await fetch('/api/admin/ai-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: referenceImage,
+          productName: formData.name || 'produit',
+          preset: aiPreset,
+          duration: '5',
+          aspectRatio: '1:1',
+        }),
+      })
+      const data = await res.json()
+      if (data.videoUrl) {
+        setVideoUrl(data.videoUrl)
+        setShowAiPanel(false)
+        toast.success('🎬 Vidéo IA générée avec succès !')
+      } else {
+        throw new Error(data.error || 'Erreur de génération')
+      }
+    } catch (err: any) {
+      setAiError(err.message)
+      toast.error(err.message)
+    } finally {
+      setAiVideoGenerating(false)
     }
   }
 
@@ -1049,38 +1089,133 @@ export default function EditProductPage() {
               className="hidden"
               id="video-upload-input"
             />
-            <label
-              htmlFor="video-upload-input"
-              className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-8 cursor-pointer transition-all ${
-                uploadingVideo
-                  ? 'border-purple-500/60 bg-purple-500/5'
-                  : 'border-gray-700 hover:border-purple-500/50 hover:bg-purple-500/5'
-              }`}
-            >
-              {uploadingVideo ? (
-                <>
-                  <div className="w-8 h-8 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"/>
-                  <p className="text-purple-300 text-sm font-bold">Upload en cours...</p>
-                  <p className="text-gray-500 text-xs">Les grosses vidéos prennent quelques secondes</p>
-                </>
-              ) : (
-                <>
-                  <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center">
-                    <Upload className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-white font-bold text-sm">
-                      {videoUrl ? '🔄 Remplacer la vidéo' : '🎬 Ajouter une vidéo'}
+
+            {/* Two action buttons: upload from PC or generate with AI */}
+            <div className="grid grid-cols-2 gap-3">
+              <label
+                htmlFor="video-upload-input"
+                className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-2xl p-5 cursor-pointer transition-all ${
+                  uploadingVideo
+                    ? 'border-purple-500/60 bg-purple-500/5'
+                    : 'border-gray-700 hover:border-purple-500/50 hover:bg-purple-500/5'
+                }`}
+              >
+                {uploadingVideo ? (
+                  <>
+                    <div className="w-7 h-7 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"/>
+                    <p className="text-purple-300 text-xs font-bold text-center">Upload...</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-purple-400" />
+                    <p className="text-white font-bold text-xs text-center">
+                      {videoUrl ? 'Remplacer' : 'Depuis mon PC'}
                     </p>
-                    <p className="text-gray-500 text-xs mt-1">MP4, WebM, MOV, AVI · Max 200 Mo</p>
+                    <p className="text-gray-500 text-[10px] text-center">MP4, MOV · Max 200 Mo</p>
+                  </>
+                )}
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setShowAiPanel(!showAiPanel)}
+                className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-fuchsia-700/50 hover:border-fuchsia-500 hover:bg-fuchsia-500/5 rounded-2xl p-5 transition-all cursor-pointer"
+              >
+                <span className="text-2xl">✨</span>
+                <p className="text-white font-bold text-xs text-center">Générer avec l'IA</p>
+                <p className="text-gray-500 text-[10px] text-center">Depuis l'image produit</p>
+              </button>
+            </div>
+
+            {/* AI Generation Panel */}
+            {showAiPanel && (
+              <div className="bg-fuchsia-950/30 border border-fuchsia-700/30 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">✨</span>
+                  <div>
+                    <p className="text-white font-black text-sm">Génération vidéo IA</p>
+                    <p className="text-gray-400 text-xs">Utilise l'image principale du produit comme référence</p>
                   </div>
-                </>
-              )}
-            </label>
+                </div>
+
+                {/* Reference image preview */}
+                {(imageUrl || product?.images?.[0]?.url) && (
+                  <div className="flex items-center gap-3 bg-gray-900/60 rounded-xl p-3">
+                    <img
+                      src={imageUrl || product?.images?.[0]?.url}
+                      alt="Référence"
+                      className="w-12 h-12 rounded-lg object-cover border border-gray-700"
+                    />
+                    <div>
+                      <p className="text-gray-400 text-[10px] font-black uppercase tracking-wide">Image de référence</p>
+                      <p className="text-white text-xs font-bold">{formData.name || 'Produit'}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Motion preset selector */}
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Type de mouvement</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'rotate',    emoji: '🔄', label: 'Rotation 360°' },
+                      { id: 'zoom',      emoji: '🔍', label: 'Zoom cinématique' },
+                      { id: 'lifestyle', emoji: '🌟', label: 'Lifestyle usage' },
+                      { id: 'float',     emoji: '✨', label: 'Flottement premium' },
+                      { id: 'reveal',    emoji: '🎬', label: 'Révélation lumière' },
+                      { id: 'hands',     emoji: '🤲', label: 'Mains & détail' },
+                    ].map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setAiPreset(p.id)}
+                        className={`flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-bold transition-all ${
+                          aiPreset === p.id
+                            ? 'bg-fuchsia-500/20 border-fuchsia-500 text-white'
+                            : 'bg-gray-800/60 border-gray-700 text-gray-400 hover:border-gray-600'
+                        }`}
+                      >
+                        <span>{p.emoji}</span>
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {aiError && (
+                  <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-xl p-3">
+                    ❌ {aiError}
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={generateAiVideo}
+                  disabled={aiVideoGenerating}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-black py-3 rounded-xl text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {aiVideoGenerating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
+                      Génération en cours... (30–60 sec)
+                    </>
+                  ) : (
+                    <>
+                      <span>✨</span>
+                      Générer la vidéo IA
+                    </>
+                  )}
+                </button>
+
+                <p className="text-[10px] text-gray-600 text-center">
+                  Propulsé par Kling AI v1.6 via FAL.AI · Génération en ~60 sec
+                </p>
+              </div>
+            )}
 
             {/* Or paste a URL */}
             <div>
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Ou coller un lien vidéo (YouTube, TikTok, direct mp4…)</p>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Ou coller un lien vidéo (direct mp4…)</p>
               <input
                 type="url"
                 value={videoUrl}
