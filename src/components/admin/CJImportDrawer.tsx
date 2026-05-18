@@ -140,6 +140,37 @@ export default function CJImportDrawer({
     setCategories(data || [])
   }
 
+  function cleanHtml(html: string): string {
+    if (!html) return ''
+    
+    let text = html
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]*>/g, ' ')
+    
+    // Decode common HTML entities
+    text = text
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&rsquo;/g, "'")
+      .replace(/&ldquo;/g, '"')
+      .replace(/&rdquo;/g, '"')
+    
+    // Clean line spaces and filter out consecutive empty lines
+    return text
+      .split('\n')
+      .map(line => line.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .join('\n')
+      .trim()
+  }
+
   function prefillForm() {
     if (!product) return
     
@@ -153,9 +184,10 @@ export default function CJImportDrawer({
     setForm({
       name: product.productNameEn || 
         product.productName || '',
-      description: 
+      description: cleanHtml(
         product.productDescription || 
-        product.description || '',
+        product.description || ''
+      ),
       shortDescription: '',
       sellingPrice: 
         suggestedPrice.toFixed(2),

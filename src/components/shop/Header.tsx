@@ -80,7 +80,7 @@ export default function Header() {
 
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+    <header className="relative md:sticky top-0 z-50 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
       {/* ── TOP BAR (Trust signals) ── */}
       <div className="bg-gray-900 text-white py-2">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-xs">
