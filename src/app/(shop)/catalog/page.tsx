@@ -37,20 +37,14 @@ export async function generateMetadata({
 
 export default async function CatalogPage() {
   // Fetch initial data on the SERVER
-  const [prodRes, catRes, dropshipRes] = await Promise.all([
-    supabase.from('products').select('*').eq('is_active', true),
-    supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
-    supabase.from('dropship_products').select('*').eq('is_active', true)
+  const [prodRes, catRes] = await Promise.all([
+    supabase.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false }),
+    supabase.from('categories').select('*').eq('is_active', true).order('sort_order')
   ])
-
-  const allProducts = [
-    ...(prodRes.data || []),
-    ...(dropshipRes.data || []).map(p => ({ ...p, is_dropship: true }))
-  ]
 
   return (
     <CatalogContent 
-      initialProducts={allProducts} 
+      initialProducts={prodRes.data || []} 
       initialCategories={catRes.data || []} 
     />
   )

@@ -334,18 +334,30 @@ export async function createCJOrder(orderData: {
     '/shopping/order/createOrderV2',
     'POST',
     {
+      // New V2 Fields (verified required by CJ API v2)
       orderNumber: orderData.orderNumber,
-      fromCountryCode: orderData.fromCountryCode,
+      shippingCustomerName: orderData.toName,
+      shippingPhone: orderData.toPhone || '0000000000',
+      shippingAddress: orderData.toAddress,
+      shippingCity: orderData.toCity,
+      shippingProvince: orderData.toProvince || '',
+      shippingCountryCode: orderData.toCountryCode,
+      shippingCountry: orderData.toCountryCode === 'CA' ? 'Canada' : orderData.toCountryCode === 'US' ? 'United States' : orderData.toCountryCode || '',
+      shippingZip: orderData.toPostCode || '',
+      shippingName: orderData.logisticName || 'CJPacket Ordinary',
+
+      // Legacy / V1 Fields for absolute compatibility
+      fromCountryCode: orderData.fromCountryCode || 'CN',
       toCountryCode: orderData.toCountryCode,
-      toProvince: orderData.toProvince,
+      toProvince: orderData.toProvince || '',
       toCity: orderData.toCity,
       toDistrict: orderData.toDistrict || '',
       toAddress: orderData.toAddress,
       toName: orderData.toName,
-      toPhone: orderData.toPhone,
+      toPhone: orderData.toPhone || '0000000000',
       toEmail: orderData.toEmail || '',
-      toPostCode: orderData.toPostCode,
-      shippingName: orderData.logisticName || 'CJPacket Ordinary',
+      toPostCode: orderData.toPostCode || '',
+      
       products: orderData.products,
       remark: orderData.remark || 'Missa Shop Order',
     }

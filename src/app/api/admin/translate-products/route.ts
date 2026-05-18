@@ -6,24 +6,54 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Utilitaire de traduction Google (Gratuit)
+// Détection de la langue française pour éviter les appels API inutiles
+function isFrench(text: string): boolean {
+  if (!text) return true;
+  const frenchIndicator = /\b(le|la|les|pour|dans|avec|est|une|cette|produit|informations|aperçu|maison|décoration|chambre|couleur|taille|matière|professionnel|baskets|hommes|femmes)\b/i;
+  const frenchChars = /[éàèùçêâîôûœÉÀÈÙÇÊÂÎÔÛŒ]/;
+  return frenchIndicator.test(text) || frenchChars.test(text);
+}
+
+// Fonction utilitaire pour faire une pause
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Utilitaire de traduction Google (Gratuit) avec découpage et gestion d'erreurs
 async function translateToFr(text: string) {
   if (!text || text.length < 3) return text;
-  try {
-    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=fr&dt=t`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `q=${encodeURIComponent(text)}`
-    });
-    const data = await res.json();
-    let translated = '';
-    if (data && data[0]) {
-      data[0].forEach((item: any) => { if (item[0]) translated += item[0]; });
+  if (isFrench(text)) return text; // Déjà en français !
+  
+  const translateChunk = async (chunk: string) => {
+    try {
+      await sleep(1000); // 1 seconde de pause avant chaque appel API pour éviter les blocages IP
+      const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=fr&dt=t`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `q=${encodeURIComponent(chunk)}`
+      });
+      const data = await res.json();
+      let translated = '';
+      if (data && data[0]) {
+        data[0].forEach((item: any) => { if (item[0]) translated += item[0]; });
+      }
+      return translated || chunk;
+    } catch (err) {
+      console.error("Translation error on chunk:", err);
+      return chunk;
     }
-    return translated || text;
-  } catch (err) {
-    return text;
+  };
+
+  if (text.length <= 1500) {
+    return await translateChunk(text);
   }
+
+  // Découpage par morceaux de 1500 caractères
+  const chunks = text.match(/.{1,1500}(?:\s|$)/g) || [text];
+  const translatedChunks = [];
+  for (const chunk of chunks) {
+    translatedChunks.push(await translateChunk(chunk));
+  }
+
+  return translatedChunks.join(' ');
 }
 
 export async function GET(req: Request) {
@@ -38,18 +68,30 @@ export async function GET(req: Request) {
     let totalUpdated = 0
 
     for (const product of products) {
+      const nameNeedsTranslation = !isFrench(product.name);
+      const descNeedsTranslation = product.description && !isFrench(product.description);
+      const shortDescNeedsTranslation = product.short_description && !isFrench(product.short_description);
+
+      if (!nameNeedsTranslation && !descNeedsTranslation && !shortDescNeedsTranslation) {
+        continue; // Tout est déjà en français !
+      }
+
+      console.log(`Translating product: "${product.name}" (ID: ${product.id})...`);
+
       // Traduire le nom
-      const translatedName = await translateToFr(product.name);
+      const translatedName = nameNeedsTranslation 
+        ? await translateToFr(product.name) 
+        : product.name;
       
       // Traduire la description longue
       let translatedDescription = product.description;
-      if (product.description) {
+      if (product.description && descNeedsTranslation) {
         translatedDescription = await translateToFr(product.description);
       }
       
       // Traduire la description courte
       let translatedShortDescription = product.short_description;
-      if (product.short_description) {
+      if (product.short_description && shortDescNeedsTranslation) {
         translatedShortDescription = await translateToFr(product.short_description);
       }
 
@@ -59,6 +101,7 @@ export async function GET(req: Request) {
         translatedDescription !== product.description ||
         translatedShortDescription !== product.short_description
       ) {
+        console.log(`Updating translation for "${product.name}"...`);
         
         // Mettre à jour la table 'products'
         await supabase.from('products').update({

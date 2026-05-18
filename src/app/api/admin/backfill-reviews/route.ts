@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     for (const product of products) {
       // Check if product already has reviews
       const { count } = await supabase
-        .from('reviews')
+        .from('product_reviews')
         .select('*', { count: 'exact', head: true })
         .eq('product_id', product.id)
       
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
       }))
 
       // Insert reviews
-      await supabase.from('reviews').insert(reviewsToInsert)
+      await supabase.from('product_reviews').insert(reviewsToInsert)
 
       // Update product stats
       await supabase.from('products').update({

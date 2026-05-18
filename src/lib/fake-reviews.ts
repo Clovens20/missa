@@ -247,34 +247,34 @@ function identifyCategory(contextStr: string): string[] {
   if (str.match(/beauté|soin|visage|cheveux|maquillage|nail/)) return COMMENTS_BEAUTE;
   if (str.match(/maison|déco|diffuseur|coussin|cuisine|rangement/)) return COMMENTS_MAISON;
   if (str.match(/homme|chemise|pantalon homme|costume/)) return COMMENTS_HOMME;
-  
+
   return COMMENTS_GENERAL;
 }
 
 export function generateFakeReviewsForProduct(productId: string, productContext: string = "") {
   // Between 10 and 25 reviews
   const reviewCount = Math.floor(Math.random() * 16) + 10;
-  
+
   const selectedCommentsBank = identifyCategory(productContext);
-  
+
   const reviewsToInsert = [];
   let totalRating = 0;
-  
+
   const now = new Date();
-  
+
   for (let i = 0; i < reviewCount; i++) {
     // 80% chance of 5 stars, 20% chance of 4 stars
     const rating = Math.random() < 0.8 ? 5 : 4;
     totalRating += rating;
-    
+
     // Pick name
     const firstName = FRENCH_NAMES[Math.floor(Math.random() * FRENCH_NAMES.length)];
     const lastInitial = LAST_INITIALS[Math.floor(Math.random() * LAST_INITIALS.length)];
     const customerName = `${firstName} ${lastInitial}`;
-    
+
     // Pick title
     const title = REVIEW_TITLES_BANK[Math.floor(Math.random() * REVIEW_TITLES_BANK.length)];
-    
+
     // Pick comment (mix between selected category, general, and delivery)
     let commentPool;
     const poolRoll = Math.random();
@@ -286,25 +286,27 @@ export function generateFakeReviewsForProduct(productId: string, productContext:
       commentPool = COMMENTS_LIVRAISON;
     }
     const comment = commentPool[Math.floor(Math.random() * commentPool.length)];
-    
+
     // Random date within the last 60 days
     const daysAgo = Math.floor(Math.random() * 60);
     const createdAt = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-    
+
     reviewsToInsert.push({
       product_id: productId,
       customer_name: customerName,
       rating: rating,
       title: title,
-      comment: comment,
-      is_approved: true,
+      body: comment,
+      status: 'approved',
+      is_verified: Math.random() > 0.3,
+      helpful_count: Math.floor(Math.random() * 10),
       created_at: createdAt.toISOString(),
       updated_at: createdAt.toISOString()
     });
   }
-  
+
   const avgRating = totalRating / reviewCount;
-  
+
   return {
     reviews: reviewsToInsert,
     reviewCount: reviewCount,

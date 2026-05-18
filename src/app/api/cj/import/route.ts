@@ -206,24 +206,41 @@ export async function POST(
               }
             })
 
-    // Utilitaire de traduction Google (Gratuit)
+    // Utilitaire de traduction Google (Gratuit) avec découpage
     async function translateToFr(text: string) {
       if (!text || text.length < 3) return text;
-      try {
-        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=fr&dt=t`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `q=${encodeURIComponent(text)}`
-        });
-        const data = await res.json();
-        let translated = '';
-        if (data && data[0]) {
-          data[0].forEach((item: any) => { if (item[0]) translated += item[0]; });
+      
+      const translateChunk = async (chunk: string) => {
+        try {
+          const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=fr&dt=t`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `q=${encodeURIComponent(chunk)}`
+          });
+          const data = await res.json();
+          let translated = '';
+          if (data && data[0]) {
+            data[0].forEach((item: any) => { if (item[0]) translated += item[0]; });
+          }
+          return translated || chunk;
+        } catch (err) {
+          console.error("Translation error on chunk:", err);
+          return chunk;
         }
-        return translated || text;
-      } catch (err) {
-        return text;
+      };
+
+      if (text.length <= 1500) {
+        return await translateChunk(text);
       }
+
+      // Si le texte est très long, on le découpe en essayant de ne pas couper au milieu d'une phrase
+      const chunks = text.match(/.{1,1500}(?:\s|$)/g) || [text];
+      const translatedChunks = [];
+      for (const chunk of chunks) {
+        translatedChunks.push(await translateChunk(chunk));
+      }
+
+      return translatedChunks.join(' ');
     }
 
     const rawProductName = customName || 
@@ -324,7 +341,7 @@ export async function POST(
       ...r,
       product_id: inserted.id
     }));
-    const { error: reviewsError } = await supabase.from('reviews').insert(reviewsToInsert);
+    const { error: reviewsError } = await supabase.from('product_reviews').insert(reviewsToInsert);
     if (reviewsError) {
       console.error('Failed to insert fake reviews:', reviewsError);
     }

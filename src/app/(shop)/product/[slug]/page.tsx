@@ -172,10 +172,10 @@ export default async function ProductPage({
     .limit(8)
 
   const { data: reviews } = await supabase
-    .from('reviews')
+    .from('product_reviews')
     .select('*')
     .eq('product_id', product.id)
-    .eq('is_approved', true)
+    .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(10)
 

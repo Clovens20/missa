@@ -58,36 +58,19 @@ export default async function CategoryPage({
     .select('*')
     .eq('is_active', true)
 
-  let dropshipQuery = supabase
-    .from('dropship_products')
-    .select('*')
-    .eq('is_active', true)
-
   if (category.id !== 'virtual') {
     prodQuery = prodQuery.eq('category_id', category.id)
-    // For dropship products, we match by category name or tag since they might not have a category_id yet
-    dropshipQuery = dropshipQuery.or(`tags.cs.{${category.slug}},tags.cs.{${category.name}},name.ilike.%${category.name}%`)
   } else {
     // Virtual category search by tag/name
     prodQuery = prodQuery.or(`tags.cs.{${slug}},name.ilike.%${slug}%`)
-    dropshipQuery = dropshipQuery.or(`tags.cs.{${slug}},name.ilike.%${slug}%`)
   }
 
   if (sub) {
     // If sub is provided, filter by tag or name
     prodQuery = prodQuery.or(`tags.cs.{${sub}},name.ilike.%${sub}%`)
-    dropshipQuery = dropshipQuery.or(`tags.cs.{${sub}},name.ilike.%${sub}%`)
   }
 
-  const [prodRes, dropshipRes] = await Promise.all([
-    prodQuery.order('created_at', { ascending: false }),
-    dropshipQuery.order('imported_at', { ascending: false })
-  ])
-
-  const products = [
-    ...(prodRes.data || []),
-    ...(dropshipRes.data || []).map(p => ({ ...p, is_dropship: true }))
-  ]
+  const { data: products } = await prodQuery.order('created_at', { ascending: false })
 
   return (
     <>

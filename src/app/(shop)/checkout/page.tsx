@@ -286,9 +286,13 @@ export default function CheckoutPage() {
       }
 
       // Check expiry date
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        setCouponError('Ce code promo a expiré')
-        return
+      if (data.expires_at) {
+        const expiryDate = new Date(data.expires_at)
+        expiryDate.setHours(23, 59, 59, 999)
+        if (expiryDate < new Date()) {
+          setCouponError('Ce code promo a expiré')
+          return
+        }
       }
 
       // Check max uses

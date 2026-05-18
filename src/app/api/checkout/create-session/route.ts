@@ -17,6 +17,15 @@ export async function POST(req: Request) {
   try {
     const { items, customerEmail, shippingDetails, currency } = await req.json()
 
+    // Dynamically resolve base origin for Stripe redirects (success/cancel)
+    const originHeader = req.headers.get('origin') || req.headers.get('referer') || process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com'
+    let baseOrigin = 'https://www.missashopp.com'
+    try {
+      baseOrigin = new URL(originHeader).origin
+    } catch (e) {
+      baseOrigin = originHeader.endsWith('/') ? originHeader.slice(0, -1) : originHeader
+    }
+
     if (!items?.length) {
       return NextResponse.json(
         { error: 'Cart is empty' },
@@ -141,8 +150,8 @@ export async function POST(req: Request) {
         enabled: true,
       },
 
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/checkout`,
+      success_url: `${baseOrigin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseOrigin}/checkout`,
 
       metadata: {
         source: 'missashopp.com',
@@ -174,13 +183,13 @@ export async function POST(req: Request) {
       shipping: shippingCost,
       tax: tax,
       total: grandTotal,
-      shipping_address: shippingDetails ? {
-        address: shippingDetails.address || '',
-        city: shippingDetails.city || '',
-        state: shippingDetails.state || '',
-        zip: shippingDetails.zip || '',
-        country: shippingDetails.country || 'CA',
-      } : null,
+      shipping_address: {
+        address: shippingDetails?.address || '',
+        city: shippingDetails?.city || '',
+        state: shippingDetails?.state || '',
+        zip: shippingDetails?.zip || '',
+        country: shippingDetails?.country || 'CA',
+      },
       payment_method: 'card',
       payment_status: 'pending',
       order_status: 'pending',

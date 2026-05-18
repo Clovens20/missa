@@ -9,14 +9,14 @@ export const FROM =
   `<${process.env.RESEND_FROM_EMAIL || 'contact@www.missashopp.com'}>`
 
 export const ADMIN_EMAIL =
-  process.env.ADMIN_EMAIL!
+  process.env.ADMIN_EMAIL || process.env.CJ_EMAIL || 'contact@missashopp.com'
 
 // Send order confirmation to customer
 export async function sendOrderConfirmation(
   to: string,
   order: any
 ) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com'
 
   return resend.emails.send({
     from: FROM,
@@ -49,7 +49,7 @@ export async function sendOrderConfirmation(
 export async function sendAdminOrderAlert(
   order: any
 ) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com'
 
   return resend.emails.send({
     from: FROM,

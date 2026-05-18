@@ -125,15 +125,17 @@ export async function POST(req: Request) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: session.customer_details?.email || guestOrder?.email,
-          firstName: firstName || guestOrder?.first_name,
-          orderNumber: orderNumber,
+          id: orderNumber,
+          order_number: orderNumber,
+          customer_email: session.customer_details?.email || guestOrder?.email || '',
+          customer_name: session.customer_details?.name || `${firstName} ${lastName}`.trim() || guestOrder?.first_name || 'Client',
+          total: (session.amount_total || 0) / 100,
+          items_count: guestOrder?.items?.length || lineItems.data.length || 1,
           items: guestOrder?.items || lineItems.data.map(item => ({
             name: item.description,
             qty: item.quantity,
             price: (item.amount_total || 0) / 100 / (item.quantity || 1)
           })),
-          total: (session.amount_total || 0) / 100,
         })
       })
     } catch (mailErr) {
