@@ -89,7 +89,7 @@ export default function EditProductPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoFileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
-  const [videoUrl, setVideoUrl] = useState('')
+  const [videoUrls, setVideoUrls] = useState<string[]>([])
   const [uploadingVideo, setUploadingVideo] = useState(false)
   const [defaultVariantStock, setDefaultVariantStock] = useState<number>(0)
   const [aiVideoGenerating, setAiVideoGenerating] = useState(false)
@@ -148,7 +148,10 @@ export default function EditProductPage() {
       })
       setImageUrl(p.images?.[0]?.url || '')
       setAdditionalImages(p.images?.slice(1) || [])
-      setVideoUrl(p.video_url || '')
+      // Load video_urls array, fall back to legacy video_url
+      const vurls: string[] = p.video_urls?.filter(Boolean) || []
+      if (vurls.length === 0 && p.video_url) vurls.push(p.video_url)
+      setVideoUrls(vurls)
       
       // Load variants and auto-fill SKUs if missing
       const baseSku = p.sku || 'PROD'
@@ -313,8 +316,8 @@ export default function EditProductPage() {
       const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
       const data = await res.json()
       if (data.url) {
-        setVideoUrl(data.url)
-        toast.success('🎬 Vidéo uploadée avec succès !')
+        setVideoUrls(prev => [...prev, data.url])
+        toast.success('🎬 Vidéo ajoutée !')
       } else {
         throw new Error(data.error || "Erreur d'upload vidéo")
       }
@@ -348,9 +351,9 @@ export default function EditProductPage() {
       })
       const data = await res.json()
       if (data.videoUrl) {
-        setVideoUrl(data.videoUrl)
+        setVideoUrls(prev => [...prev, data.videoUrl])
         setShowAiPanel(false)
-        toast.success('🎬 Vidéo IA générée avec succès !')
+        toast.success('🎬 Vidéo IA ajoutée !')
       } else {
         throw new Error(data.error || 'Erreur de génération')
       }
@@ -479,7 +482,8 @@ export default function EditProductPage() {
         availability_type: formData.availability_type,
         available_countries: formData.available_countries,
         sold_count: formData.sold_count,
-        video_url: videoUrl || null,
+        video_urls: videoUrls.filter(Boolean),
+        video_url: videoUrls[0] || null,
         updated_at: new Date().toISOString()
       }
 
@@ -1056,27 +1060,31 @@ export default function EditProductPage() {
               Vidéo produit
             </h2>
 
-            {/* Current video preview */}
-            {videoUrl && (
-              <div className="relative rounded-2xl overflow-hidden bg-black border border-gray-700">
-                <video
-                  src={videoUrl}
-                  controls
-                  className="w-full max-h-52 object-contain"
-                />
-                <div className="absolute top-2 right-2 flex items-center gap-2">
-                  <span className="flex items-center gap-1 bg-green-500/80 text-white text-[10px] font-black px-2 py-1 rounded-lg">
-                    <CheckCircle className="w-3 h-3" /> Vidéo active
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setVideoUrl('')}
-                    className="p-1 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors"
-                    title="Supprimer la vidéo"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+            {/* ── VIDEO LIST ── */}
+            {videoUrls.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  Vidéos ({videoUrls.length})
+                </p>
+                {videoUrls.map((url, idx) => (
+                  <div key={idx} className="relative rounded-2xl overflow-hidden bg-black border border-gray-700 group">
+                    <video src={url} controls className="w-full max-h-44 object-contain" />
+                    <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+                      <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-black px-2 py-1 rounded-lg">
+                        <CheckCircle className="w-3 h-3 text-green-400" />
+                        Vidéo {idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setVideoUrls(prev => prev.filter((_, i) => i !== idx))}
+                        className="p-1 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors"
+                        title="Supprimer cette vidéo"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -1108,9 +1116,7 @@ export default function EditProductPage() {
                 ) : (
                   <>
                     <Upload className="w-5 h-5 text-purple-400" />
-                    <p className="text-white font-bold text-xs text-center">
-                      {videoUrl ? 'Remplacer' : 'Depuis mon PC'}
-                    </p>
+                    <p className="text-white font-bold text-xs text-center">+ Ajouter une vidéo</p>
                     <p className="text-gray-500 text-[10px] text-center">MP4, MOV · Max 200 Mo</p>
                   </>
                 )}
@@ -1122,7 +1128,7 @@ export default function EditProductPage() {
                 className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-fuchsia-700/50 hover:border-fuchsia-500 hover:bg-fuchsia-500/5 rounded-2xl p-5 transition-all cursor-pointer"
               >
                 <span className="text-2xl">✨</span>
-                <p className="text-white font-bold text-xs text-center">Générer avec l'IA</p>
+                <p className="text-white font-bold text-xs text-center">+ Générer avec l'IA</p>
                 <p className="text-gray-500 text-[10px] text-center">Depuis l'image produit</p>
               </button>
             </div>
@@ -1202,7 +1208,7 @@ export default function EditProductPage() {
                   ) : (
                     <>
                       <span>✨</span>
-                      Générer la vidéo IA
+                      Générer et ajouter la vidéo IA
                     </>
                   )}
                 </button>
@@ -1213,16 +1219,25 @@ export default function EditProductPage() {
               </div>
             )}
 
-            {/* Or paste a URL */}
-            <div>
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Ou coller un lien vidéo (direct mp4…)</p>
+            {/* Paste URL to add */}
+            <div className="flex gap-2">
               <input
                 type="url"
-                value={videoUrl}
-                onChange={e => setVideoUrl(e.target.value)}
-                placeholder="https://…/video.mp4"
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-purple-500 outline-none"
+                placeholder="Coller un lien vidéo (mp4) et appuyer sur +"
+                id="paste-video-url"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-purple-500 outline-none"
               />
+              <button
+                type="button"
+                onClick={() => {
+                  const input = document.getElementById('paste-video-url') as HTMLInputElement
+                  const val = input?.value?.trim()
+                  if (val) { setVideoUrls(prev => [...prev, val]); input.value = '' }
+                }}
+                className="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-bold text-sm transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
           </div>
 

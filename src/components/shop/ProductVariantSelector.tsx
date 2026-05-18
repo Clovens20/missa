@@ -162,15 +162,16 @@ ProductVariantSelector({
     }
   }, [selectedColor, selectedSize])
 
-  // Unified media items (images + video if available)
+  // Unified media items (images + all videos)
   const mediaItems = (() => {
     const items: { type: 'image' | 'video'; url: string }[] = [];
     currentImages.forEach((img: string) => {
       items.push({ type: 'image', url: img });
     });
-    if (product.video_url) {
-      items.push({ type: 'video', url: product.video_url });
-    }
+    // Support both new video_urls[] and legacy video_url
+    const videos: string[] = product.video_urls?.filter(Boolean) || [];
+    if (videos.length === 0 && product.video_url) videos.push(product.video_url);
+    videos.forEach((v: string) => items.push({ type: 'video', url: v }));
     return items;
   })();
 
