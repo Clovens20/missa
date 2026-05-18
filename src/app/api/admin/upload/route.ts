@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// ── Lift the default 4 MB body-size limit for video uploads ──
+export const maxDuration = 60 // seconds (Vercel / Next.js limit)
+
+// Pages Router compat shim (ignored in App Router but harmless)
+export const config = {
+  api: {
+    bodyParser: false,
+    responseLimit: false,
+  },
+}
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!

@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '210mb',
+    },
+  },
 }
 
 export default nextConfig
