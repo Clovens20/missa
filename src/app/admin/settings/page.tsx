@@ -32,7 +32,13 @@ export default function SettingsPage() {
       supabase.from('legal_pages').select('*'),
     ])
     const settingsMap: Record<string, any> = {}
-    settingsRes.data?.forEach(s => { settingsMap[s.key] = s.value })
+    settingsRes.data?.forEach(s => {
+      try {
+        settingsMap[s.key] = JSON.parse(s.value)
+      } catch {
+        settingsMap[s.key] = s.value
+      }
+    })
     setSettings(settingsMap)
     setCategories(catsRes.data || [])
     setLegalPages(legalRes.data || [])
