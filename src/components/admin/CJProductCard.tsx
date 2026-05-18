@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import {
   Plus, Star, TrendingUp,
   Eye, Award, Zap, Loader, Package,
-  X, ChevronLeft, ChevronRight
+  X, ChevronLeft, ChevronRight, Video
 } from 'lucide-react'
 import { formatPrice, getSafeImageUrl } from '@/lib/utils'
 import SupplierInfoCard from 
@@ -37,14 +37,22 @@ export default function CJProductCard({
     try {
       const res = await fetch(`/api/cj/media?pid=${pid}`)
       const data = await res.json()
-      if (data.images && data.images.length > 0) {
-        setGalleryImages(data.images)
-      } else {
-        setGalleryImages([{ url: mainImage }])
+      
+      const items = []
+      if (data.video) {
+        items.push({ url: data.video, isVideo: true })
       }
+      
+      if (data.images && data.images.length > 0) {
+        items.push(...data.images.map((img: any) => ({ ...img, isVideo: false })))
+      } else {
+        items.push({ url: mainImage, isVideo: false })
+      }
+      
+      setGalleryImages(items)
       setActiveImageIndex(0)
     } catch (err) {
-      setGalleryImages([{ url: mainImage }])
+      setGalleryImages([{ url: mainImage, isVideo: false }])
     } finally {
       setLoadingGallery(false)
     }
@@ -493,14 +501,24 @@ export default function CJProductCard({
                   {/* Main view */}
                   <div className="w-full h-full flex items-center justify-center p-4">
                     {galleryImages[activeImageIndex]?.url ? (
-                      <motion.img 
-                        key={activeImageIndex}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        src={getSafeImageUrl(galleryImages[activeImageIndex].url)} 
-                        alt={product.productNameEn} 
-                        className="max-w-full max-h-[50vh] lg:max-h-[60vh] object-contain rounded-xl shadow-2xl"
-                      />
+                      galleryImages[activeImageIndex].isVideo ? (
+                        <video 
+                          key={activeImageIndex}
+                          src={galleryImages[activeImageIndex].url}
+                          controls
+                          autoPlay
+                          className="max-w-full max-h-[50vh] lg:max-h-[60vh] rounded-xl shadow-2xl bg-black"
+                        />
+                      ) : (
+                        <motion.img 
+                          key={activeImageIndex}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          src={getSafeImageUrl(galleryImages[activeImageIndex].url)} 
+                          alt={product.productNameEn} 
+                          className="max-w-full max-h-[50vh] lg:max-h-[60vh] object-contain rounded-xl shadow-2xl"
+                        />
+                      )
                     ) : (
                       <p className="text-gray-500">Aucune image disponible</p>
                     )}
@@ -584,7 +602,14 @@ export default function CJProductCard({
                             : 'border-gray-800 hover:border-gray-700 opacity-60 hover:opacity-100'
                         }`}
                       >
-                        <img src={getSafeImageUrl(img.url)} alt="" className="w-full h-full object-cover" />
+                        <img src={getSafeImageUrl(img.isVideo ? mainImage : img.url)} alt="" className="w-full h-full object-cover" />
+                        {img.isVideo && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <span className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                              <Video className="w-3.5 h-3.5 text-white" />
+                            </span>
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>

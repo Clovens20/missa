@@ -7,7 +7,7 @@ import {
   ArrowLeft, Save, Image as ImageIcon, 
   Plus, Trash2, Package, Tag, 
   DollarSign, Hash, Layers, X, AlertTriangle,
-  Search, RefreshCw, Globe
+  Search, RefreshCw, Globe, Video, Upload, CheckCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -87,7 +87,10 @@ export default function EditProductPage() {
   const [variants, setVariants] = useState<any[]>([])
   const [currentTag, setCurrentTag] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoFileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [videoUrl, setVideoUrl] = useState('')
+  const [uploadingVideo, setUploadingVideo] = useState(false)
   const [defaultVariantStock, setDefaultVariantStock] = useState<number>(0)
   
   // Switch Supplier states
@@ -141,6 +144,7 @@ export default function EditProductPage() {
       })
       setImageUrl(p.images?.[0]?.url || '')
       setAdditionalImages(p.images?.slice(1) || [])
+      setVideoUrl(p.video_url || '')
       
       // Load variants and auto-fill SKUs if missing
       const baseSku = p.sku || 'PROD'
@@ -293,6 +297,31 @@ export default function EditProductPage() {
     }
   }
 
+  async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingVideo(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (data.url) {
+        setVideoUrl(data.url)
+        toast.success('🎬 Vidéo uploadée avec succès !')
+      } else {
+        throw new Error(data.error || "Erreur d'upload vidéo")
+      }
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setUploadingVideo(false)
+      if (videoFileRef.current) videoFileRef.current.value = ''
+    }
+  }
+
   function addTag() {
     if (currentTag.trim() && !formData.tags.includes(currentTag.trim())) {
       setFormData({ ...formData, tags: [...formData.tags, currentTag.trim()] })
@@ -410,6 +439,7 @@ export default function EditProductPage() {
         availability_type: formData.availability_type,
         available_countries: formData.available_countries,
         sold_count: formData.sold_count,
+        video_url: videoUrl || null,
         updated_at: new Date().toISOString()
       }
 
@@ -977,6 +1007,88 @@ export default function EditProductPage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* ── VIDEO PRODUIT ── */}
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 space-y-4">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Video className="w-5 h-5 text-purple-400"/>
+              Vidéo produit
+            </h2>
+
+            {/* Current video preview */}
+            {videoUrl && (
+              <div className="relative rounded-2xl overflow-hidden bg-black border border-gray-700">
+                <video
+                  src={videoUrl}
+                  controls
+                  className="w-full max-h-52 object-contain"
+                />
+                <div className="absolute top-2 right-2 flex items-center gap-2">
+                  <span className="flex items-center gap-1 bg-green-500/80 text-white text-[10px] font-black px-2 py-1 rounded-lg">
+                    <CheckCircle className="w-3 h-3" /> Vidéo active
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setVideoUrl('')}
+                    className="p-1 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors"
+                    title="Supprimer la vidéo"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Upload zone */}
+            <input
+              ref={videoFileRef}
+              type="file"
+              accept="video/mp4,video/webm,video/mov,video/avi,video/quicktime"
+              onChange={handleVideoUpload}
+              className="hidden"
+              id="video-upload-input"
+            />
+            <label
+              htmlFor="video-upload-input"
+              className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-8 cursor-pointer transition-all ${
+                uploadingVideo
+                  ? 'border-purple-500/60 bg-purple-500/5'
+                  : 'border-gray-700 hover:border-purple-500/50 hover:bg-purple-500/5'
+              }`}
+            >
+              {uploadingVideo ? (
+                <>
+                  <div className="w-8 h-8 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"/>
+                  <p className="text-purple-300 text-sm font-bold">Upload en cours...</p>
+                  <p className="text-gray-500 text-xs">Les grosses vidéos prennent quelques secondes</p>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-white font-bold text-sm">
+                      {videoUrl ? '🔄 Remplacer la vidéo' : '🎬 Ajouter une vidéo'}
+                    </p>
+                    <p className="text-gray-500 text-xs mt-1">MP4, WebM, MOV, AVI · Max 200 Mo</p>
+                  </div>
+                </>
+              )}
+            </label>
+
+            {/* Or paste a URL */}
+            <div>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Ou coller un lien vidéo (YouTube, TikTok, direct mp4…)</p>
+              <input
+                type="url"
+                value={videoUrl}
+                onChange={e => setVideoUrl(e.target.value)}
+                placeholder="https://…/video.mp4"
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-purple-500 outline-none"
+              />
+            </div>
           </div>
 
           <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 space-y-4">

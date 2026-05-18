@@ -18,25 +18,31 @@ export async function POST(req: Request) {
       )
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Validate file type — allow images and videos
+    const isImage = file.type.startsWith('image/')
+    const isVideo = file.type.startsWith('video/')
+
+    if (!isImage && !isVideo) {
       return NextResponse.json(
-        { error: 'File must be an image' },
+        { error: 'File must be an image or video (mp4, webm, mov…)' },
         { status: 400 }
       )
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // Validate file size: images ≤ 10 MB, videos ≤ 200 MB
+    const maxSize = isVideo ? 200 * 1024 * 1024 : 10 * 1024 * 1024
+    if (file.size > maxSize) {
       return NextResponse.json(
-        { error: 'File too large (max 10MB)' },
+        { error: isVideo ? 'Vidéo trop lourde (max 200 Mo)' : 'Image trop lourde (max 10 Mo)' },
         { status: 400 }
       )
     }
 
     // Generate unique filename
-    const ext = file.name.split('.').pop() || 'jpg'
-    const filename = `uploads/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
+    const isVideo = file.type.startsWith('video/')
+    const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')
+    const folder = isVideo ? 'videos' : 'uploads'
+    const filename = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
 
     // Convert to buffer
     const arrayBuffer = await file.arrayBuffer()
@@ -73,6 +79,7 @@ export async function POST(req: Request) {
       url: publicUrl,
       filename,
       fallback: false,
+      isVideo: file.type.startsWith('video/'),
     })
 
   } catch (error: any) {
