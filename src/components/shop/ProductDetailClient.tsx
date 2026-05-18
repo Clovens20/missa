@@ -216,10 +216,10 @@ export default function ProductDetailClient({
                   onClick={handleAddToCart} 
                   disabled={adding || product.stock_quantity === 0 || !isAvailable} 
                   whileTap={{ scale: 0.97 }} 
-                  className={`flex-1 py-3 rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all ${
+                  className={`w-full md:flex-1 py-4 md:py-3 rounded-2xl md:rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all sticky md:relative bottom-20 md:bottom-auto z-40 md:z-auto shadow-xl shadow-primary/30 md:shadow-lg md:shadow-primary/30 ${
                     (product.stock_quantity === 0 || !isAvailable) 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : adding ? 'bg-secondary text-white' : 'bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/30'
+                      : adding ? 'bg-secondary text-white' : 'bg-primary hover:bg-primary-dark text-white'
                   }`}
                 >
                   {adding ? <Check className="w-5 h-5"/> : <ShoppingCart className="w-5 h-5"/>}

@@ -150,9 +150,8 @@ export default function ProductCard({
         {/* ── IMAGE ZONE ── */}
         <Link
           href={`/product/${product.slug}`}
-          className="block relative
-            overflow-hidden bg-gray-50"
-          style={{ aspectRatio: '4/5' }}>
+          className="block relative overflow-hidden bg-gray-50 w-full"
+          style={{ aspectRatio: '1/1' }}>
 
           {/* Main image */}
           {mainImage ? (
@@ -162,13 +161,14 @@ export default function ProductCard({
                 alt={product.name}
                 className={`
                   absolute inset-0
-                  w-full h-full object-cover
+                  w-full h-full object-cover object-center bg-gray-100
                   transition-all duration-500
                   ${hovered && hoverImage
                     ? 'opacity-0 scale-105'
                     : 'opacity-100 scale-100'
                   }`}
-                loading="lazy"
+                style={{ objectFit: 'cover' }}
+                loading={index < 4 ? "eager" : "lazy"}
               />
               {/* Hover image */}
               {hoverImage && (
@@ -177,12 +177,13 @@ export default function ProductCard({
                   alt={product.name}
                   className={`
                     absolute inset-0
-                    w-full h-full object-cover
+                    w-full h-full object-cover object-center bg-gray-100
                     transition-all duration-500
                     ${hovered
                       ? 'opacity-100 scale-100'
                       : 'opacity-0 scale-105'
                     }`}
+                  style={{ objectFit: 'cover' }}
                   loading="lazy"
                 />
               )}
@@ -376,11 +377,7 @@ export default function ProductCard({
           {/* Product name */}
           <Link
             href={`/product/${product.slug}`}>
-            <h3 className="font-bold
-              text-gray-900 text-sm
-              leading-snug line-clamp-2
-              hover:text-primary
-              transition-colors min-h-[2.5rem]">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-2 leading-tight min-h-[2.5rem] hover:text-primary transition-colors">
               {product.name}
             </h3>
           </Link>
@@ -489,10 +486,8 @@ export default function ProductCard({
             justify-between pt-1
             border-t border-gray-50">
 
-            <div className="flex items-baseline
-              gap-2">
-              <span className="text-xl
-                font-black text-gray-900">
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm sm:text-base font-black text-primary mt-1">
                 {formatPrice(product.price)}
               </span>
               {hasDiscount && (

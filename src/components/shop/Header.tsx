@@ -175,7 +175,7 @@ export default function Header() {
               <Link
                 key={cat.slug}
                 href={`/category/${cat.slug}`}
-                className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-primary/5 hover:text-primary rounded-xl text-[10px] font-black text-gray-700 transition-colors border border-transparent active:border-primary/20"
+                className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-primary/5 hover:text-primary rounded-xl text-xs font-black text-gray-700 transition-colors border border-transparent active:border-primary/20 min-h-[44px]"
               >
                 <span className="text-sm">{cat.label.split(' ')[0]}</span>
                 <span className="truncate">{cat.label.replace(/^.\s/, '')}</span>

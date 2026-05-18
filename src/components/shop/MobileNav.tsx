@@ -17,6 +17,14 @@ export default function MobileNav() {
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
 
+  useEffect(() => {
+    // Show nav after mount
+    const nav = document.querySelector('.bottom-nav') as HTMLElement
+    if (nav) {
+      nav.style.transform = 'translateY(0)'
+    }
+  }, [])
+
   // Hide on scroll down, show on scroll up
   useEffect(() => {
     const handleScroll = () => {
@@ -50,10 +58,10 @@ export default function MobileNav() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ y: 100 }}
+          initial={{ y: 0 }}
           animate={{ y: 0 }}
           exit={{ y: 100 }}
-          className="md:hidden fixed bottom-0 left-0 right-0 z-[60] px-4 pb-4 pointer-events-none"
+          className="bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-[60] px-4 pb-4 pointer-events-none"
         >
           <div className="bg-gray-900/90 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-black/40 flex items-center justify-around p-2 pointer-events-auto max-w-md mx-auto">
             {navItems.map((item, i) => {

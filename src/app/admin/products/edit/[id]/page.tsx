@@ -7,7 +7,8 @@ import {
   ArrowLeft, Save, Image as ImageIcon, 
   Plus, Trash2, Package, Tag, 
   DollarSign, Hash, Layers, X, AlertTriangle,
-  Search, RefreshCw, Globe, Video, Upload, CheckCircle
+  Search, RefreshCw, Globe, Video, Upload, CheckCircle,
+  Star, ArrowUp
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -1069,15 +1070,35 @@ export default function EditProductPage() {
                 {videoUrls.map((url, idx) => (
                   <div key={idx} className="relative rounded-2xl overflow-hidden bg-black border border-gray-700 group">
                     <video src={url} controls className="w-full max-h-44 object-contain" />
-                    <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-black px-2 py-1 rounded-lg">
-                        <CheckCircle className="w-3 h-3 text-green-400" />
-                        Vidéo {idx + 1}
-                      </span>
+                    <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        {idx === 0 ? (
+                          <span className="flex items-center gap-1 bg-primary text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-md border border-primary/20">
+                            <Star className="w-3 h-3 fill-current text-yellow-300 animate-pulse" />
+                            ⭐ Vidéo Principale
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...videoUrls];
+                              const [selected] = updated.splice(idx, 1);
+                              updated.unshift(selected);
+                              setVideoUrls(updated);
+                              toast.success('⭐ Vidéo définie comme principale ! Enregistrez pour sauvegarder.');
+                            }}
+                            className="flex items-center gap-1 bg-black/80 hover:bg-primary text-white hover:text-white text-[10px] font-black px-2.5 py-1 rounded-lg border border-gray-700 hover:border-primary transition-all shadow-sm"
+                          >
+                            <ArrowUp className="w-3 h-3 text-yellow-400" />
+                            Définir comme principale
+                          </button>
+                        )}
+                      </div>
+                      
                       <button
                         type="button"
                         onClick={() => setVideoUrls(prev => prev.filter((_, i) => i !== idx))}
-                        className="p-1 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors"
+                        className="p-1 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors shadow-md"
                         title="Supprimer cette vidéo"
                       >
                         <X className="w-3.5 h-3.5" />

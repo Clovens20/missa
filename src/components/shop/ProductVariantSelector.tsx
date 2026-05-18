@@ -184,27 +184,25 @@ ProductVariantSelector({
 
         {/* Thumbnails */}
         {mediaItems.length > 1 && (
-          <div className="flex flex-row md:flex-col
-            gap-2 w-full md:w-16 flex-shrink-0 md:max-h-[500px] overflow-x-auto md:overflow-x-hidden md:overflow-y-auto pb-2 md:pb-0 md:pr-1 scrollbar-thin scrollbar-thumb-gray-300">
+          <div className="flex flex-row md:flex-col gap-2 w-full md:w-20 flex-shrink-0 md:max-h-[500px] overflow-x-auto md:overflow-x-hidden md:overflow-y-auto pb-2 md:pb-0 md:pr-1 scrollbar-hide">
             {mediaItems.map((item, i: number) => (
               <button
                 key={i}
                 type="button"
                 onClick={() =>
                   setCurrentImgIdx(i)}
-                className={`w-16 h-16 flex-shrink-0
-                  rounded-xl overflow-hidden
-                  border-2 transition-all relative group
+                className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all relative group
                   ${currentImgIdx === i
                     ? 'border-primary shadow-md'
-                    : 'border-gray-200 hover:border-gray-400'
+                    : 'border-transparent hover:border-gray-400'
                   }`}>
                 {item.type === 'image' ? (
                   <img
                     src={item.url}
                     alt=""
-                    className="w-full h-full
-                      object-cover"
+                    className="w-full h-full object-cover object-center bg-gray-100"
+                    style={{ objectFit: 'cover' }}
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-full relative bg-black flex items-center justify-center">
@@ -228,9 +226,7 @@ ProductVariantSelector({
         )}
 
         {/* Main image / video */}
-        <div className="flex-1 relative
-          aspect-square rounded-3xl
-          overflow-hidden bg-gray-50">
+        <div className="w-full md:flex-1 relative rounded-3xl overflow-hidden bg-gray-50" style={{ aspectRatio: '1/1' }}>
           <AnimatePresence mode="wait">
             {mediaItems[currentImgIdx]?.type === 'image' ? (
               <motion.img
@@ -242,12 +238,13 @@ ProductVariantSelector({
                   || '/placeholder-product.jpg'
                 }
                 alt={product.name}
-                className="w-full h-full
-                  object-cover"
+                className="w-full h-full object-cover object-center bg-gray-100"
+                style={{ objectFit: 'cover' }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
+                loading="eager"
               />
             ) : (
               <motion.div
