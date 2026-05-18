@@ -14,6 +14,7 @@ import { useRef } from 'react'
 import ProductVariantsManager from '@/components/admin/ProductVariantsManager'
 import RichTextEditor from '@/components/admin/RichTextEditor'
 import { ProductImage } from '@/types'
+import { generateFakeReviewsForProduct } from '@/lib/fake-reviews'
 
 interface ProductFormData {
   name: string
@@ -244,13 +245,32 @@ export default function NewProductPage() {
         availability_type: formData.availability_type,
         available_countries: formData.available_countries,
         sold_count: formData.sold_count,
-        rating: parseFloat((Math.random() * 0.5 + 4.5).toFixed(1)),
-        review_count: Math.floor(formData.sold_count * (Math.random() * 0.3 + 0.1)),
+        rating: 5, // Temporary, will update below
+        review_count: 0, // Temporary
+        review_avg: 5, // Temporary
         updated_at: new Date().toISOString()
       }
 
-      const { error } = await supabase.from('products').insert(productData)
+      const { data: inserted, error } = await supabase.from('products').insert(productData).select().single()
       if (error) throw error
+
+      // Generate fake text reviews
+      const contextStr = `${formData.name} ${formData.tags.join(' ')}`;
+      const fakeReviewsData = generateFakeReviewsForProduct('DUMMY', contextStr);
+      
+      const reviewsToInsert = fakeReviewsData.reviews.map(r => ({
+        ...r,
+        product_id: inserted.id
+      }));
+
+      await supabase.from('reviews').insert(reviewsToInsert);
+
+      // Update the product with accurate review numbers
+      await supabase.from('products').update({
+        rating: fakeReviewsData.reviewAvg,
+        review_avg: fakeReviewsData.reviewAvg,
+        review_count: fakeReviewsData.reviewCount
+      }).eq('id', inserted.id);
 
       toast.success('🚀 Produit créé avec succès!')
       router.push('/admin/products')

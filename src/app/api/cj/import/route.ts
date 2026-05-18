@@ -9,6 +9,7 @@ import { createClient } from
   '@supabase/supabase-js'
 import { slugify } from '@/lib/utils'
 import { getColorHex } from '@/lib/colors'
+import { generateFakeReviewsForProduct } from '@/lib/fake-reviews'
 
 function cleanHtml(html: string): string {
   if (!html) return ''
@@ -135,9 +136,12 @@ export async function POST(
     )
 
     const rawCjPrice = cjProduct.sellPrice || cjProduct.productPrice || '0'
-    const cjPrice = typeof rawCjPrice === 'string'
+    const cjPriceUSD = typeof rawCjPrice === 'string'
       ? parseFloat(rawCjPrice.split('-')[0])
       : parseFloat(rawCjPrice.toString())
+      
+    const USD_TO_CAD_RATE = 1.38 // Taux de change USD vers CAD
+    const cjPrice = parseFloat((cjPriceUSD * USD_TO_CAD_RATE).toFixed(2))
     
     const finalSellingPrice = 
       sellingPrice || 
@@ -202,17 +206,41 @@ export async function POST(
               }
             })
 
-    const productName = customName || 
+    // Utilitaire de traduction Google (Gratuit)
+    async function translateToFr(text: string) {
+      if (!text || text.length < 3) return text;
+      try {
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=fr&dt=t`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `q=${encodeURIComponent(text)}`
+        });
+        const data = await res.json();
+        let translated = '';
+        if (data && data[0]) {
+          data[0].forEach((item: any) => { if (item[0]) translated += item[0]; });
+        }
+        return translated || text;
+      } catch (err) {
+        return text;
+      }
+    }
+
+    const rawProductName = customName || 
       cjProduct.productNameEn || 
       cjProduct.productName
 
-    // Build and clean description (stripping raw HTML tags for clean text formatting)
+    const productName = customName ? rawProductName : await translateToFr(rawProductName);
+
+    // Build and clean description
     const rawDescription = 
       customDescription || 
       cjProduct.description || 
       cjProduct.productNameEn ||
       ''
-    const finalDescription = cleanHtml(rawDescription)
+    
+    const translatedDescription = customDescription ? rawDescription : await translateToFr(rawDescription);
+    const finalDescription = cleanHtml(translatedDescription)
 
     // Build tags
     const finalTags = tags?.length > 0 
@@ -230,8 +258,10 @@ export async function POST(
 
     // Generate random engagement metrics
     const randomSoldCount = Math.floor(Math.random() * 150) + 20; // 20 to 169
-    const randomReviewCount = Math.floor(randomSoldCount * (Math.random() * 0.3 + 0.1)); // 10% to 40% of sold count
-    const randomRating = parseFloat((Math.random() * 0.5 + 4.5).toFixed(1)); // 4.5 to 5.0
+    const contextStr = `${cjProduct.categoryName || ''} ${productName} ${finalTags.join(' ')}`;
+    const fakeReviewsData = generateFakeReviewsForProduct("DUMMY_ID", contextStr);
+    const randomReviewCount = fakeReviewsData.reviewCount;
+    const randomRating = fakeReviewsData.reviewAvg;
 
     // Insert into dropship_products
     const { data: inserted, error } = 
@@ -289,6 +319,16 @@ export async function POST(
 
     if (error) throw error
 
+    // Insert the generated reviews
+    const reviewsToInsert = fakeReviewsData.reviews.map(r => ({
+      ...r,
+      product_id: inserted.id
+    }));
+    const { error: reviewsError } = await supabase.from('reviews').insert(reviewsToInsert);
+    if (reviewsError) {
+      console.error('Failed to insert fake reviews:', reviewsError);
+    }
+
     // ✅ Sync directly to main products table to appear on storefront immediately
     const { error: prodError } = await supabase
       .from('products')
@@ -323,6 +363,7 @@ export async function POST(
         sold_count: randomSoldCount,
         rating: randomRating,
         review_count: randomReviewCount,
+        review_avg: randomRating,
       })
       
     if (prodError) {
