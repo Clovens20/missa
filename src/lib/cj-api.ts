@@ -344,6 +344,7 @@ export async function createCJOrder(orderData: {
       shippingCountryCode: orderData.toCountryCode,
       shippingCountry: orderData.toCountryCode === 'CA' ? 'Canada' : orderData.toCountryCode === 'US' ? 'United States' : orderData.toCountryCode || '',
       shippingZip: orderData.toPostCode || '',
+      logisticName: orderData.logisticName || 'CJPacket Ordinary',
       shippingName: orderData.logisticName || 'CJPacket Ordinary',
 
       // Legacy / V1 Fields for absolute compatibility
