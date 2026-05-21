@@ -145,7 +145,7 @@ export default function Footer() {
             className="prose prose-sm prose-invert max-w-none text-gray-400 leading-relaxed mb-6
               prose-p:text-gray-400 prose-p:leading-relaxed
               prose-strong:text-white"
-            dangerouslySetInnerHTML={{ __html: getSetting('site_description') || brand.description || "Votre boutique en ligne premium." }}
+            dangerouslySetInnerHTML={{ __html: getSetting('site_description') || brand.description || "Beauté, maison, mode & gadgets tendance. Prix imbattables. Livraison Canada, USA & Haïti 🇨🇦🇺🇸🇭🇹" }}
           />
           
           {/* Social Links */}

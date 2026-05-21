@@ -139,7 +139,7 @@ export default function Header() {
                 </span>
               </div>
               <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">
-                {getSetting('site_tagline', 'MODE & LIFESTYLE PREMIUM')}
+                {getSetting('site_tagline', 'TENDANCES & LIFESTYLE — LIVRÉ CHEZ TOI')}
               </p>
             </div>
           </Link>

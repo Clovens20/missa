@@ -235,14 +235,30 @@ export default function ProductCard({
             )}
 
             {!inStock && (
-              <span className="bg-gray-500
-                text-white text-xs
-                font-black px-2.5 py-1
-                rounded-full shadow-sm">
+              <span className="bg-gray-500 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-sm">
                 Épuisé
               </span>
             )}
+
+            {/* Flash sale timer */}
+            {(product as any).flash_sale_ends_at && (
+              <div className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                ⚡ FLASH SALE
+              </div>
+            )}
           </div>
+
+          {/* Viewers badge */}
+          {(product as any).show_urgency && (product as any).fake_viewers_min && (
+            <div className="absolute top-2 right-12 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-20">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"/>
+              {Math.floor(
+                Math.random() *
+                ((product as any).fake_viewers_max - (product as any).fake_viewers_min)
+                + (product as any).fake_viewers_min
+              )} personnes regardent
+            </div>
+          )}
 
           {/* ── ACTIONS top-right ── */}
           <div className="absolute top-3
@@ -501,12 +517,15 @@ export default function ProductCard({
             </div>
 
             {/* Sold count */}
-            {(product.sold_count || 0) > 10 && (
-              <span className="text-[10px]
-                text-gray-400">
+            {(product as any).show_sold_count && (product.sold_count || 0) > 0 ? (
+              <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                🛒 {product.sold_count}+ déjà vendus
+              </div>
+            ) : (product.sold_count || 0) > 10 ? (
+              <span className="text-[10px] text-gray-400">
                 {product.sold_count}+ vendus
               </span>
-            )}
+            ) : null}
           </div>
         </div>
       </motion.div>

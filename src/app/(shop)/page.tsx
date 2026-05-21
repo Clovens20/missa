@@ -204,6 +204,68 @@ export default function HomePage() {
           🚚 Livraison gratuite dès {getSetting('free_shipping_threshold', 100)}$ · 🔒 Paiement sécurisé · ↩️ Retour 30 jours
         </div>
 
+        {/* ── HERO SECTION ── */}
+        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-red-50 py-12 px-4 md:py-20">
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-orange-100/50 blur-3xl pointer-events-none"/>
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 bg-orange-100 border border-orange-200 rounded-full px-4 py-1.5 mb-4">
+                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"/>
+                <span className="text-orange-700 text-sm font-semibold">🔥 +500 produits tendance</span>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight text-gray-900 mb-4">
+                Tout ce qui est
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
+                  {' '}tendance{' '}
+                </span>
+                livré chez toi 🔥
+              </h1>
+              <p className="text-gray-500 text-lg max-w-lg mb-8 leading-relaxed mx-auto md:mx-0">
+                Beauté, maison, mode & gadgets. Prix imbattables. Livraison 🇨🇦 🇺🇸 🇭🇹
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                <a href="/catalog" className="px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-black text-base shadow-xl shadow-orange-500/40 hover:shadow-orange-500/60 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-2">
+                  🛍️ Voir les tendances →
+                </a>
+                <a href="/catalog?sale=true" className="px-8 py-4 rounded-2xl bg-white border-2 border-orange-200 text-orange-600 font-bold text-base hover:border-orange-400 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-2">
+                  🔥 Promotions du jour
+                </a>
+              </div>
+              <div className="flex items-center gap-4 mt-6 flex-wrap justify-center md:justify-start">
+                {[
+                  '🚚 Livraison gratuite +100$',
+                  '🔒 Paiement sécurisé',
+                  '↩️ Retour 30 jours',
+                  '⭐ 4.8/5 satisfaction',
+                ].map((t) => (
+                  <span key={t} className="text-gray-500 text-xs flex items-center gap-1 font-medium">{t}</span>
+                ))}
+              </div>
+            </div>
+            <div className="flex-1 hidden md:grid grid-cols-2 gap-3 max-w-sm">
+              {products.slice(0, 4).map((product, i) => (
+                <div
+                  key={product.id}
+                  className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+                  onClick={() => window.location.href = `/product/${product.slug}`}
+                >
+                  <div className="aspect-square overflow-hidden">
+                    <img
+                      src={typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.url}
+                      alt={product.name}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-bold text-gray-800 line-clamp-1">{product.name.split(' ').slice(0, 4).join(' ')}...</p>
+                    <p className="text-orange-500 font-black text-sm">{product.price}$</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 space-y-4">
 
           {/* ── CATEGORY TABS ── */}

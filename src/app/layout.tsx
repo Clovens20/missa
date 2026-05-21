@@ -20,20 +20,16 @@ export const metadata: Metadata = {
     'https://www.missashopp.com'
   ),
   title: {
-    default: `${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'} — Mode & Lifestyle Premium`,
+    default: `${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'} — Tendances & Lifestyle | Livraison Canada 🇨🇦`,
     template: `%s | ${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'}`,
   },
   description: 
-    'Découvrez la mode premium à petits prix. ' +
-    'Robes, sacs, bijoux, chaussures et plus. ' +
-    'Livraison au Canada, USA et Haïti. ' +
-    'Paiement sécurisé. Retour 30 jours.',
+    'Découvrez les produits tendance: beauté, maison, mode & gadgets. Prix imbattables. Livraison rapide au Canada, USA et ailleur. Paiement sécurisé. Retour 30 jours.',
   keywords: [
-    'mode femme', 'boutique en ligne',
-    'robe', 'sac', 'bijoux', 'chaussures',
-    'livraison Canada', 'livraison Haïti',
-    'dropshipping', 'Missa Shop',
-    'vêtements femme', 'accessoires mode',
+    'produits tendance', 'beauté pas cher', 'gadgets maison',
+    'livraison Canada', 'livraison partout dans le monde',
+    'boutique en ligne', 'Missa Shop',
+    'dropshipping Canada'
   ],
   authors: [{ name: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop' }],
   creator: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
@@ -54,22 +50,21 @@ export const metadata: Metadata = {
     locale: 'fr_CA',
     url: process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com',
     siteName: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
-    title: `${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'} — Mode & Lifestyle Premium`,
+    title: `${process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop'} — Tendances & Lifestyle | Livraison Canada 🇨🇦`,
     description: 
-      'Mode premium à petits prix. ' +
-      'Livraison Canada, USA, Haïti.',
+      'Découvrez les produits tendance: beauté, maison, mode & gadgets. Prix imbattables. Livraison rapide au Canada, USA et ailleur. Paiement sécurisé. Retour 30 jours.',
     images: [{
       url: 'https://www.missashopp.com/api/og',
       width: 1200,
       height: 630,
-      alt: 'Missa Shop — Mode & Lifestyle Premium',
+      alt: 'Missa Shop — Tendances & Lifestyle',
     }],
   },
   twitter: {
     card: 'summary_large_image',
     title: process.env.NEXT_PUBLIC_SITE_NAME || 'Missa Shop',
     description: 
-      'Mode premium à petits prix.',
+      'Découvrez les produits tendance: beauté, maison, mode & gadgets.',
     images: ['https://www.missashopp.com/api/og'],
     creator: '@missashop',
   },
