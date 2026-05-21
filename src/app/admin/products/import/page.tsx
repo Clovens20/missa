@@ -31,11 +31,12 @@ interface ImportRow {
   is_new: boolean
   is_on_sale: boolean
   status: 'pending' | 'success' | 'error' | 'skip'
+  ali_url?: string
   error?: string
 }
 
 const CSV_HEADERS = [
-  'name', 'category_name', 'description', 'short_description', 'price', 'compare_price', 'sku', 'tags', 'sizes', 'colors', 'stock_quantity', 'weight', 'image_url', 'is_featured', 'is_new', 'is_on_sale',
+  'name', 'category_name', 'description', 'short_description', 'price', 'compare_price', 'sku', 'tags', 'sizes', 'colors', 'stock_quantity', 'weight', 'image_url', 'is_featured', 'is_new', 'is_on_sale', 'ali_url'
 ]
 
 function parseCSV(text: string): any[] {
@@ -68,7 +69,7 @@ export default function ImportProductsPage() {
   function downloadTemplate() {
     const template = [
       CSV_HEADERS.join(','),
-      '"T-Shirt Premium Homme","homme","Description du produit","T-shirt confortable","29.99","49.99","TSH-001","t-shirt,homme,casual","S,M,L,XL,XXL","Rouge,Bleu,Noir","50","0.3","https://image-url.com/img.jpg","true","false","true"',
+      '"T-Shirt Premium Homme","homme","Description du produit","T-shirt confortable","29.99","49.99","TSH-001","t-shirt,homme,casual","S,M,L,XL,XXL","Rouge,Bleu,Noir","50","0.3","https://image-url.com/img.jpg","true","false","true","https://fr.aliexpress.com/item/12345.html"',
     ].join('\n')
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'missa-shop-import-template.csv'; a.click(); URL.revokeObjectURL(url)
@@ -100,6 +101,7 @@ export default function ImportProductsPage() {
         is_featured: row.is_featured === 'true',
         is_new: row.is_new === 'true',
         is_on_sale: row.is_on_sale === 'true',
+        ali_url: row.ali_url || '',
         status: !row.name || !row.price ? 'error' : 'pending',
         error: !row.name ? 'Nom manquant' : !row.price ? 'Prix manquant' : undefined,
       }))
@@ -137,10 +139,42 @@ export default function ImportProductsPage() {
         }
         const images = row.image_url ? [{ url: row.image_url, alt: row.name, is_primary: true }] : []
         let slug = slugify(row.name); if (row.sku) { slug = `${slug}-${row.sku.toLowerCase()}` }
-        const { error } = await supabase.from('products').upsert({
+        const { data: inserted, error } = await supabase.from('products').upsert({
           name: row.name, slug, description: row.description, short_description: row.short_description, price: row.price, compare_price: row.compare_price || null, sku: row.sku || null, category_id: categoryId || null, images, variants, tags: row.tags ? row.tags.split(',').map(t => t.trim()) : [], stock_quantity: row.stock_quantity, weight: row.weight || null, is_featured: row.is_featured, is_new: row.is_new, is_on_sale: row.is_on_sale, is_active: true, low_stock_threshold: 5,
-        }, { onConflict: 'sku' })
+        }, { onConflict: 'sku' }).select('id').single()
         if (error) throw error
+
+        // Import reviews if ali_url provided
+        if (row.ali_url && row.ali_url.trim() !== '') {
+          const res = await fetch('/api/scrape-reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ aliUrl: row.ali_url, productName: row.name })
+          })
+          const data = await res.json()
+          
+          if (data.success && data.reviews.length > 0) {
+            const reviewsToInsert = data.reviews.map((r: any) => ({
+              product_id: inserted.id,
+              customer_name: r.reviewer_name + (r.reviewer_country ? ` (${r.reviewer_country})` : ''),
+              rating: r.rating,
+              title: r.comment.length > 30 ? r.comment.substring(0, 30) + '...' : r.comment,
+              body: r.comment,
+              is_verified: r.is_verified,
+              status: 'approved',
+              created_at: new Date(r.review_date).toISOString()
+            }))
+            await supabase.from('product_reviews').insert(reviewsToInsert)
+
+            const avg = reviewsToInsert.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewsToInsert.length
+            await supabase.from('products').update({
+              rating: avg,
+              review_avg: avg,
+              review_count: reviewsToInsert.length
+            }).eq('id', inserted.id)
+          }
+        }
+
         success++; setRows(prev => prev.map(r => r.row === row.row ? { ...r, status: 'success' } : r))
       } catch (err: any) {
         errors++; setRows(prev => prev.map(r => r.row === row.row ? { ...r, status: 'error', error: err.message } : r))
@@ -169,7 +203,7 @@ export default function ImportProductsPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
             <h2 className="font-black text-white mb-4 flex items-center gap-2">📋 Format du fichier CSV</h2>
-            <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-gray-700"><th className="text-left py-2 pr-4 text-gray-400 font-bold">Colonne</th><th className="text-left py-2 pr-4 text-gray-400 font-bold">Obligatoire</th><th className="text-left py-2 text-gray-400 font-bold">Exemple</th></tr></thead><tbody className="text-gray-300">{[['name', '✅ OUI', 'T-Shirt Premium'], ['category_name', '⭕ NON', 'homme'], ['description', '⭕ NON', 'Description complète...'], ['short_description', '⭕ NON', 'Courte description'], ['price', '✅ OUI', '29.99'], ['compare_price', '⭕ NON', '49.99'], ['sku', '⭕ NON', 'TSH-001-ROUGE'], ['tags', '⭕ NON', 'homme,casual,été'], ['sizes', '⭕ NON', 'S,M,L,XL,XXL'], ['colors', '⭕ NON', 'Rouge,Bleu,Noir'], ['stock_quantity', '✅ OUI', '100'], ['weight', '⭕ NON', '0.3'], ['image_url', '⭕ NON', 'https://...'], ['is_featured', '⭕ NON', 'true / false'], ['is_new', '⭕ NON', 'true / false'], ['is_on_sale', '⭕ NON', 'true / false']].map(([col, req, ex]) => (<tr key={col} className="border-b border-gray-800/50"><td className="py-2 pr-4 font-mono text-primary text-xs">{col}</td><td className="py-2 pr-4 text-xs">{req}</td><td className="py-2 text-gray-500 text-xs">{ex}</td></tr>))}</tbody></table></div>
+            <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-gray-700"><th className="text-left py-2 pr-4 text-gray-400 font-bold">Colonne</th><th className="text-left py-2 pr-4 text-gray-400 font-bold">Obligatoire</th><th className="text-left py-2 text-gray-400 font-bold">Exemple</th></tr></thead><tbody className="text-gray-300">{[['name', '✅ OUI', 'T-Shirt Premium'], ['category_name', '⭕ NON', 'homme'], ['description', '⭕ NON', 'Description complète...'], ['short_description', '⭕ NON', 'Courte description'], ['price', '✅ OUI', '29.99'], ['compare_price', '⭕ NON', '49.99'], ['sku', '⭕ NON', 'TSH-001-ROUGE'], ['tags', '⭕ NON', 'homme,casual,été'], ['sizes', '⭕ NON', 'S,M,L,XL,XXL'], ['colors', '⭕ NON', 'Rouge,Bleu,Noir'], ['stock_quantity', '✅ OUI', '100'], ['weight', '⭕ NON', '0.3'], ['image_url', '⭕ NON', 'https://...'], ['is_featured', '⭕ NON', 'true / false'], ['is_new', '⭕ NON', 'true / false'], ['is_on_sale', '⭕ NON', 'true / false'], ['ali_url', '⭕ NON', 'https://aliexpress...']].map(([col, req, ex]) => (<tr key={col} className="border-b border-gray-800/50"><td className="py-2 pr-4 font-mono text-primary text-xs">{col}</td><td className="py-2 pr-4 text-xs">{req}</td><td className="py-2 text-gray-500 text-xs">{ex}</td></tr>))}</tbody></table></div>
           </div>
           <div className="border-2 border-dashed border-gray-600 rounded-3xl p-16 text-center hover:border-primary hover:bg-primary/5 transition-all cursor-pointer group" onClick={() => fileRef.current?.click()}>
             <input ref={fileRef} type="file" accept=".csv" onChange={handleFileChange} className="hidden"/>

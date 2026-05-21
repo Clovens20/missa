@@ -60,27 +60,56 @@ export default function PixelsInjector({
     pixels.twitter
   ].filter(Boolean) as PlatformPixel[]
 
+function SafeHtmlInjector({ html }: { html: string | null }) {
+  useEffect(() => {
+    if (!html) return
+    const container = document.createElement('div')
+    container.innerHTML = html
+
+    const scripts = Array.from(container.getElementsByTagName('script'))
+    const newScripts: HTMLScriptElement[] = []
+
+    scripts.forEach(oldScript => {
+      const newScript = document.createElement('script')
+      Array.from(oldScript.attributes).forEach(attr => {
+        newScript.setAttribute(attr.name, attr.value)
+      })
+      newScript.innerHTML = oldScript.innerHTML
+      document.head.appendChild(newScript)
+      newScripts.push(newScript)
+    })
+
+    const nonScripts = Array.from(container.childNodes).filter(
+      node => node.nodeName.toLowerCase() !== 'script'
+    )
+    const appendedNodes: Node[] = []
+    nonScripts.forEach(node => {
+      const clone = node.cloneNode(true)
+      document.body.appendChild(clone)
+      appendedNodes.push(clone)
+    })
+
+    return () => {
+      // Avoid cleaning up pixels on unmount as they are meant to be global
+    }
+  }, [html])
+
+  return null
+}
+
   return (
     <>
       {/* ── ZONE 1 & 2 INJECTION ── */}
       {allPixels.map((p, i) => (
         <div key={i}>
-          {p.tag && (
-            <div dangerouslySetInnerHTML={{ __html: p.tag }} />
-          )}
-          {p.script && (
-            <div dangerouslySetInnerHTML={{ __html: p.script }} />
-          )}
+          <SafeHtmlInjector html={p.tag} />
+          <SafeHtmlInjector html={p.script} />
         </div>
       ))}
 
       {/* ── CUSTOM SCRIPTS ── */}
-      {pixels.customHead && (
-        <div dangerouslySetInnerHTML={{ __html: pixels.customHead }} />
-      )}
-      {pixels.customBody && (
-        <div dangerouslySetInnerHTML={{ __html: pixels.customBody }} />
-      )}
+      <SafeHtmlInjector html={pixels.customHead} />
+      <SafeHtmlInjector html={pixels.customBody} />
     </>
   )
 }

@@ -56,6 +56,7 @@ export default function CJImportDrawer({
     categoryId: '',
     tags: [] as string[],
     newTag: '',
+    aliUrl: '',
   })
 
   // Categories
@@ -262,6 +263,7 @@ export default function CJImportDrawer({
         product.categoryName
       ].filter(Boolean),
       newTag: '',
+      aliUrl: '',
     })
 
     try {
@@ -438,6 +440,43 @@ export default function CJImportDrawer({
       toast.success(
         `✅ "${form.name}" importé!`
       )
+
+      if (form.aliUrl?.trim()) {
+        try {
+          const revRes = await fetch('/api/scrape-reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ aliUrl: form.aliUrl, productName: form.name })
+          })
+          const revData = await revRes.json()
+          if (revData.success && revData.reviews.length > 0) {
+            await supabase.from('product_reviews').delete().eq('product_id', data.product.id)
+            
+            const reviewsToInsert = revData.reviews.map((r: any) => ({
+              product_id: data.product.id,
+              customer_name: r.reviewer_name + (r.reviewer_country ? ` (${r.reviewer_country})` : ''),
+              rating: r.rating,
+              title: r.comment.length > 30 ? r.comment.substring(0, 30) + '...' : r.comment,
+              body: r.comment,
+              is_verified: r.is_verified,
+              status: 'approved',
+              created_at: new Date(r.review_date).toISOString()
+            }))
+            await supabase.from('product_reviews').insert(reviewsToInsert)
+
+            const avg = reviewsToInsert.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewsToInsert.length
+            await supabase.from('products').update({
+              rating: avg,
+              review_avg: avg,
+              review_count: reviewsToInsert.length
+            }).eq('id', data.product.id)
+            
+            toast.success("✅ Avis AliExpress importés!")
+          }
+        } catch(e) {
+          console.error("Error importing AliExpress reviews:", e)
+        }
+      }
       
       setImportedProductId(
         data.product.cj_product_id
@@ -1112,6 +1151,24 @@ export default function CJImportDrawer({
                       <Plus className="w-4 h-4"/>
                     </button>
                   </div>
+                </div>
+
+                {/* AliExpress URL */}
+                <div>
+                  <label className="block text-sm font-bold text-orange-400 mb-2 flex items-center gap-1">
+                    ⭐ Lien AliExpress (Import Avis)
+                    <span className="text-gray-500 font-normal ml-2 text-xs">(Optionnel)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.aliUrl}
+                    onChange={e => setForm(p => ({ ...p, aliUrl: e.target.value }))}
+                    placeholder="https://fr.aliexpress.com/item/12345.html"
+                    className="w-full px-4 py-3 bg-gray-900 border border-orange-500/50 rounded-xl text-white text-sm focus:border-orange-500 focus:outline-none transition-all"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Les avis seront automatiquement importés et rattachés à ce produit.
+                  </p>
                 </div>
               </div>
             )}

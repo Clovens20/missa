@@ -34,9 +34,25 @@ export default function ReviewsAdminPage() {
     is_verified: true,
   })
 
+  // Importer states
+  const [aliUrl, setAliUrl] = useState('')
+  const [fetching, setFetching] = useState(false)
+  const [fetchedReviews, setFetched] = useState<any[]>([])
+  const [selected, setSelectedR] = useState<Set<number>>(new Set())
+  const [message, setMessage] = useState('')
+  const [selectedProduct, setSelectedProduct] = useState<string>('')
+  const [products, setProducts] = useState<any[]>([])
+  const [generatingMissing, setGeneratingMissing] = useState(false)
+
   useEffect(() => {
     loadReviews()
+    loadProducts()
   }, [filter])
+
+  async function loadProducts() {
+    const { data } = await supabase.from('products').select('id, name').order('created_at', { ascending: false })
+    setProducts(data || [])
+  }
 
   async function loadReviews() {
     setLoading(true)
@@ -148,6 +164,96 @@ export default function ReviewsAdminPage() {
     }
   }
 
+  // Fetch reviews from AliExpress
+  const fetchFromAli = async () => {
+    if (!aliUrl.trim()) return
+    setFetching(true)
+    setFetched([])
+    setSelectedR(new Set())
+    setMessage('')
+
+    try {
+      const selectedProductData = products.find(p => p.id === selectedProduct)
+      const productName = selectedProductData ? selectedProductData.name : 'cet article'
+
+      const res = await fetch('/api/scrape-reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aliUrl, productName })
+      })
+      const data = await res.json()
+
+      if (data.success && data.reviews.length > 0) {
+        setFetched(data.reviews)
+        // Auto-select 5 stars only
+        const autoSelect = new Set(
+          data.reviews
+            .map((_: any, i: number) => i)
+            .filter((i: number) => data.reviews[i].rating >= 4)
+        )
+        setSelectedR(autoSelect as Set<number>)
+        setMessage(`✅ ${data.reviews.length} avis trouvés!`)
+      } else {
+        setMessage('⚠️ Aucun avis trouvé. Essaie une autre URL Ali.')
+      }
+    } catch (e) {
+      setMessage('❌ Erreur réseau')
+    }
+    setFetching(false)
+  }
+
+  // Save selected reviews
+  const saveSelected = async () => {
+    if (!selectedProduct || selected.size === 0) return
+    setLoading(true)
+
+    const toSave = fetchedReviews
+      .filter((_, i) => selected.has(i))
+      .map(r => ({
+        product_id: selectedProduct,
+        customer_name: r.reviewer_name + (r.reviewer_country ? ` (${r.reviewer_country})` : ''),
+        rating: r.rating,
+        title: r.comment.length > 30 ? r.comment.substring(0, 30) + '...' : r.comment,
+        body: r.comment,
+        is_verified: r.is_verified,
+        status: 'approved',
+        created_at: new Date(r.review_date).toISOString()
+      }))
+
+    const { error } = await supabase.from('product_reviews').insert(toSave)
+
+    if (!error) {
+      setMessage(`✅ ${toSave.length} avis importés avec succès!`)
+      setFetched([])
+      setSelectedR(new Set())
+      setAliUrl('')
+      loadReviews()
+    } else {
+      setMessage('❌ ' + error.message)
+    }
+    setLoading(false)
+  }
+
+  async function generateMissingReviews() {
+    if (!confirm("Voulez-vous générer automatiquement des avis réalistes (un nombre aléatoire entre 10 et 25 avis par produit pour faire naturel) pour TOUS les produits qui n'ont actuellement aucun avis ?")) return
+    setGeneratingMissing(true)
+    try {
+      const res = await fetch('/api/admin/auto-reviews', { method: 'POST' })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      if (data.count === 0 || data.productsCount === 0) {
+        toast.info(data.message || "Aucun produit sans avis trouvé.")
+      } else {
+        toast.success(`✅ Généré ${data.reviewsCount} avis pour ${data.productsCount} produits !`)
+        loadReviews()
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la génération")
+    } finally {
+      setGeneratingMissing(false)
+    }
+  }
+
   const pendingCount = reviews.length
 
   return (
@@ -155,7 +261,7 @@ export default function ReviewsAdminPage() {
       
       {/* Header */}
       <div className="flex items-center 
-        justify-between">
+        justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl 
             font-black text-white">
@@ -166,14 +272,23 @@ export default function ReviewsAdminPage() {
             Modérez les avis clients
           </p>
         </div>
-        <button
-          onClick={loadReviews}
-          className="p-2 bg-gray-800 
-            hover:bg-gray-700 
-            text-gray-400 rounded-xl 
-            transition-colors">
-          <RefreshCw className="w-5 h-5"/>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={generateMissingReviews}
+            disabled={generatingMissing}
+            className="flex items-center gap-2 bg-secondary/10 hover:bg-secondary/20 text-secondary font-bold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
+          >
+            {generatingMissing ? '⏳ Génération...' : '🪄 Auto-générer (produits sans avis)'}
+          </button>
+          <button
+            onClick={loadReviews}
+            className="p-2 bg-gray-800 
+              hover:bg-gray-700 
+              text-gray-400 rounded-xl 
+              transition-colors">
+            <RefreshCw className="w-5 h-5"/>
+          </button>
+        </div>
       </div>
 
       {/* Filter tabs */}
@@ -206,6 +321,127 @@ export default function ReviewsAdminPage() {
             )}
           </button>
         ))}
+      </div>
+
+      {/* AliExpress Importer UI */}
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-sm">
+        <h2 className="font-black text-white mb-1 flex items-center gap-2">
+          🔍 Import automatique AliExpress
+        </h2>
+        <p className="text-sm text-gray-400 mb-6">
+          Choisis le produit dans ta boutique, puis colle l'URL du même produit sur AliExpress → on récupère les vrais avis → tu choisis lesquels garder.
+        </p>
+
+        <div className="flex flex-col gap-4 mb-4">
+          <select
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary"
+          >
+            <option value="">-- Sélectionner un produit --</option>
+            {products.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+
+          <div className="flex gap-2">
+            <input
+              value={aliUrl}
+              onChange={e => setAliUrl(e.target.value)}
+              placeholder="https://www.aliexpress.com/item/123456789.html"
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary"
+            />
+            <button
+              onClick={fetchFromAli}
+              disabled={fetching || !aliUrl.trim() || !selectedProduct}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-black text-sm disabled:opacity-50 transition-all whitespace-nowrap flex items-center gap-2"
+            >
+              {fetching ? (
+                <><span className="animate-spin">⏳</span> Recherche...</>
+              ) : (
+                <>⭐ Importer Avis</>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {message && (
+          <p className={`text-sm font-bold mb-4 ${message.includes('❌') ? 'text-red-400' : message.includes('⚠️') ? 'text-yellow-400' : 'text-green-400'}`}>
+            {message}
+          </p>
+        )}
+
+        {/* Fetched reviews to select */}
+        {fetchedReviews.length > 0 && (
+          <div className="mt-6 border-t border-gray-800 pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-bold text-gray-300">
+                {fetchedReviews.length} avis trouvés — coche ceux à importer:
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSelectedR(new Set(fetchedReviews.map((_, i) => i)))}
+                  className="text-xs text-primary font-bold hover:underline"
+                >
+                  Tout sélectionner
+                </button>
+                <button
+                  onClick={() => setSelectedR(new Set())}
+                  className="text-xs text-gray-500 font-bold hover:underline"
+                >
+                  Tout désélectionner
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+              {fetchedReviews.map((review, i) => (
+                <div
+                  key={i}
+                  onClick={() => {
+                    const s = new Set(selected)
+                    s.has(i) ? s.delete(i) : s.add(i)
+                    setSelectedR(s)
+                  }}
+                  className={`flex items-start gap-4 p-4 rounded-xl cursor-pointer border-2 transition-all ${
+                    selected.has(i) ? 'border-primary bg-primary/10' : 'border-gray-800 bg-gray-800/50 hover:border-gray-700'
+                  }`}
+                >
+                  {/* Checkbox */}
+                  <div className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center mt-1 border transition-all ${
+                    selected.has(i) ? 'bg-primary border-primary text-white' : 'border-gray-600'
+                  }`}>
+                    {selected.has(i) && <Check className="w-3 h-3"/>}
+                  </div>
+
+                  {/* Review content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-white truncate">{review.reviewer_name}</span>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">{review.reviewer_country}</span>
+                      </div>
+                      <span className="text-amber-400 text-xs">{'⭐'.repeat(review.rating)}</span>
+                    </div>
+                    <p className="text-sm text-gray-400 line-clamp-2">{review.comment}</p>
+                    <p className="text-[10px] text-gray-500 mt-2 flex items-center gap-1">📅 {review.review_date}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Save button */}
+            {selected.size > 0 && (
+              <button
+                onClick={saveSelected}
+                disabled={loading}
+                className="mt-6 w-full py-3.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-sm shadow-lg shadow-green-500/20 disabled:opacity-50 transition-transform active:scale-95 flex items-center justify-center gap-2"
+              >
+                {loading ? '⏳ Sauvegarde en cours...' : `💾 Importer les ${selected.size} avis sélectionnés dans la boutique`}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Reviews */}

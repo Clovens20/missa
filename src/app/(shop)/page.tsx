@@ -211,7 +211,7 @@ export default function HomePage() {
             <div className="flex-1 text-center md:text-left">
               <div className="inline-flex items-center gap-2 bg-orange-100 border border-orange-200 rounded-full px-4 py-1.5 mb-4">
                 <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"/>
-                <span className="text-orange-700 text-sm font-semibold">🔥 +500 produits tendance</span>
+                <span className="text-orange-700 text-sm font-semibold">🔥 {total > 0 ? `${total} produits tendance` : 'Des produits tendance'}</span>
               </div>
               <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight text-gray-900 mb-4">
                 Tout ce qui est

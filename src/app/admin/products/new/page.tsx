@@ -42,6 +42,7 @@ interface ProductFormData {
   availability_type: string
   available_countries: string[]
   sold_count: number
+  ali_url: string
 }
 
 export default function NewProductPage() {
@@ -75,6 +76,7 @@ export default function NewProductPage() {
     availability_type: 'worldwide',
     available_countries: ['*'],
     sold_count: Math.floor(Math.random() * 150) + 20,
+    ali_url: '',
   })
 
   const [imageUrl, setImageUrl] = useState('')
@@ -254,23 +256,59 @@ export default function NewProductPage() {
       const { data: inserted, error } = await supabase.from('products').insert(productData).select().single()
       if (error) throw error
 
-      // Generate fake text reviews
-      const contextStr = `${formData.name} ${formData.tags.join(' ')}`;
-      const fakeReviewsData = generateFakeReviewsForProduct('DUMMY', contextStr, formData.name);
+      if (formData.ali_url && formData.ali_url.trim() !== '') {
+        // Fetch from AliExpress
+        const res = await fetch('/api/scrape-reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ aliUrl: formData.ali_url, productName: formData.name })
+        })
+        const data = await res.json()
+        
+        if (data.success && data.reviews.length > 0) {
+          const reviewsToInsert = data.reviews.map((r: any) => ({
+            product_id: inserted.id,
+            customer_name: r.reviewer_name + (r.reviewer_country ? ` (${r.reviewer_country})` : ''),
+            rating: r.rating,
+            title: r.comment.length > 30 ? r.comment.substring(0, 30) + '...' : r.comment,
+            body: r.comment,
+            is_verified: r.is_verified,
+            status: 'approved',
+            created_at: new Date(r.review_date).toISOString()
+          }))
+          await supabase.from('product_reviews').insert(reviewsToInsert)
 
-      const reviewsToInsert = fakeReviewsData.reviews.map(r => ({
-        ...r,
-        product_id: inserted.id
-      }));
+          const avg = reviewsToInsert.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewsToInsert.length
+          await supabase.from('products').update({
+            rating: avg,
+            review_avg: avg,
+            review_count: reviewsToInsert.length
+          }).eq('id', inserted.id)
+        }
+      } else {
+        // Generate fallback fake text reviews
+        const contextStr = `${formData.name} ${formData.tags.join(' ')}`;
+        const fakeReviewsData = generateFakeReviewsForProduct('DUMMY', contextStr, formData.name);
 
-      await supabase.from('reviews').insert(reviewsToInsert);
+        const reviewsToInsert = fakeReviewsData.reviews.map((r: any) => ({
+          product_id: inserted.id,
+          customer_name: r.customer_name,
+          rating: r.rating,
+          title: r.title,
+          body: r.body,
+          is_verified: r.is_verified,
+          status: 'approved'
+        }));
 
-      // Update the product with accurate review numbers
-      await supabase.from('products').update({
-        rating: fakeReviewsData.reviewAvg,
-        review_avg: fakeReviewsData.reviewAvg,
-        review_count: fakeReviewsData.reviewCount
-      }).eq('id', inserted.id);
+        await supabase.from('product_reviews').insert(reviewsToInsert);
+
+        // Update the product with accurate review numbers
+        await supabase.from('products').update({
+          rating: fakeReviewsData.reviewAvg,
+          review_avg: fakeReviewsData.reviewAvg,
+          review_count: fakeReviewsData.reviewCount
+        }).eq('id', inserted.id);
+      }
 
       toast.success('🚀 Produit créé avec succès!')
       router.push('/admin/products')
@@ -350,6 +388,17 @@ export default function NewProductPage() {
                     className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:border-primary outline-none"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black text-orange-400 uppercase mb-2 flex items-center gap-1">⭐ Lien AliExpress (Pour Importer les Avis)</label>
+                <input
+                  type="text"
+                  value={formData.ali_url}
+                  onChange={(e) => setFormData({ ...formData, ali_url: e.target.value })}
+                  placeholder="https://fr.aliexpress.com/item/12345.html (Optionnel)"
+                  className="w-full bg-gray-900 border border-orange-500/50 focus:border-orange-500 rounded-xl px-4 py-3 text-white outline-none transition-all"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">Collez le lien ici. Les avis seront importés automatiquement après l'enregistrement !</p>
               </div>
               <div>
                 <label className="block text-xs font-black text-gray-500 uppercase mb-2">Description</label>
