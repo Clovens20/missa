@@ -79,7 +79,7 @@ export default function ProductDetailClient({
     )
   ]
 
-  const currentDiscount = VOLUME_DISCOUNTS.find(d => d.qty === quantity)?.discount || VOLUME_DISCOUNTS[VOLUME_DISCOUNTS.length - 1].discount
+  const currentDiscount = VOLUME_DISCOUNTS.find(d => d.qty === quantity)?.discount ?? VOLUME_DISCOUNTS[VOLUME_DISCOUNTS.length - 1].discount
   const unitPrice = product.price * (1 - currentDiscount / 100)
 
   function handleAddToCart() {

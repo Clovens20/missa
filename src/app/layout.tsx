@@ -7,6 +7,7 @@ import { CountryProvider } from '@/contexts/CountryContext'
 import { SettingsProvider } from '@/contexts/SettingsContext'
 import { CurrencyProvider } from '@/contexts/CurrencyContext'
 import { Toaster } from 'sonner'
+import { supabaseServer as supabase } from '@/lib/supabase-server'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -84,13 +85,25 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const { data: rawPixelData } = await supabase
+    .from('tracking_pixels')
+    .select('*')
+    .eq('id', '00000000-0000-0000-0000-000000000001')
+    .single()
+  const pixelData = rawPixelData as any
+
   return (
     <html lang="fr" suppressHydrationWarning>
+      <head>
+        {pixelData?.google_enabled && pixelData?.google_pixel_script && (
+          <div dangerouslySetInnerHTML={{ __html: pixelData.google_pixel_script }} />
+        )}
+      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <SettingsProvider>
           <CurrencyProvider>
