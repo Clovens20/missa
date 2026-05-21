@@ -201,46 +201,33 @@ export default function ProductCard({
             </div>
           )}
 
-          {/* ── BADGES top-left ── */}
-          <div className="absolute top-3
-            left-3 flex flex-col gap-1.5
-            z-10">
-
+          {/* ── NEW / SALE BADGES top-left ── */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
+            {product.is_new && (
+              <div className="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full z-10">
+                🆕 Nouveau
+              </div>
+            )}
+            {(product as any).is_on_sale && !product.is_new && (
+              <div className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full z-10">
+                🔥 Promo
+              </div>
+            )}
             {hasDiscount && (
-              <span className="bg-red-500
-                text-white text-xs
-                font-black px-2.5 py-1
-                rounded-full shadow-sm">
+              <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
                 -{discountPct}%
               </span>
             )}
-
-            {product.is_new && (
-              <span className="bg-primary
-                text-white text-xs
-                font-black px-2.5 py-1
-                rounded-full shadow-sm">
-                ✨ Nouveau
-              </span>
-            )}
-
             {isLowStock && (
-              <span className="bg-orange-500
-                text-white text-[10px]
-                font-black px-2 py-0.5
-                rounded-full shadow-sm">
-                🔥 {product.stock_quantity}
-                {' '}restants
+              <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                🔥 {product.stock_quantity} restants
               </span>
             )}
-
             {!inStock && (
-              <span className="bg-gray-500 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-sm">
+              <span className="bg-gray-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
                 Épuisé
               </span>
             )}
-
-            {/* Flash sale timer */}
             {(product as any).flash_sale_ends_at && (
               <div className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
                 ⚡ FLASH SALE
@@ -249,14 +236,15 @@ export default function ProductCard({
           </div>
 
           {/* Viewers badge */}
-          {(product as any).show_urgency && (product as any).fake_viewers_min && (
-            <div className="absolute top-2 right-12 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-20">
+          {(product as any).show_urgency && (
+            <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"/>
               {Math.floor(
-                Math.random() *
-                ((product as any).fake_viewers_max - (product as any).fake_viewers_min)
-                + (product as any).fake_viewers_min
-              )} personnes regardent
+                Math.random() * (
+                  ((product as any).fake_viewers_max || 18)
+                  - ((product as any).fake_viewers_min || 3)
+                ) + ((product as any).fake_viewers_min || 3)
+              )} voient ça
             </div>
           )}
 
@@ -517,15 +505,11 @@ export default function ProductCard({
             </div>
 
             {/* Sold count */}
-            {(product as any).show_sold_count && (product.sold_count || 0) > 0 ? (
-              <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+            {(product as any).show_sold_count && (product.sold_count || 0) > 0 && (
+              <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                 🛒 {product.sold_count}+ déjà vendus
-              </div>
-            ) : (product.sold_count || 0) > 10 ? (
-              <span className="text-[10px] text-gray-400">
-                {product.sold_count}+ vendus
-              </span>
-            ) : null}
+              </p>
+            )}
           </div>
         </div>
       </motion.div>

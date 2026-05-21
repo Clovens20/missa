@@ -2,8 +2,9 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Heart, Share2, Star, Shield, Truck, RotateCcw, ChevronRight, Minus, Plus, Check, AlertCircle } from 'lucide-react'
+import { ShoppingCart, Heart, Share2, Star, Shield, Truck, RotateCcw, ChevronRight, Minus, Plus, Check, AlertCircle, Zap } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { formatPrice, calculateDiscount } from '@/lib/utils'
@@ -42,6 +43,15 @@ export default function ProductDetailClient({
   const [activeTab, setActiveTab] = useState<'desc'|'specs'|'reviews'>('desc')
   const [adding, setAdding] = useState(false)
   const [cartError, setCartError] = useState('')
+  const router = useRouter()
+
+  const VOLUME_DISCOUNTS = [
+    { qty: 1, discount: 0, label: '1 article' },
+    { qty: 2, discount: 15, label: '2 articles (-15%)' },
+    { qty: 3, discount: 20, label: '3 articles (-20%)' },
+    { qty: 4, discount: 25, label: '4 articles (-25%)' },
+    { qty: 5, discount: 35, label: '5 articles (-35%)' },
+  ]
 
   const inWishlist = isInWishlist(product.id)
   const discount = product.compare_price ? calculateDiscount(product.price, product.compare_price) : 0
@@ -69,6 +79,9 @@ export default function ProductDetailClient({
     )
   ]
 
+  const currentDiscount = VOLUME_DISCOUNTS.find(d => d.qty === quantity)?.discount || VOLUME_DISCOUNTS[VOLUME_DISCOUNTS.length - 1].discount
+  const unitPrice = product.price * (1 - currentDiscount / 100)
+
   function handleAddToCart() {
     // Validate variants
     if (colors.length > 0 && !selectedVariant?.color) {
@@ -82,9 +95,26 @@ export default function ProductDetailClient({
 
     setCartError('')
     setAdding(true)
-    addItem(product, quantity, selectedVariant || undefined)
-    trackAddToCart(product, quantity)
+    const productToAdd = { ...product, price: unitPrice }
+    addItem(productToAdd, quantity, selectedVariant || undefined)
+    trackAddToCart(productToAdd, quantity)
     setTimeout(() => setAdding(false), 2000)
+  }
+
+  function handleBuyNow() {
+    if (colors.length > 0 && !selectedVariant?.color) {
+      setCartError('Veuillez choisir une couleur')
+      return
+    }
+    if (sizes.length > 0 && !selectedVariant?.size) {
+      setCartError('Veuillez choisir une taille')
+      return
+    }
+    setCartError('')
+    const productToAdd = { ...product, price: unitPrice }
+    addItem(productToAdd, quantity, selectedVariant || undefined)
+    trackAddToCart(productToAdd, quantity)
+    router.push('/checkout')
   }
 
   function handleShare() {
@@ -166,12 +196,18 @@ export default function ProductDetailClient({
 
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-black text-primary">
-                  {formatPrice(product.price)}
+                  {formatPrice(unitPrice)}
                 </span>
-                {product.compare_price && product.compare_price > product.price && (
+                {currentDiscount > 0 ? (
                   <span className="text-xl text-gray-400 line-through decoration-red-500/30">
-                    {formatPrice(product.compare_price)}
+                    {formatPrice(product.price)}
                   </span>
+                ) : (
+                  product.compare_price && product.compare_price > product.price && (
+                    <span className="text-xl text-gray-400 line-through decoration-red-500/30">
+                      {formatPrice(product.compare_price)}
+                    </span>
+                  )
                 )}
               </div>
             </div>
@@ -206,31 +242,78 @@ export default function ProductDetailClient({
                 </div>
               )}
 
-              <div className="flex gap-3">
-                <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
-                  <button onClick={() => setQuantity(q => Math.max(1, q-1))} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"><Minus className="w-4 h-4"/></button>
-                  <span className="w-12 text-center font-bold text-lg">{quantity}</span>
-                  <button onClick={() => setQuantity(q => q+1)} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"><Plus className="w-4 h-4"/></button>
+              {/* Volume Discounts */}
+              <div className="space-y-3 pt-4 border-t border-gray-100">
+                <p className="font-bold text-gray-900 text-sm">Offres de volume 🔥</p>
+                <div className="flex flex-col gap-2">
+                  {VOLUME_DISCOUNTS.map(offer => {
+                    const isSelected = quantity === offer.qty
+                    return (
+                      <button
+                        key={offer.qty}
+                        onClick={() => setQuantity(offer.qty)}
+                        className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                          isSelected ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-primary' : 'border-gray-300'}`}>
+                            {isSelected && <div className="w-2.5 h-2.5 bg-primary rounded-full" />}
+                          </div>
+                          <span className={`font-bold ${isSelected ? 'text-primary' : 'text-gray-700'}`}>
+                            {offer.label}
+                          </span>
+                        </div>
+                        <span className="font-black text-gray-900">
+                          {formatPrice((product.price * (1 - offer.discount / 100)) * offer.qty)}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
-                <motion.button 
-                  onClick={handleAddToCart} 
-                  disabled={adding || product.stock_quantity === 0 || !isAvailable} 
-                  whileTap={{ scale: 0.97 }} 
-                  className={`w-full md:flex-1 py-4 md:py-3 rounded-2xl md:rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all sticky md:relative bottom-20 md:bottom-auto z-40 md:z-auto shadow-xl shadow-primary/30 md:shadow-lg md:shadow-primary/30 ${
-                    (product.stock_quantity === 0 || !isAvailable) 
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : adding ? 'bg-secondary text-white' : 'bg-primary hover:bg-primary-dark text-white'
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-3">
+                  <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
+                    <button onClick={() => setQuantity(q => Math.max(1, q-1))} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"><Minus className="w-4 h-4"/></button>
+                    <span className="w-12 text-center font-bold text-lg">{quantity}</span>
+                    <button onClick={() => setQuantity(q => Math.min(5, q+1))} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"><Plus className="w-4 h-4"/></button>
+                  </div>
+                  <motion.button 
+                    onClick={handleAddToCart} 
+                    disabled={adding || product.stock_quantity === 0 || !isAvailable} 
+                    whileTap={{ scale: 0.97 }} 
+                    className={`w-full md:flex-1 py-4 md:py-3 rounded-2xl md:rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all sticky md:relative bottom-20 md:bottom-auto z-40 md:z-auto shadow-xl shadow-primary/30 md:shadow-lg md:shadow-primary/30 ${
+                      (product.stock_quantity === 0 || !isAvailable) 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                        : adding ? 'bg-secondary text-white' : 'bg-primary hover:bg-primary-dark text-white'
+                    }`}
+                  >
+                    {adding ? <Check className="w-5 h-5"/> : <ShoppingCart className="w-5 h-5"/>}
+                    {product.stock_quantity === 0 ? 'Rupture de stock' : !isAvailable ? 'Région non desservie' : adding ? 'Ajouté au panier!' : 'Ajouter au panier'}
+                  </motion.button>
+                  <ShareProduct
+                    productName={product.name}
+                    productSlug={product.slug}
+                    productImage={product.images?.[0]?.url}
+                    productPrice={product.price}
+                  />
+                </div>
+
+                {/* 1-Click Buy Button */}
+                <motion.button
+                  onClick={handleBuyNow}
+                  disabled={product.stock_quantity === 0 || !isAvailable}
+                  whileTap={{ scale: 0.97 }}
+                  className={`w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-2 transition-all shadow-lg ${
+                    (product.stock_quantity === 0 || !isAvailable)
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-900 hover:bg-black text-white shadow-gray-900/20 border-2 border-gray-900'
                   }`}
                 >
-                  {adding ? <Check className="w-5 h-5"/> : <ShoppingCart className="w-5 h-5"/>}
-                  {product.stock_quantity === 0 ? 'Rupture de stock' : !isAvailable ? 'Région non desservie' : adding ? 'Ajouté au panier!' : 'Ajouter au panier'}
+                  <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400"/> Achat Rapide (Apple Pay, PayPal...)
                 </motion.button>
-                <ShareProduct
-                  productName={product.name}
-                  productSlug={product.slug}
-                  productImage={product.images?.[0]?.url}
-                  productPrice={product.price}
-                />
               </div>
             </div>
 

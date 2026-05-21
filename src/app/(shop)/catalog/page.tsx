@@ -16,12 +16,13 @@ export async function generateMetadata({
     : 'Catalogue — Missa Shop'
   
   const description = category
-    ? `Découvrez notre collection ${category}. Mode premium à petits prix. Livraison rapide au Canada, USA et Haïti.`
-    : 'Tout notre catalogue mode: robes, sacs, bijoux, chaussures et accessoires. Prix abordables, qualité premium.'
+    ? `Découvrez notre collection ${category}. Mode premium à petits prix. Livraison rapide au Canada, USA, Europe et Haïti.`
+    : 'Tous nos produits tendance: beauté, gadgets, maison, mode & accessoires. Prix imbattables. Livraison Internationale (Canada, USA, Europe...).'
 
   return {
     title: { absolute: title },
     description,
+    keywords: 'produits tendance, beauté pas cher, gadgets maison, livraison Canada, livraison Haiti, boutique en ligne, Missa Shop',
     openGraph: {
       title,
       description,

@@ -221,7 +221,7 @@ export default function HomePage() {
                 livré chez toi 🔥
               </h1>
               <p className="text-gray-500 text-lg max-w-lg mb-8 leading-relaxed mx-auto md:mx-0">
-                Beauté, maison, mode & gadgets. Prix imbattables. Livraison 🇨🇦 🇺🇸 🇭🇹
+                Beauté, maison, mode & gadgets. Prix imbattables. Livraison Internationale 🌍 (Canada, USA, Europe, Haïti...)
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
                 <a href="/catalog" className="px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-black text-base shadow-xl shadow-orange-500/40 hover:shadow-orange-500/60 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-2">
@@ -242,26 +242,97 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            <div className="flex-1 hidden md:grid grid-cols-2 gap-3 max-w-sm">
-              {products.slice(0, 4).map((product, i) => (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
-                  onClick={() => window.location.href = `/product/${product.slug}`}
-                >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.url}
-                      alt={product.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-2">
-                    <p className="text-xs font-bold text-gray-800 line-clamp-1">{product.name.split(' ').slice(0, 4).join(' ')}...</p>
-                    <p className="text-orange-500 font-black text-sm">{product.price}$</p>
-                  </div>
-                </div>
-              ))}
+            <div className="
+              flex-1 hidden md:grid
+              grid-cols-2 gap-3
+              max-w-sm
+            ">
+              {products?.slice(0, 4).map((product) => {
+                  const img =
+                    typeof product.images?.[0] === 'string'
+                    ? product.images[0]
+                    : product.images?.[0]?.url || ''
+
+                  return (
+                    <a
+                      key={product.id}
+                      href={`/product/${product.slug}`}
+                      className="
+                        bg-white rounded-2xl
+                        overflow-hidden
+                        border border-gray-100
+                        shadow-lg
+                        hover:-translate-y-1
+                        hover:shadow-xl
+                        hover:shadow-orange-500/10
+                        transition-all duration-200
+                        cursor-pointer
+                        group
+                      "
+                    >
+                      <div className="
+                        aspect-square overflow-hidden
+                        bg-gray-50
+                      ">
+                        {img && (
+                          <img
+                            src={img}
+                            alt={product.name}
+                            className="
+                              w-full h-full
+                              object-cover
+                              group-hover:scale-105
+                              transition-transform
+                              duration-300
+                            "
+                          />
+                        )}
+                      </div>
+                      <div className="p-2.5">
+                        <p className="
+                          text-xs font-bold
+                          text-gray-800
+                          line-clamp-2
+                          leading-tight mb-1
+                        ">
+                          {product.name
+                            .split(' ')
+                            .slice(0, 5)
+                            .join(' ')}
+                        </p>
+                        <div className="
+                          flex items-center
+                          justify-between
+                        ">
+                          <p className="
+                            text-orange-500
+                            font-black text-sm
+                          ">
+                            {product.price}$
+                          </p>
+                          {product.compare_price && (
+                            <p className="
+                              text-gray-400
+                              text-xs
+                              line-through
+                            ">
+                              {product.compare_price}$
+                            </p>
+                          )}
+                        </div>
+                        {product.sold_count > 0 && (
+                          <p className="
+                            text-gray-400
+                            text-[10px] mt-0.5
+                          ">
+                            🛒 {product.sold_count}+ vendus
+                          </p>
+                        )}
+                      </div>
+                    </a>
+                  )
+                })
+              }
             </div>
           </div>
         </section>
