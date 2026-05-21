@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Users, Check, X, DollarSign, TrendingUp } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatAdminPrice } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function AffiliatesAdminPage() {
@@ -83,7 +83,7 @@ export default function AffiliatesAdminPage() {
           <p className="text-gray-500 text-xs mt-0.5">Ambassadeurs Actifs</p>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-          <p className="text-2xl font-black text-primary">{formatPrice(affiliates.reduce((s, a) => s + (a.total_commission || 0), 0))}</p>
+          <p className="text-2xl font-black text-primary">{formatAdminPrice(affiliates.reduce((s, a) => s + (a.total_commission || 0), 0))}</p>
           <p className="text-gray-500 text-xs mt-0.5">Commissions Totales</p>
         </div>
       </div>
@@ -156,3 +156,4 @@ export default function AffiliatesAdminPage() {
     </div>
   )
 }
+

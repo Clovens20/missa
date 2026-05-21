@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatPrice } from '@/lib/utils'
+import { formatAdminPrice } from '@/lib/utils'
 
 // ── Custom Tooltip ──────────────────
 function CustomTooltip({ 
@@ -191,7 +191,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Chiffre d'Affaires" 
-          val={formatPrice(data?.summary?.currentRevenue || 0)} 
+          val={formatAdminPrice(data?.summary?.currentRevenue || 0)} 
           icon={DollarSign} 
           color="primary" 
           trend={data?.summary?.revenueGrowth >= 0 ? `+${data?.summary?.revenueGrowth}%` : `${data?.summary?.revenueGrowth}%`} 
@@ -212,7 +212,7 @@ export default function AnalyticsPage() {
         />
         <StatCard 
           title="Préc. Revenu" 
-          val={formatPrice(data?.summary?.prevRevenue || 0)} 
+          val={formatAdminPrice(data?.summary?.prevRevenue || 0)} 
           icon={TrendingUp} 
           color="purple" 
           trend="Période préc." 
@@ -234,7 +234,7 @@ export default function AnalyticsPage() {
           {data?.summary?.revenueGrowth !== undefined && (
             <div className="text-right">
               <p className="text-3xl font-black text-white">
-                {formatPrice(data.summary.currentRevenue)}
+                {formatAdminPrice(data.summary.currentRevenue)}
               </p>
               <GrowthBadge value={data.summary.revenueGrowth} />
             </div>
@@ -344,7 +344,7 @@ export default function AnalyticsPage() {
                         <span className="text-[10px] font-black text-gray-500 uppercase flex-shrink-0">{p.quantity} vendus</span>
                       </div>
                     </div>
-                    <span className="text-primary font-black text-sm tabular-nums flex-shrink-0">{formatPrice(p.revenue)}</span>
+                    <span className="text-primary font-black text-sm tabular-nums flex-shrink-0">{formatAdminPrice(p.revenue)}</span>
                   </div>
                 )
               })}
@@ -533,7 +533,7 @@ export default function AnalyticsPage() {
                       {order.items?.length > 1 && <span className="text-primary text-[10px] font-black">+{order.items.length - 1} autres</span>}
                     </td>
                     <td className="px-8 py-5">
-                      <p className="font-black text-white text-base tabular-nums">{formatPrice(order.total_amount)}</p>
+                      <p className="font-black text-white text-base tabular-nums">{formatAdminPrice(order.total_amount)}</p>
                     </td>
                     <td className="px-8 py-5">
                       <span className={`inline-flex items-center gap-1.5 text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm ${
@@ -587,3 +587,4 @@ function InsightItem({ title, desc, trend }: any) {
     </div>
   )
 }
+

@@ -7,7 +7,7 @@ import {
   CheckCircle, Clock
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { formatPrice } from '@/lib/utils'
+import { formatAdminPrice } from '@/lib/utils'
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<any[]>([])
@@ -149,7 +149,7 @@ export default function CouponsPage() {
                   <div>
                     <h3 className="text-white font-black text-lg tracking-wider">{c.code}</h3>
                     <p className="text-gray-500 text-xs flex items-center gap-2 font-bold">
-                      {c.discount_type === 'percentage' ? `${c.discount_value}% de remise` : `${formatPrice(c.discount_value)} de remise`}
+                      {c.discount_type === 'percentage' ? `${c.discount_value}% de remise` : `${formatAdminPrice(c.discount_value)} de remise`}
                       <span className="w-1 h-1 bg-gray-700 rounded-full"/>
                       {c.used_count || 0} utilisations
                     </p>
@@ -179,3 +179,4 @@ export default function CouponsPage() {
     </div>
   )
 }
+

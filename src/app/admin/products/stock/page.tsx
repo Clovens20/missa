@@ -6,7 +6,7 @@ import {
   XCircle, Search, Filter, ArrowUpRight, 
   Clock, TrendingDown, ExternalLink
 } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatAdminPrice } from '@/lib/utils'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -236,3 +236,4 @@ export default function StockMonitorPage() {
     </div>
   )
 }
+

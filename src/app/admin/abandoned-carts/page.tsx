@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import {
   Clock, RefreshCw, ShoppingCart, CheckCircle, TrendingUp, DollarSign, Mail
 } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatAdminPrice } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function AbandonedCartsPage() {
@@ -139,7 +139,7 @@ export default function AbandonedCartsPage() {
           {
             icon: DollarSign,
             label: 'Revenu récupéré',
-            value: formatPrice(stats.recoveredValue || 0),
+            value: formatAdminPrice(stats.recoveredValue || 0),
             color: 'text-secondary',
             bg: 'bg-secondary/10',
           },
@@ -297,7 +297,7 @@ export default function AbandonedCartsPage() {
 
                     <td className="px-5 py-4">
                       <p className="font-black text-white">
-                        {formatPrice(cartTotalValue)}
+                        {formatAdminPrice(cartTotalValue)}
                       </p>
                       {cart.discount_code && (
                         <p className="text-xs text-primary">
@@ -371,3 +371,4 @@ export default function AbandonedCartsPage() {
     </div>
   )
 }
+

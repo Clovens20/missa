@@ -67,17 +67,8 @@ export async function POST(req: Request) {
       })
 
     if (error) {
-      // If bucket doesn't exist or storage fails,
-      // return the base64 as fallback
       console.error('Storage error:', error.message)
-      
-      const base64 = buffer.toString('base64')
-      const dataUrl = `data:${file.type};base64,${base64}`
-      
-      return NextResponse.json({
-        url: dataUrl,
-        fallback: true,
-      })
+      return NextResponse.json({ error: 'Erreur de stockage: ' + error.message }, { status: 500 })
     }
 
     // Get public URL

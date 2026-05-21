@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useCart } from '@/contexts/CartContext'
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react'
 import { useSettings } from '@/contexts/SettingsContext'
+import { useCurrency } from '@/contexts/CurrencyContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -17,6 +18,7 @@ export default function CartDrawer() {
     updateQty, clearCart 
   } = useCart()
   const { getSetting } = useSettings()
+  const { currency, rate, formatLocalPrice } = useCurrency()
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -41,6 +43,8 @@ export default function CartDrawer() {
               is_dropship: i.product.is_dropship || false,
               variant_id: i.variant?.id || null
             })),
+            currency,
+            rate
           }),
         }
       )
@@ -110,7 +114,7 @@ export default function CartDrawer() {
               {remaining > 0 ? (
                 <>
                   <p className="text-xs text-orange-700 mb-1.5">
-                    🚚 Plus que <strong>{formatPrice(remaining)}</strong> pour la livraison gratuite!
+                    🚚 Plus que <strong>{formatLocalPrice(remaining)}</strong> pour la livraison gratuite!
                   </p>
                   <div className="h-2 bg-orange-200 rounded-full overflow-hidden">
                     <motion.div
@@ -142,19 +146,21 @@ export default function CartDrawer() {
               ) : (
                 items.map(item => (
                   <div key={item.id} className="flex gap-3 bg-gray-50 rounded-xl p-3">
-                    <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-white border border-gray-100">
-                      <Image
-                        src={getSafeImageUrl(item.product.images)}
-                        alt={item.product.name}
-                        fill
-                        className="object-cover"
-                      />
+                    <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-white border border-gray-100 group">
+                      <Link href={`/product/${item.product.slug}`} onClick={toggleCart}>
+                        <Image
+                          src={getSafeImageUrl(item.product.images)}
+                          alt={item.product.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </Link>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-800 line-clamp-2 mb-1">
+                      <Link href={`/product/${item.product.slug}`} onClick={toggleCart} className="font-semibold text-sm text-gray-800 line-clamp-2 mb-1 hover:text-primary transition-colors">
                         {item.product.name}
-                      </p>
-                      <p className="text-primary font-bold text-sm">{formatPrice(item.product.price)}</p>
+                      </Link>
+                      <p className="text-primary font-bold text-sm">{formatLocalPrice(item.product.price)}</p>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 p-1">
                           <button
@@ -186,7 +192,7 @@ export default function CartDrawer() {
               <div className="p-5 border-t border-gray-100 space-y-3">
                 <div className="flex justify-between font-black text-xl">
                   <span>Total</span>
-                  <span className="text-primary">{formatPrice(total)}</span>
+                  <span className="text-primary">{formatLocalPrice(total)}</span>
                 </div>
                 <button
                   onClick={handleCheckout}

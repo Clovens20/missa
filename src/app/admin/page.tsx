@@ -10,7 +10,7 @@ import {
   CheckCircle, XCircle, Truck,
   Zap, ArrowDownRight, RefreshCw
 } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatAdminPrice } from '@/lib/utils'
 import StockAlertsWidget from '@/components/admin/StockAlertsWidget'
 
 export default function AdminDashboard() {
@@ -103,8 +103,8 @@ export default function AdminDashboard() {
   const statCards = [
     { 
       title: 'Chiffre d\'Affaires', 
-      value: formatPrice(stats.totalRevenue), 
-      sub: `+${formatPrice(stats.todayRevenue)} aujourd'hui`, 
+      value: formatAdminPrice(stats.totalRevenue), 
+      sub: `+${formatAdminPrice(stats.todayRevenue)} aujourd'hui`, 
       icon: DollarSign, 
       color: 'text-emerald-400', 
       bg: 'bg-emerald-500/10', 
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
                           </div>
                         </td>
                         <td className="px-8 py-6">
-                          <span className="text-white font-black text-base">{formatPrice(order.total)}</span>
+                          <span className="text-white font-black text-base">{formatAdminPrice(order.total)}</span>
                         </td>
                         <td className="px-8 py-6">
                           <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black ${status.bg} ${status.color}`}>
@@ -338,3 +338,4 @@ export default function AdminDashboard() {
     </div>
   )
 }
+

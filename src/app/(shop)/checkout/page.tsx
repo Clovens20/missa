@@ -113,8 +113,9 @@ export default function CheckoutPage() {
     ? [
         { code: 'CA', name: '🇨🇦 Canada' },
         { code: 'US', name: '🇺🇸 États-Unis' },
-        { code: 'HT', name: '🇭🇹 Haïti' },
-        { code: 'FR', name: '🇫🇷 France' }
+        { code: 'FR', name: '🇫🇷 France' },
+        { code: 'CH', name: '🇨🇭 Suisse' },
+        { code: 'BE', name: '🇧🇪 Belgique' }
       ]
     : WORLDWIDE_COUNTRIES
 

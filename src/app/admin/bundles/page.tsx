@@ -7,7 +7,7 @@ import {
   Tag, ArrowRight, Search
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { formatPrice } from '@/lib/utils'
+import { formatAdminPrice } from '@/lib/utils'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -139,8 +139,8 @@ export default function BundlesAdminPage() {
                 </div>
                 <p className="text-gray-500 text-sm mb-3">{bundle.products?.length || 0} produits inclus</p>
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-xl font-black text-primary">{formatPrice(bundle.bundle_price || 0)}</span>
-                  {bundle.original_price && <span className="text-sm text-gray-500 line-through">{formatPrice(bundle.original_price)}</span>}
+                  <span className="text-xl font-black text-primary">{formatAdminPrice(bundle.bundle_price || 0)}</span>
+                  {bundle.original_price && <span className="text-sm text-gray-500 line-through">{formatAdminPrice(bundle.original_price)}</span>}
                   {bundle.discount_value && <span className="text-xs bg-red-500/20 text-red-400 font-bold px-2 py-0.5 rounded-full">-{bundle.discount_value}{bundle.discount_type === 'percentage' ? '%' : '$'}</span>}
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
@@ -165,3 +165,4 @@ export default function BundlesAdminPage() {
     </div>
   )
 }
+

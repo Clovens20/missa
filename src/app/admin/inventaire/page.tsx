@@ -11,7 +11,7 @@ import {
   Tag, Eye, Info,
 } from 'lucide-react'
 import Link from 'next/link'
-import { formatPrice } from '@/lib/utils'
+import { formatAdminPrice } from '@/lib/utils'
 
 export default function InventairePage() {
   const [data, setData] = useState<any>(null)
@@ -183,7 +183,7 @@ export default function InventairePage() {
               {
                 icon: DollarSign,
                 label: 'Revenu Total',
-                value: formatPrice(data.grandTotal.total_revenue),
+                value: formatAdminPrice(data.grandTotal.total_revenue),
                 sub: 'Toutes sources',
                 color: 'text-white',
                 bg: 'bg-gray-800',
@@ -192,7 +192,7 @@ export default function InventairePage() {
               {
                 icon: TrendingDown,
                 label: 'Dépenses Totales',
-                value: formatPrice(data.grandTotal.total_expenses),
+                value: formatAdminPrice(data.grandTotal.total_expenses),
                 sub: 'Achats + CJ',
                 color: 'text-red-400',
                 bg: 'bg-red-500/5',
@@ -201,7 +201,7 @@ export default function InventairePage() {
               {
                 icon: TrendingUp,
                 label: 'Profit Net',
-                value: formatPrice(data.grandTotal.total_profit),
+                value: formatAdminPrice(data.grandTotal.total_profit),
                 sub: data.grandTotal.total_profit >= 0 ? '✅ Rentable' : '❌ En perte',
                 color: data.grandTotal.total_profit >= 0 ? 'text-secondary' : 'text-red-400',
                 bg: data.grandTotal.total_profit >= 0 ? 'bg-secondary/5' : 'bg-red-500/5',
@@ -210,7 +210,7 @@ export default function InventairePage() {
               {
                 icon: Package,
                 label: 'Valeur Stock',
-                value: formatPrice(data.ownTotals.stock_value),
+                value: formatAdminPrice(data.ownTotals.stock_value),
                 sub: 'Produits en stock',
                 color: 'text-primary',
                 bg: 'bg-primary/5',
@@ -268,11 +268,11 @@ export default function InventairePage() {
                   <span className="text-xs font-normal text-gray-500">(en stock)</span>
                 </h3>
                 {[
-                  { label: '💸 Total investi', value: formatPrice(data.ownTotals.total_invested), color: 'text-red-400' },
-                  { label: '💰 Revenu généré', value: formatPrice(data.ownTotals.total_revenue), color: 'text-white' },
-                  { label: '📉 Coût des ventes', value: formatPrice(data.ownTotals.total_cost), color: 'text-red-400' },
-                  { label: '📈 Profit brut', value: formatPrice(data.ownTotals.total_profit), color: data.ownTotals.total_profit >= 0 ? 'text-secondary' : 'text-red-400' },
-                  { label: '📦 Valeur stock restant', value: formatPrice(data.ownTotals.stock_value), color: 'text-primary' },
+                  { label: '💸 Total investi', value: formatAdminPrice(data.ownTotals.total_invested), color: 'text-red-400' },
+                  { label: '💰 Revenu généré', value: formatAdminPrice(data.ownTotals.total_revenue), color: 'text-white' },
+                  { label: '📉 Coût des ventes', value: formatAdminPrice(data.ownTotals.total_cost), color: 'text-red-400' },
+                  { label: '📈 Profit brut', value: formatAdminPrice(data.ownTotals.total_profit), color: data.ownTotals.total_profit >= 0 ? 'text-secondary' : 'text-red-400' },
+                  { label: '📦 Valeur stock restant', value: formatAdminPrice(data.ownTotals.stock_value), color: 'text-primary' },
                   { label: '🛍️ Unités vendues', value: data.ownTotals.total_units.toString(), color: 'text-gray-300' },
                 ].map((row, i) => (
                   <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
@@ -299,9 +299,9 @@ export default function InventairePage() {
                   <span className="text-xs font-normal text-gray-500">(sans stock)</span>
                 </h3>
                 {[
-                  { label: '💰 Revenu généré', value: formatPrice(data.dropTotals.total_revenue), color: 'text-white' },
-                  { label: '📉 Coût CJ payé', value: formatPrice(data.dropTotals.total_cj_cost), color: 'text-red-400' },
-                  { label: '📈 Profit net', value: formatPrice(data.dropTotals.total_profit), color: data.dropTotals.total_profit >= 0 ? 'text-secondary' : 'text-red-400' },
+                  { label: '💰 Revenu généré', value: formatAdminPrice(data.dropTotals.total_revenue), color: 'text-white' },
+                  { label: '📉 Coût CJ payé', value: formatAdminPrice(data.dropTotals.total_cj_cost), color: 'text-red-400' },
+                  { label: '📈 Profit net', value: formatAdminPrice(data.dropTotals.total_profit), color: data.dropTotals.total_profit >= 0 ? 'text-secondary' : 'text-red-400' },
                   { label: '🛍️ Unités vendues', value: data.dropTotals.total_units.toString(), color: 'text-gray-300' },
                   { label: '📊 Produits actifs', value: data.dropTotals.products_count.toString(), color: 'text-gray-300' },
                 ].map((row, i) => (
@@ -354,13 +354,13 @@ export default function InventairePage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 font-bold text-red-400">{formatPrice(p.cost_price)}</td>
-                        <td className="px-4 py-4 font-bold text-white">{formatPrice(p.sell_price)}</td>
-                        <td className="px-4 py-4"><span className={`font-black ${p.unit_margin > 0 ? 'text-secondary' : 'text-red-400'}`}>{formatPrice(p.unit_margin)}</span> <span className="text-[10px] text-gray-500">({p.margin_pct}%)</span></td>
+                        <td className="px-4 py-4 font-bold text-red-400">{formatAdminPrice(p.cost_price)}</td>
+                        <td className="px-4 py-4 font-bold text-white">{formatAdminPrice(p.sell_price)}</td>
+                        <td className="px-4 py-4"><span className={`font-black ${p.unit_margin > 0 ? 'text-secondary' : 'text-red-400'}`}>{formatAdminPrice(p.unit_margin)}</span> <span className="text-[10px] text-gray-500">({p.margin_pct}%)</span></td>
                         <td className="px-4 py-4 font-bold text-gray-300">{p.units_sold}</td>
-                        <td className="px-4 py-4 font-bold text-white">{formatPrice(p.total_revenue)}</td>
-                        <td className="px-4 py-4 text-red-400">{formatPrice(p.total_cost)}</td>
-                        <td className="px-4 py-4"><span className={`font-black ${p.total_profit >= 0 ? 'text-secondary' : 'text-red-400'}`}>{formatPrice(p.total_profit)}</span></td>
+                        <td className="px-4 py-4 font-bold text-white">{formatAdminPrice(p.total_revenue)}</td>
+                        <td className="px-4 py-4 text-red-400">{formatAdminPrice(p.total_cost)}</td>
+                        <td className="px-4 py-4"><span className={`font-black ${p.total_profit >= 0 ? 'text-secondary' : 'text-red-400'}`}>{formatAdminPrice(p.total_profit)}</span></td>
                         <td className="px-4 py-4"><span className={`font-bold ${p.current_stock <= 5 ? 'text-red-400' : 'text-gray-300'}`}>{p.current_stock}</span></td>
                         <td className="px-4 py-4"><HealthBadge health={p.health}/></td>
                       </tr>
@@ -400,13 +400,13 @@ export default function InventairePage() {
                             <p className="text-white font-semibold truncate max-w-[150px]">{p.name}</p>
                           </div>
                         </td>
-                        <td className="px-4 py-4 font-bold text-red-400">{formatPrice(p.cj_price)}</td>
-                        <td className="px-4 py-4 font-bold text-white">{formatPrice(p.selling_price)}</td>
-                        <td className="px-4 py-4 font-black text-secondary">{formatPrice(p.unit_margin)}</td>
+                        <td className="px-4 py-4 font-bold text-red-400">{formatAdminPrice(p.cj_price)}</td>
+                        <td className="px-4 py-4 font-bold text-white">{formatAdminPrice(p.selling_price)}</td>
+                        <td className="px-4 py-4 font-black text-secondary">{formatAdminPrice(p.unit_margin)}</td>
                         <td className="px-4 py-4 font-bold text-gray-300">{p.units_sold}</td>
-                        <td className="px-4 py-4 font-bold text-white">{formatPrice(p.total_revenue)}</td>
-                        <td className="px-4 py-4 text-red-400">{formatPrice(p.total_cj_cost)}</td>
-                        <td className="px-4 py-4 font-black text-secondary">{formatPrice(p.total_profit)}</td>
+                        <td className="px-4 py-4 font-bold text-white">{formatAdminPrice(p.total_revenue)}</td>
+                        <td className="px-4 py-4 text-red-400">{formatAdminPrice(p.total_cj_cost)}</td>
+                        <td className="px-4 py-4 font-black text-secondary">{formatAdminPrice(p.total_profit)}</td>
                         <td className="px-4 py-4"><span className="bg-secondary/20 text-secondary text-[10px] font-black px-2 py-1 rounded-full">{p.margin_pct}%</span></td>
                       </tr>
                     ))}
@@ -420,3 +420,4 @@ export default function InventairePage() {
     </div>
   )
 }
+

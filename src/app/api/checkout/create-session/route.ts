@@ -15,7 +15,7 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { items, customerEmail, shippingDetails, currency } = await req.json()
+    const { items, customerEmail, shippingDetails, currency, rate: reqRate } = await req.json()
 
     // Dynamically resolve base origin for Stripe redirects (success/cancel)
     const originHeader = req.headers.get('origin') || req.headers.get('referer') || process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com'
@@ -33,9 +33,9 @@ export async function POST(req: Request) {
       )
     }
 
-    // 1. Force Canadian Dollar (CAD) strictly
-    const targetCurrency = 'cad'
-    const rate = 1.0
+    // Support dynamic currency (USD or CAD)
+    const targetCurrency = (currency || 'usd').toLowerCase()
+    const rate = reqRate || 1.0
 
     const lineItems = items.map((item: any) => ({
       price_data: {

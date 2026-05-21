@@ -6,16 +6,36 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(
-  price: number,
+  priceInUSD: number,
   _showCode: boolean = false,
   _currency?: string
 ): string {
-  return new Intl.NumberFormat('fr-CA', {
+  let currencyCode = 'CAD'
+  let rate = 1.36
+
+  if (typeof window !== 'undefined') {
+    currencyCode = (window as any).__currencyCode || 'CAD'
+    rate = (window as any).__currencyRate || 1.36
+  }
+
+  const convertedPrice = priceInUSD * rate
+  const locale = currencyCode === 'CAD' ? 'fr-CA' : 'en-US'
+
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: 'CAD',
+    currency: currencyCode,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(price)
+  }).format(convertedPrice)
+}
+
+export function formatAdminPrice(priceInUSD: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(priceInUSD)
 }
 
 export function formatDate(

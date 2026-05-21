@@ -148,9 +148,10 @@ export default function ProductCard({
           flex flex-col relative">
 
         {/* ── IMAGE ZONE ── */}
-        <Link
-          href={`/product/${product.slug}`}
-          className="block relative overflow-hidden bg-gray-50 w-full aspect-square sm:aspect-[4/5]">
+        <div className="block relative overflow-hidden bg-gray-50 w-full aspect-square sm:aspect-[4/5]">
+          <Link
+            href={`/product/${product.slug}`}
+            className="absolute inset-0 z-0">
 
           {/* Main image */}
           {mainImage ? (
@@ -200,6 +201,7 @@ export default function ProductCard({
               </p>
             </div>
           )}
+          </Link>
 
           {/* ── NEW / SALE BADGES top-left ── */}
           <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
@@ -237,7 +239,7 @@ export default function ProductCard({
 
           {/* Viewers badge */}
           {(product as any).show_urgency && (
-            <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
+            <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10" suppressHydrationWarning>
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"/>
               {Math.floor(
                 Math.random() * (
@@ -362,8 +364,7 @@ export default function ProductCard({
               ))}
             </div>
           )}
-        </Link>
-
+        </div>
         {/* ── PRODUCT INFO ── */}
         <div className="p-4 flex flex-col
           gap-3 flex-1">

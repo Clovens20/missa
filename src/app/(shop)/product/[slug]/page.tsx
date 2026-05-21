@@ -73,7 +73,7 @@ export async function generateMetadata({
       canonical: productUrl,
     },
     other: {
-      'product:price:amount': product.price.toString(),
+      'product:price:amount': (product.price || 0).toString(),
       'product:price:currency': 'CAD',
       'product:availability': (product.stock_quantity || 0) > 0 ? 'in stock' : 'out of stock',
     },

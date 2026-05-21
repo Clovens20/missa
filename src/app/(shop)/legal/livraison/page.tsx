@@ -40,7 +40,6 @@ export default function PolitiqueExpedition() {
                 {[
                   ["🇨🇦 Canada", "7 – 14 jours ouvrables", `Gratuit dès ${threshold}$ / sinon 9,99$`],
                   ["🇺🇸 États-Unis", "7 – 15 jours ouvrables", `Gratuit dès ${threshold}$ / sinon 12,99$`],
-                  ["🇭🇹 Haïti", "14 – 21 jours ouvrables", `Gratuit dès ${threshold}$ / sinon 14,99$`],
                   ["🌍 Europe", "10 – 20 jours ouvrables", "Calculé au checkout"],
                   ["🌏 Asie / Pacifique", "14 – 25 jours ouvrables", "Calculé au checkout"],
                   ["🌎 Reste du monde", "14 – 30 jours ouvrables", "Calculé au checkout"],

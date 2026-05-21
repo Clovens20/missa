@@ -7,7 +7,7 @@ import {
   Trash2, Save, Package
 } from 'lucide-react'
 import Link from 'next/link'
-import { formatPrice, slugify } from '@/lib/utils'
+import { formatAdminPrice, slugify } from '@/lib/utils'
 import { toast } from 'sonner'
 import RichTextEditor from '@/components/admin/RichTextEditor'
 
@@ -150,7 +150,7 @@ export default function NewBundlePage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">{p.name}</p>
-                        <p className="text-primary text-xs font-bold">{formatPrice(p.price)}</p>
+                        <p className="text-primary text-xs font-bold">{formatAdminPrice(p.price)}</p>
                       </div>
                       <Plus className="w-4 h-4 text-primary flex-shrink-0"/>
                     </button>
@@ -166,7 +166,7 @@ export default function NewBundlePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-sm font-semibold truncate">{p.name}</p>
-                    <p className="text-primary text-xs font-bold">{formatPrice(p.price)}</p>
+                    <p className="text-primary text-xs font-bold">{formatAdminPrice(p.price)}</p>
                   </div>
                   <button onClick={() => removeProduct(p.id)} className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                 </div>
@@ -178,9 +178,9 @@ export default function NewBundlePage() {
             <div className="bg-primary/10 border border-primary/30 rounded-2xl p-6">
               <h2 className="font-bold text-white mb-4">💰 Aperçu des prix</h2>
               <div className="space-y-2 text-sm text-gray-400">
-                <div className="flex justify-between"><span>Prix original</span><span className="line-through">{formatPrice(originalPrice)}</span></div>
-                <div className="flex justify-between text-red-400 font-bold"><span>Réduction</span><span>-{formatPrice(savings)}</span></div>
-                <div className="flex justify-between text-2xl font-black text-primary pt-2 border-t border-primary/20"><span>Prix bundle</span><span>{formatPrice(Math.max(0, bundlePrice))}</span></div>
+                <div className="flex justify-between"><span>Prix original</span><span className="line-through">{formatAdminPrice(originalPrice)}</span></div>
+                <div className="flex justify-between text-red-400 font-bold"><span>Réduction</span><span>-{formatAdminPrice(savings)}</span></div>
+                <div className="flex justify-between text-2xl font-black text-primary pt-2 border-t border-primary/20"><span>Prix bundle</span><span>{formatAdminPrice(Math.max(0, bundlePrice))}</span></div>
               </div>
             </div>
           )}
@@ -197,3 +197,4 @@ export default function NewBundlePage() {
     </div>
   )
 }
+

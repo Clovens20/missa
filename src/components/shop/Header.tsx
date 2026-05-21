@@ -22,7 +22,7 @@ export default function Header() {
   const { count, toggleCart, total } = useCart()
   const { count: wishCount } = useWishlist()
   const { getSetting } = useSettings()
-  const { currency, setCurrency } = useCurrency()
+  const { currency, setCurrency, formatLocalPrice } = useCurrency()
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const router = useRouter()
@@ -125,6 +125,7 @@ export default function Header() {
                 src="/logo.png"
                 alt="Missa Shop Logo"
                 fill
+                sizes="(max-width: 768px) 40px, 48px"
                 className="object-contain"
                 priority
               />
@@ -159,7 +160,7 @@ export default function Header() {
                 <ShoppingCart className="w-5 h-5 md:w-5 md:h-5"/>
                 {count > 0 && <span className="absolute -top-2.5 -right-2.5 w-4 h-4 md:w-5 md:h-5 bg-yellow-400 text-gray-900 text-[10px] md:text-xs font-black rounded-full flex items-center justify-center border-2 border-primary">{count > 9 ? '9+' : count}</span>}
               </div>
-              <div className="hidden md:block text-left"><p className="text-[10px] leading-none opacity-80">Mon panier</p><p className="font-black text-sm leading-tight">{formatPrice(total)}</p></div>
+              <div className="hidden md:block text-left"><p className="text-[10px] leading-none opacity-80">Mon panier</p><p className="font-black text-sm leading-tight" suppressHydrationWarning>{formatLocalPrice(total)}</p></div>
             </button>
             
             <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden p-2 hover:bg-gray-50 rounded-xl text-gray-700">{menuOpen ? <X className="w-6 h-6"/> : <Menu className="w-6 h-6"/>}</button>

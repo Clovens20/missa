@@ -200,6 +200,12 @@ export default function NewProductPage() {
         body: formData
       })
 
+      if (!res.ok) {
+        const text = await res.text()
+        if (text.includes('Request Entity') || res.status === 413) throw new Error('Image trop volumineuse (Max 4.5MB)')
+        throw new Error("Erreur d'upload")
+      }
+
       const data = await res.json()
       if (data.url) {
         setImageUrl(data.url)
@@ -534,9 +540,9 @@ export default function NewProductPage() {
             <h2 className="text-lg font-bold text-white flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-500" />Tarification</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Prix de vente (CA$)</label>
+                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Prix de vente (US$ - Base)</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">CA$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                   <input
                     type="number" step="0.01" value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -545,9 +551,9 @@ export default function NewProductPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Prix barré (CA$)</label>
+                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Prix barré (US$ - Base)</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">CA$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                   <input
                     type="number" step="0.01" value={formData.compare_price}
                     onChange={(e) => setFormData({ ...formData, compare_price: e.target.value })}
@@ -660,7 +666,7 @@ export default function NewProductPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Hash className="w-5 h-5 text-orange-500" />
-                Stock & Poids
+                Stock
               </h2>
               {variants.length > 0 && (
                 <span className="text-[10px] font-black bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full border border-blue-500/20">
@@ -680,7 +686,7 @@ export default function NewProductPage() {
                       setFormData(prev => ({
                         ...prev,
                         stock_quantity: val,
-                        initial_stock: parseInt(val) || 0 // Bidirectional sync
+                        initial_stock: parseInt(val) || 0
                       }))
                     }}
                     readOnly={variants.length > 0}
@@ -688,14 +694,6 @@ export default function NewProductPage() {
                   />
                   {variants.length > 0 && <Layers className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />}
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Poids (kg)</label>
-                <input
-                  type="number" step="0.001" value={formData.weight}
-                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white outline-none focus:border-orange-500"
-                />
               </div>
             </div>
 

@@ -13,7 +13,7 @@ import {
   Plus
 } from 'lucide-react'
 import Link from 'next/link'
-import { formatPrice, getSafeImageUrl } from '@/lib/utils'
+import { formatAdminPrice, getSafeImageUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import UrgencySettings from '@/components/admin/UrgencySettings'
 
@@ -258,12 +258,12 @@ export default function VariantManagerPage() {
           <div className="flex flex-wrap 
             gap-3 text-sm">
             <span className="text-gray-400">
-              Prix: {formatPrice(
+              Prix: {formatAdminPrice(
                 product.selling_price
               )}
             </span>
             <span className="text-primary">
-              Coût CJ: {formatPrice(
+              Coût CJ: {formatAdminPrice(
                 product.cj_price
               )}
             </span>
@@ -565,7 +565,7 @@ export default function VariantManagerPage() {
                           : `📦 ${v.stock} en stock`}
                     </span>
                     <span className="text-primary">
-                      CJ: {formatPrice(
+                      CJ: {formatAdminPrice(
                         v.cjPrice || v.price || 0
                       )}
                     </span>

@@ -167,6 +167,17 @@ export default function ProductVariantsManager({
       const formData = new FormData()
       formData.append('file', file)
       const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+      
+      if (!res.ok) {
+        const text = await res.text()
+        if (text.includes('Request Entity') || res.status === 413) {
+          toast.error(`Image trop volumineuse: ${file.name} (Max 4.5MB)`)
+        } else {
+          toast.error(`Erreur upload: ${file.name}`)
+        }
+        return null
+      }
+
       const data = await res.json()
       return data.url || null
     } catch {

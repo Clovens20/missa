@@ -16,7 +16,7 @@ function OrganizationSchema() {
     logo: `${siteUrl}/logo.png`,
     description: 
       'Boutique tendance en ligne. ' +
-      'Beauté, gadgets, maison & mode. Livraison Internationale (Canada, USA, Europe, Haïti...). Prix imbattables.',
+      'Beauté, gadgets, maison & mode. Livraison Internationale (Canada, USA, Suisse, France, Belgique, etc...). Prix imbattables.',
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'CA',

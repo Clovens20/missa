@@ -184,14 +184,14 @@ ProductVariantSelector({
 
         {/* Thumbnails */}
         {mediaItems.length > 1 && (
-          <div className="flex flex-row md:flex-col gap-2 w-full md:w-20 flex-shrink-0 md:max-h-[500px] overflow-x-auto md:overflow-x-hidden md:overflow-y-auto pb-2 md:pb-0 md:pr-1 scrollbar-hide snap-x snap-mandatory mt-3 md:mt-0">
+          <div className="grid grid-cols-5 gap-2 w-full md:flex md:flex-col md:w-20 md:flex-shrink-0 md:max-h-[500px] md:overflow-x-hidden md:overflow-y-auto pb-2 md:pb-0 md:pr-1 scrollbar-hide mt-3 md:mt-0">
             {mediaItems.map((item, i: number) => (
               <button
                 key={i}
                 type="button"
                 onClick={() =>
                   setCurrentImgIdx(i)}
-                className={`flex-shrink-0 w-16 h-16 snap-start rounded-xl overflow-hidden border-2 cursor-pointer bg-gray-100 transition-all relative group
+                className={`w-full aspect-square rounded-xl overflow-hidden border-2 cursor-pointer bg-gray-100 transition-all relative group
                   ${currentImgIdx === i
                     ? 'border-primary shadow-md'
                     : 'border-transparent hover:border-gray-400'
@@ -226,7 +226,7 @@ ProductVariantSelector({
         )}
 
         {/* Main image / video */}
-        <div className="relative w-full md:flex-1 aspect-square md:aspect-[4/5] max-h-[60vh] md:max-h-none overflow-hidden rounded-2xl bg-gray-100">
+        <div className="relative w-full md:flex-1 aspect-square md:aspect-[4/5] overflow-hidden rounded-2xl bg-gray-100">
           <AnimatePresence mode="wait">
             {mediaItems[currentImgIdx]?.type === 'image' ? (
               <motion.img
@@ -238,8 +238,7 @@ ProductVariantSelector({
                   || '/placeholder-product.jpg'
                 }
                 alt={product.name}
-                className="w-full h-full object-contain object-center bg-gray-100"
-                style={{ objectFit: 'contain' }}
+                className="absolute inset-0 w-full h-full object-contain object-center bg-gray-100"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -249,7 +248,7 @@ ProductVariantSelector({
             ) : (
               <motion.div
                 key="video-player"
-                className="w-full h-full bg-black relative flex items-center justify-center"
+                className="absolute inset-0 w-full h-full bg-black flex items-center justify-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}

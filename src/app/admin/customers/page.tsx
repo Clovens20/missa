@@ -6,7 +6,7 @@ import {
   ShoppingBag, Calendar, ArrowUpRight,
   Filter, UserCheck
 } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatAdminPrice } from '@/lib/utils'
 import Link from 'next/link'
 
 export default function CustomersPage() {
@@ -152,7 +152,7 @@ export default function CustomersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-white font-black">{formatPrice(customer.totalSpent)}</p>
+                      <p className="text-white font-black">{formatAdminPrice(customer.totalSpent)}</p>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-gray-500 text-xs">
@@ -178,3 +178,4 @@ export default function CustomersPage() {
     </div>
   )
 }
+

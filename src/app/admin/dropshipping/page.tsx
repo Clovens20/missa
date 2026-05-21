@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { formatPrice, getSafeImageUrl } from '@/lib/utils'
+import { formatAdminPrice, getSafeImageUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import CJImportDrawer from '@/components/admin/CJImportDrawer'
 import SupplierMessagePanel from '@/components/admin/SupplierMessagePanel'
@@ -531,7 +531,7 @@ function DropshippingContent() {
           { label: 'Produits importés', value: supplierStats.totalImported, icon: Package, color: 'text-blue-400', bg: 'bg-blue-500/10' },
           { label: 'Actifs sur le shop', value: supplierStats.activeProducts, icon: Eye, color: 'text-secondary', bg: 'bg-secondary/10' },
           { label: 'Commandes en cours', value: supplierStats.pendingOrders, icon: Truck, color: 'text-primary', bg: 'bg-primary/10' },
-          { label: 'Revenu dropship', value: formatPrice(supplierStats.totalRevenue), icon: DollarSign, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+          { label: 'Revenu dropship', value: formatAdminPrice(supplierStats.totalRevenue), icon: DollarSign, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
         ].map((s, i) => (
           <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
             <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center mb-3`}><s.icon className={`w-5 h-5 ${s.color}`}/></div>
@@ -575,7 +575,7 @@ function DropshippingContent() {
                   {filteredImported.map(p => (
                     <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
                       <td className="px-5 py-4"><div className="flex items-center gap-3"><div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">{p.images && <img src={getSafeImageUrl(p.images)} alt={p.name} className="w-full h-full object-cover"/>}</div><div className="min-w-0"><p className="text-white font-semibold text-sm line-clamp-1">{p.name}</p><p className="text-gray-500 text-xs">{selectedSupplier === 'eprolo' ? 'Eprolo' : 'CJ'}: {p.cj_product_id?.substring(0, 12)}... <span className="text-gray-600 ml-2">{p.active_variants_count || p.variants?.length || 0}/{p.variants_count || p.variants?.length || 0} var.</span></p><p className="text-blue-400 text-xs">🚚 {p.shipping_time}</p><ProductStatusBadge product={p}/></div></div></td>
-                      <td className="px-5 py-4"><span className="text-gray-400 font-bold">{formatPrice(p.cj_price)}</span></td>
+                      <td className="px-5 py-4"><span className="text-gray-400 font-bold">{formatAdminPrice(p.cj_price)}</span></td>
                       <td className="px-5 py-4">
                         <PriceMarginEditor
                           product={p}
@@ -848,3 +848,4 @@ export default function DropshippingPage() {
     </Suspense>
   )
 }
+

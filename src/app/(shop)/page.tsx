@@ -221,7 +221,7 @@ export default function HomePage() {
                 livré chez toi 🔥
               </h1>
               <p className="text-gray-500 text-lg max-w-lg mb-8 leading-relaxed mx-auto md:mx-0">
-                Beauté, maison, mode & gadgets. Prix imbattables. Livraison Internationale 🌍 (Canada, USA, Europe, Haïti...)
+                Beauté, maison, mode & gadgets. Prix imbattables. Livraison Internationale 🌍 (Canada, USA, Suisse, France, Belgique, etc...)
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
                 <a href="/catalog" className="px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-black text-base shadow-xl shadow-orange-500/40 hover:shadow-orange-500/60 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-2">
