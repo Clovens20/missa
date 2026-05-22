@@ -43,11 +43,12 @@ export default function ReviewsAdminPage() {
   const [selectedProduct, setSelectedProduct] = useState<string>('')
   const [products, setProducts] = useState<any[]>([])
   const [generatingMissing, setGeneratingMissing] = useState(false)
+  const [productFilter, setProductFilter] = useState<string>('all')
 
   useEffect(() => {
     loadReviews()
     loadProducts()
-  }, [filter])
+  }, [filter, productFilter])
 
   async function loadProducts() {
     const { data } = await supabase.from('products').select('id, name').order('created_at', { ascending: false })
@@ -56,15 +57,20 @@ export default function ReviewsAdminPage() {
 
   async function loadReviews() {
     setLoading(true)
-    const { data } = await supabase
+    let query = supabase
       .from('product_reviews')
       .select(`
         *,
         product:products(name, slug)
       `)
       .eq('status', filter)
-      .order('created_at', 
-        { ascending: false })
+      .order('created_at', { ascending: false })
+      
+    if (productFilter !== 'all') {
+      query = query.eq('product_id', productFilter)
+    }
+    
+    const { data } = await query
     
     setReviews(data || [])
     setLoading(false)
@@ -321,6 +327,20 @@ export default function ReviewsAdminPage() {
             )}
           </button>
         ))}
+        
+        <div className="ml-auto flex items-center gap-2">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <select
+            value={productFilter}
+            onChange={(e) => setProductFilter(e.target.value)}
+            className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-primary"
+          >
+            <option value="all">Tous les produits</option>
+            {products.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* AliExpress Importer UI */}
