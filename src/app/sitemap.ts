@@ -64,7 +64,7 @@ export default async function sitemap():
   const { data: categories } = 
     await supabase
       .from('products')
-      .select('category_id, categories(name, slug)')
+      .select('category_id, categories!products_category_id_fkey(name, slug)')
       .eq('is_active', true)
       .not('category_id', 'is', null)
 

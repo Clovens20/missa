@@ -351,6 +351,17 @@ export default function ProductReviews({
     loadReviews(true)
   }, [filterStar, sortBy, productId])
 
+  useEffect(() => {
+    const handleOpenForm = () => {
+      setShowForm(true)
+      setTimeout(() => {
+        document.getElementById('review-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+    }
+    window.addEventListener('open-review-form', handleOpenForm)
+    return () => window.removeEventListener('open-review-form', handleOpenForm)
+  }, [])
+
   async function loadReviews(
     reset = false
   ) {
@@ -500,8 +511,16 @@ export default function ProductReviews({
           )}
         </h2>
         <button
-          onClick={() => 
-            setShowForm(!showForm)}
+          onClick={() => {
+            if (!showForm) {
+              setShowForm(true)
+              setTimeout(() => {
+                document.getElementById('review-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }, 150)
+            } else {
+              setShowForm(false)
+            }
+          }}
           className="flex items-center 
             gap-2 bg-primary 
             hover:bg-primary-dark 
@@ -576,10 +595,11 @@ export default function ProductReviews({
       <AnimatePresence>
         {showForm && (
           <motion.div
+            id="review-form-container"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden">
+            className="overflow-hidden pt-4 pb-4">
             <ReviewForm
               productId={productId}
               productName={productName}
@@ -677,8 +697,14 @@ export default function ProductReviews({
             un avis sur ce produit!
           </p>
           <button
-            onClick={() => 
-              setShowForm(true)}
+            onClick={() => {
+              if (!showForm) {
+                setShowForm(true)
+                setTimeout(() => {
+                  document.getElementById('review-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }, 150)
+              }
+            }}
             className="bg-primary 
               text-white font-bold 
               px-6 py-2.5 rounded-xl 

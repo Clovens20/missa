@@ -357,7 +357,17 @@ export default function ProductDetailClient({
         {activeTab === 'reviews' && (
           <div>
             {reviews.length === 0 ? (
-              <div className="text-center py-12 text-gray-400"><Star className="w-12 h-12 mx-auto mb-3 opacity-30"/><p>Aucun avis pour ce produit</p><p className="text-sm mt-1">Soyez le premier à laisser un avis!</p></div>
+              <div className="text-center py-12 text-gray-400">
+                <Star className="w-12 h-12 mx-auto mb-3 opacity-30"/>
+                <p>Aucun avis pour ce produit</p>
+                <p className="text-sm mt-1 mb-4">Soyez le premier à laisser un avis!</p>
+                <button onClick={() => {
+                  document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' });
+                  setTimeout(() => window.dispatchEvent(new CustomEvent('open-review-form')), 300);
+                }} className="bg-primary text-white font-bold px-6 py-2.5 rounded-xl hover:bg-primary-dark transition-colors inline-flex items-center gap-2">
+                  <Star className="w-4 h-4"/> Écrire un avis
+                </button>
+              </div>
             ) : (
               <div className="space-y-4">
                 {reviews.map(review => (
@@ -370,6 +380,12 @@ export default function ProductDetailClient({
                     {review.comment && <p className="text-gray-600 text-sm leading-relaxed">{review.comment}</p>}
                   </div>
                 ))}
+                <button onClick={() => {
+                  document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' });
+                  setTimeout(() => window.dispatchEvent(new CustomEvent('open-review-form')), 300);
+                }} className="bg-gray-100 text-gray-700 font-bold px-6 py-2.5 rounded-xl hover:bg-gray-200 transition-colors inline-flex items-center gap-2">
+                  Voir tous les avis et laisser le vôtre
+                </button>
               </div>
             )}
           </div>

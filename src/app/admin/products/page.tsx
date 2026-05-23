@@ -18,7 +18,7 @@ export default function ProductsPage() {
   useEffect(() => { loadProducts() }, [])
 
   async function loadProducts() {
-    const { data } = await supabase.from('products').select('*, categories(name)').order('created_at', { ascending: false })
+    const { data } = await supabase.from('products').select('*, categories!products_category_id_fkey(name)').order('created_at', { ascending: false })
     setProducts(data || [])
     setLoading(false)
   }

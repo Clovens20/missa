@@ -138,7 +138,7 @@ export default async function ProductPage({
   const { slug } = await params
   let { data: product } = await supabase
     .from('products')
-    .select('*, category:categories(id, name, slug)')
+    .select('*, category:categories!products_category_id_fkey(id, name, slug)')
     .eq('slug', slug)
     .single()
 

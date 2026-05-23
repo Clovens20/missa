@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     // Get all products that have 0 reviews or null
     const { data: products, error } = await supabase
       .from('products')
-      .select('id, name, tags, category_id, categories(name)')
+      .select('id, name, tags, category_id, categories!products_category_id_fkey(name)')
 
     if (error) throw error
 
