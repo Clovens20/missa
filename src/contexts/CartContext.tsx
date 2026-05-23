@@ -11,7 +11,7 @@ interface CartContextType {
   count: number
   isOpen: boolean
   guestEmail: string | null
-  addItem: (product: Product, qty?: number, variant?: ProductVariant) => void
+  addItem: (product: Product, qty?: number, variant?: ProductVariant, isWholesale?: boolean, moq?: number) => void
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clearCart: () => void
@@ -95,14 +95,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
   const count = items.reduce((sum, item) => sum + item.quantity, 0)
 
-  function addItem(product: Product, qty = 1, variant?: ProductVariant) {
+  function addItem(product: Product, qty = 1, variant?: ProductVariant, isWholesale = false, moq = 0) {
     setItems(prev => {
-      const key = variant ? `${product.id}-${variant.id}` : product.id
+      const baseKey = variant ? `${product.id}-${variant.id}` : product.id
+      const key = isWholesale ? `${baseKey}-ws` : baseKey
+      
       const existing = prev.find(i => i.id === key)
       if (existing) {
         return prev.map(i => i.id === key ? { ...i, quantity: i.quantity + qty } : i)
       }
-      return [...prev, { id: key, product, quantity: qty, variant }]
+      return [...prev, { id: key, product, quantity: qty, variant, isWholesale, moq }]
     })
     toast.success(`✅ ${product.name} ajouté!`, { duration: 2000 })
     setIsOpen(true)
@@ -113,8 +115,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   function updateQty(id: string, qty: number) {
-    if (qty <= 0) { removeItem(id); return }
-    setItems(prev => prev.map(i => i.id === id ? { ...i, quantity: qty } : i))
+    setItems(prev => {
+      const existing = prev.find(i => i.id === id)
+      if (existing && existing.isWholesale && existing.moq) {
+        if (qty < existing.moq) {
+          toast.error(`La quantité minimum est de ${existing.moq}`)
+          return prev.map(i => i.id === id ? { ...i, quantity: existing.moq! } : i)
+        }
+      }
+      if (qty <= 0) {
+        return prev.filter(i => i.id !== id)
+      }
+      return prev.map(i => i.id === id ? { ...i, quantity: qty } : i)
+    })
   }
 
   function clearCart() {

@@ -58,6 +58,8 @@ export async function POST(
       sellingPrice,
       comparePrice,
       categoryId,
+      subcategoryId,
+      wholesale_moq,
       customName,
       customDescription,
       // Images: array of selected urls
@@ -361,6 +363,8 @@ export async function POST(
         stock_quantity: inserted.stock_quantity,
         images: inserted.images,
         category_id: inserted.category_id,
+        subcategory_id: subcategoryId || null,
+        wholesale_moq: wholesale_moq || 10,
         tags: inserted.tags,
         is_active: inserted.is_active,
         is_dropship: true,

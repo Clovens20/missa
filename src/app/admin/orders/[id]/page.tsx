@@ -68,14 +68,20 @@ export default function OrderDetailPage() {
   }
 
   async function cancelOrder() {
-    if (!confirm('Êtes-vous sûr de vouloir annuler cette commande ?')) return
+    if (!confirm('Êtes-vous sûr de vouloir annuler cette commande ? Si elle n\'est pas encore traitée, le client sera remboursé automatiquement via Stripe.')) return
     setProcessing(true)
     try {
-      const { error } = await supabase.from('guest_orders').update({ order_status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', id)
-      if (error) throw error
+      const res = await fetch('/api/admin/orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+
       setOrder((prev: any) => ({ ...prev, order_status: 'cancelled' }))
-      await supabase.from('admin_logs').insert({ admin_email: 'admin', action: 'ORDER_CANCELLED', entity: 'orders', entity_id: id as string, details: { order_number: order.order_number } })
-      toast.success('❌ Commande annulée avec succès !')
+      await supabase.from('admin_logs').insert({ admin_email: 'admin', action: 'ORDER_CANCELLED', entity: 'orders', entity_id: id as string, details: { order_number: order.order_number, refunded: data.refundSuccess } })
+      toast.success(data.refundSuccess ? '❌ Commande annulée et remboursée avec succès !' : '❌ Commande annulée (sans remboursement auto)')
     } catch (err: any) { toast.error(err.message) } finally { setProcessing(false) }
   }
 

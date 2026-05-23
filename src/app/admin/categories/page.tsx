@@ -24,7 +24,7 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [formData, setFormData] = useState({ name: '', slug: '', image_url: '', is_active: true })
+  const [formData, setFormData] = useState<{name: string, slug: string, image_url: string, is_active: boolean, parent_id: string | null}>({ name: '', slug: '', image_url: '', is_active: true, parent_id: null })
 
   useEffect(() => { loadCategories() }, [])
 
@@ -52,16 +52,30 @@ export default function CategoriesPage() {
         toast.success('Nouvelle catégorie créée')
       }
       setEditingId(null)
-      setFormData({ name: '', slug: '', image_url: '', is_active: true })
+      setFormData({ name: '', slug: '', image_url: '', is_active: true, parent_id: null })
       loadCategories()
     } catch (err: any) { toast.error(err.message) }
   }
 
   async function deleteCategory(id: string) {
-    if (!confirm('Supprimer cette catégorie ?')) return
+    if (!confirm('Supprimer cette catégorie et toutes ses sous-catégories ?')) return
+    // Subcategories should be deleted automatically if DB has ON DELETE CASCADE,
+    // otherwise we just delete the category and let the user handle it or delete them here.
+    // For safety, let's delete subs first
+    await supabase.from('categories').delete().eq('parent_id', id)
     await supabase.from('categories').delete().eq('id', id)
     loadCategories()
     toast.success('Catégorie supprimée')
+  }
+
+  async function toggleActive(id: string, currentStatus: boolean) {
+    try {
+      await supabase.from('categories').update({ is_active: !currentStatus }).eq('id', id)
+      toast.success(currentStatus ? 'Catégorie désactivée' : 'Catégorie activée')
+      loadCategories()
+    } catch (err: any) {
+      toast.error(err.message)
+    }
   }
 
   async function move(id: string, direction: 'up' | 'down') {
@@ -96,6 +110,38 @@ export default function CategoriesPage() {
       setLoading(false)
     }
   }
+
+  const renderCategoryRow = (cat: any, isSub: boolean = false) => (
+    <div key={cat.id} className={`group border border-gray-800 hover:border-gray-700 rounded-2xl flex items-center gap-4 transition-all shadow-lg ${isSub ? 'bg-gray-900/50 p-3 ml-12' : 'bg-gray-900 p-4'}`}>
+      {!isSub && (
+        <div className="w-12 h-12 bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center">
+          {cat.image_url ? <img src={cat.image_url} className="w-full h-full object-cover"/> : <ImageIcon className="w-5 h-5 text-gray-600"/>}
+        </div>
+      )}
+      <div className="flex-1 min-w-0 flex items-center gap-3">
+        <div>
+          <p className="text-white font-bold text-sm">{cat.name}</p>
+          <p className="text-gray-500 text-xs font-mono truncate">{cat.slug}</p>
+        </div>
+        {!cat.is_active && (
+          <span className="bg-gray-800 text-gray-400 text-[10px] font-black px-2 py-1 rounded-md border border-gray-700 uppercase">
+            Cachée
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={() => toggleActive(cat.id, cat.is_active)} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors text-[10px] font-bold uppercase tracking-wider">
+          {cat.is_active ? 'Désactiver' : 'Activer'}
+        </button>
+        <div className="w-px h-4 bg-gray-800 mx-1"/>
+        <button onClick={() => move(cat.id, 'up')} className="p-1.5 text-gray-500 hover:text-white disabled:opacity-0"><ChevronUp className="w-4 h-4"/></button>
+        <button onClick={() => move(cat.id, 'down')} className="p-1.5 text-gray-500 hover:text-white disabled:opacity-0"><ChevronDown className="w-4 h-4"/></button>
+        <div className="w-px h-4 bg-gray-800 mx-1"/>
+        <button onClick={() => {setEditingId(cat.id); setFormData({name:cat.name, slug:cat.slug, image_url:cat.image_url || '', is_active:cat.is_active, parent_id: cat.parent_id})}} className="p-2 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"><Pencil className="w-4 h-4"/></button>
+        <button onClick={() => deleteCategory(cat.id)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -140,11 +186,38 @@ export default function CategoriesPage() {
                   placeholder="https://..." className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none"
                 />
               </div>
+              
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-2">Catégorie Parente</label>
+                <select 
+                  value={formData.parent_id || ''} 
+                  onChange={e => setFormData({...formData, parent_id: e.target.value || null})}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-primary"
+                >
+                  <option value="">-- Aucune (Principale) --</option>
+                  {categories.filter(c => !c.parent_id && c.id !== editingId).map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
               {formData.image_url && (
                 <div className="aspect-video bg-gray-950 rounded-xl overflow-hidden border border-gray-800">
                   <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover opacity-50"/>
                 </div>
               )}
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${formData.is_active ? 'bg-primary' : 'bg-gray-700'}`}
+                >
+                  <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${formData.is_active ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+                <span className="text-xs font-bold text-gray-400">
+                  {formData.is_active ? 'Catégorie Active (Visible)' : 'Catégorie Cachée'}
+                </span>
+              </div>
             </div>
 
             <div className="flex gap-2 pt-2">
@@ -152,7 +225,7 @@ export default function CategoriesPage() {
                 <Save className="w-4 h-4"/> Enregistrer
               </button>
               {editingId && (
-                <button type="button" onClick={() => {setEditingId(null); setFormData({name:'', slug:'', image_url:'', is_active:true})}} className="bg-gray-800 text-gray-400 p-2.5 rounded-xl hover:text-white">
+                <button type="button" onClick={() => {setEditingId(null); setFormData({name:'', slug:'', image_url:'', is_active:true, parent_id: null})}} className="bg-gray-800 text-gray-400 p-2.5 rounded-xl hover:text-white">
                   <X className="w-5 h-5"/>
                 </button>
               )}
@@ -161,7 +234,7 @@ export default function CategoriesPage() {
         </div>
 
         {/* Liste */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="lg:col-span-2 space-y-4">
           {loading ? (
             Array(4).fill(0).map((_, i) => <div key={i} className="h-20 bg-gray-900 border border-gray-800 rounded-2xl animate-pulse"/>)
           ) : categories.length === 0 ? (
@@ -175,22 +248,10 @@ export default function CategoriesPage() {
               </button>
             </div>
           ) : (
-            categories.map((cat, i) => (
-              <div key={cat.id} className="group bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-2xl p-4 flex items-center gap-4 transition-all shadow-lg">
-                <div className="w-12 h-12 bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center">
-                  {cat.image_url ? <img src={cat.image_url} className="w-full h-full object-cover"/> : <ImageIcon className="w-5 h-5 text-gray-600"/>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-bold">{cat.name}</p>
-                  <p className="text-gray-500 text-xs font-mono truncate">{cat.slug}</p>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => move(cat.id, 'up')} className="p-1.5 text-gray-500 hover:text-white disabled:opacity-0"><ChevronUp className="w-4 h-4"/></button>
-                  <button onClick={() => move(cat.id, 'down')} className="p-1.5 text-gray-500 hover:text-white disabled:opacity-0"><ChevronDown className="w-4 h-4"/></button>
-                  <div className="w-px h-4 bg-gray-800 mx-1"/>
-                  <button onClick={() => {setEditingId(cat.id); setFormData({name:cat.name, slug:cat.slug, image_url:cat.image_url || '', is_active:cat.is_active})}} className="p-2 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"><Pencil className="w-4 h-4"/></button>
-                  <button onClick={() => deleteCategory(cat.id)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
-                </div>
+            categories.filter(c => !c.parent_id).map((cat) => (
+              <div key={cat.id} className="space-y-2">
+                {renderCategoryRow(cat, false)}
+                {categories.filter(sub => sub.parent_id === cat.id).map(sub => renderCategoryRow(sub, true))}
               </div>
             ))
           )}

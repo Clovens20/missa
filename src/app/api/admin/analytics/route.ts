@@ -217,7 +217,6 @@ export async function GET(req: Request) {
         .from('orders')
         .select('source, metadata')
         .gte('created_at', startISO)
-        .not('source', 'is', null)
 
     const sourceCount: Record<
       string, number
@@ -239,7 +238,6 @@ export async function GET(req: Request) {
       }
     })
 
-    // If no source data, use placeholder
     const totalWithSource = 
       Object.values(sourceCount)
         .reduce((a, b) => a + b, 0)
@@ -257,12 +255,7 @@ export async function GET(req: Request) {
               ),
             }))
             .sort((a, b) => b.value - a.value)
-        : [
-            { name: 'Direct', value: 60, pct: 60 },
-            { name: 'Instagram', value: 25, pct: 25 },
-            { name: 'Facebook', value: 10, pct: 10 },
-            { name: 'Autre', value: 5, pct: 5 },
-          ]
+        : []
 
     // ── 6. Recent orders ───────────────
     const { data: recentOrders } = 

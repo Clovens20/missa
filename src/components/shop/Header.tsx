@@ -6,7 +6,8 @@ import {
   Search, Heart, ShoppingCart, 
   User, Menu, X, MapPin,
   ChevronDown, Shield, Truck,
-  Star, Phone, Package, ArrowRight
+  Star, Phone, Package, ArrowRight,
+  Building2
 } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
@@ -64,12 +65,15 @@ export default function Header() {
           { slug: 'sport', label: '🏃 Sport', subs: ['Vêtements sport', 'Équipements', 'Chaussures sport'] },
         ]
 
-        const merged = data.map(dbCat => {
+        const topLevel = data.filter(c => !c.parent_id)
+        const merged = topLevel.map(dbCat => {
           const h = hardcoded.find(x => x.slug === dbCat.slug)
+          const dbSubs = data.filter(c => c.parent_id === dbCat.id).map(c => c.name)
+          
           return {
             slug: dbCat.slug,
             label: dbCat.name, // Use DB name (which might have emoji already)
-            subs: h ? h.subs : []
+            subs: dbSubs.length > 0 ? dbSubs : (h ? h.subs : [])
           }
         })
         setCategories(merged)
@@ -119,31 +123,38 @@ export default function Header() {
       {/* ── MAIN HEADER ── */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap md:flex-nowrap items-center justify-between gap-3 md:gap-4">
-          <Link href="/" className="flex-shrink-0 flex items-center gap-2 group order-1">
-            <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-              <Image
-                src="/logo.png"
-                alt="Missa Shop Logo"
-                fill
-                sizes="(max-width: 768px) 40px, 48px"
-                className="object-contain"
-                priority
-              />
-            </div>
-            <div className="hidden sm:block">
-              <div className="leading-none">
-                <span className="font-black text-lg md:text-xl text-primary">
-                  {getSetting('site_name', 'Missa Shop').split(' ')[0]}
-                </span>
-                <span className="font-black text-lg md:text-xl text-secondary">
-                  {getSetting('site_name', 'Missa Shop').split(' ')[1] || ''}
-                </span>
+          <div className="flex items-center gap-4 order-1 md:pr-4">
+            <Link href="/" className="flex-shrink-0 flex items-center gap-2 group">
+              <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="Missa Shop Logo"
+                  fill
+                  sizes="(max-width: 768px) 40px, 48px"
+                  className="object-contain"
+                  priority
+                />
               </div>
-              <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">
-                {getSetting('site_tagline', 'TENDANCES & LIFESTYLE — LIVRÉ CHEZ TOI')}
-              </p>
-            </div>
-          </Link>
+              <div className="hidden sm:block">
+                <div className="leading-none">
+                  <span className="font-black text-lg md:text-xl text-primary">
+                    {getSetting('site_name', 'Missa Shop').split(' ')[0]}
+                  </span>
+                  <span className="font-black text-lg md:text-xl text-secondary">
+                    {getSetting('site_name', 'Missa Shop').split(' ')[1] || ''}
+                  </span>
+                </div>
+                <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">
+                  {getSetting('site_tagline', 'TENDANCES & LIFESTYLE — LIVRÉ CHEZ TOI')}
+                </p>
+              </div>
+            </Link>
+
+            <Link href="/wholesale" className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-xs font-black transition-all shadow-sm border border-gray-800">
+              <Building2 className="w-3.5 h-3.5 text-secondary"/>
+              Vente en gros
+            </Link>
+          </div>
 
           <div className="w-full md:w-auto md:flex-1 max-w-2xl order-3 md:order-2">
             <SmartSearchBar

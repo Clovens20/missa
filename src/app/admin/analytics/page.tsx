@@ -427,6 +427,11 @@ export default function AnalyticsPage() {
                 {[1,2,3,4].map(i => <div key={i} className="h-12 bg-gray-800/50 rounded-2xl animate-pulse"/>)}
              </div>
           </div>
+        ) : !data?.trafficSources?.length ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Globe className="w-12 h-12 text-gray-800 mb-3" />
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Aucune donnée de trafic</p>
+          </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-12">
             <ResponsiveContainer width="100%" height={250}>

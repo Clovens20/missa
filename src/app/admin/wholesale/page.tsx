@@ -11,24 +11,27 @@ export default function WholesaleAdminPage() {
   const [filter, setFilter] = useState('pending')
   const [settings, setSettings] = useState({
     discount: 30,
-    minOrder: 200
+    minOrder: 200,
+    defaultMoq: 10
   })
   const [savingSettings, setSavingSettings] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
-    const [appRes, settingRes, discountRes, minOrderRes] = await Promise.all([
+    const [appRes, settingRes, discountRes, minOrderRes, defaultMoqRes] = await Promise.all([
       supabase.from('wholesale_applications').select('*').order('created_at', { ascending: false }),
       supabase.from('site_settings').select('value').eq('key', 'feature_wholesale').single(),
       supabase.from('site_settings').select('value').eq('key', 'wholesale_default_discount').single(),
-      supabase.from('site_settings').select('value').eq('key', 'wholesale_min_order').single()
+      supabase.from('site_settings').select('value').eq('key', 'wholesale_min_order').single(),
+      supabase.from('site_settings').select('value').eq('key', 'wholesale_default_moq').single()
     ])
     setApplications(appRes.data || [])
     setFeatureOn(settingRes.data?.value === true || settingRes.data?.value === 'true')
     setSettings({
       discount: parseInt(discountRes.data?.value || '30'),
-      minOrder: parseInt(minOrderRes.data?.value || '200')
+      minOrder: parseInt(minOrderRes.data?.value || '200'),
+      defaultMoq: parseInt(defaultMoqRes.data?.value || '10')
     })
     setLoading(false)
   }
@@ -38,7 +41,8 @@ export default function WholesaleAdminPage() {
     try {
       await Promise.all([
         supabase.from('site_settings').upsert({ key: 'wholesale_default_discount', value: String(settings.discount), label: 'Remise Wholesale Défaut', category: 'wholesale' }),
-        supabase.from('site_settings').upsert({ key: 'wholesale_min_order', value: String(settings.minOrder), label: 'Minimum Commande Wholesale', category: 'wholesale' })
+        supabase.from('site_settings').upsert({ key: 'wholesale_min_order', value: String(settings.minOrder), label: 'Minimum Commande Wholesale', category: 'wholesale' }),
+        supabase.from('site_settings').upsert({ key: 'wholesale_default_moq', value: String(settings.defaultMoq), label: 'MOQ Par Défaut (unités)', category: 'wholesale' })
       ])
       toast.success('✅ Paramètres mis à jour !')
     } catch (err: any) {
@@ -104,6 +108,16 @@ export default function WholesaleAdminPage() {
                     className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-primary"
                   />
                   <span className="text-gray-500 font-bold">$</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-2">Quantité Minimum Par Produit (MOQ Global)</label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="number" value={settings.defaultMoq} onChange={e => setSettings({...settings, defaultMoq: parseInt(e.target.value)})}
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-primary"
+                  />
+                  <span className="text-gray-500 font-bold">unités</span>
                 </div>
               </div>
             </div>

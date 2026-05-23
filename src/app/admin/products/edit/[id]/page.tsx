@@ -8,7 +8,7 @@ import {
   Plus, Trash2, Package, Tag, 
   DollarSign, Hash, Layers, X, AlertTriangle,
   Search, RefreshCw, Globe, Video, Upload, CheckCircle,
-  Star, ArrowUp
+  Star, ArrowUp, Building2
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -28,6 +28,8 @@ interface ProductFormData {
   compare_price: string
   sku: string
   category_id: string
+  subcategory_id: string
+  wholesale_moq: string
   stock_quantity: string
   weight: string
   is_active: boolean
@@ -64,6 +66,8 @@ export default function EditProductPage() {
     compare_price: '',
     sku: '',
     category_id: '',
+    subcategory_id: '',
+    wholesale_moq: '10',
     stock_quantity: '0',
     weight: '',
     is_active: true,
@@ -129,6 +133,8 @@ export default function EditProductPage() {
         compare_price: p.compare_price?.toString() || '',
         sku: p.sku || '',
         category_id: p.category_id || '',
+        subcategory_id: p.subcategory_id || '',
+        wholesale_moq: p.wholesale_moq?.toString() || '10',
         stock_quantity: p.stock_quantity?.toString() || '0',
         weight: p.weight?.toString() || '',
         is_active: p.is_active ?? true,
@@ -480,6 +486,8 @@ export default function EditProductPage() {
         ...formData,
         price: parseFloat(formData.price),
         compare_price: formData.compare_price ? parseFloat(formData.compare_price) : null,
+        wholesale_moq: parseInt(formData.wholesale_moq) || 10,
+        subcategory_id: formData.subcategory_id || null,
         stock_quantity: variants.length > 0 
           ? variants.reduce((sum, v) => sum + (v.stock || 0), 0)
           : parseInt(formData.stock_quantity),
@@ -855,7 +863,21 @@ export default function EditProductPage() {
                 </div>
               </div>
             </div>
-            <p className="text-[11px] text-gray-400">Entrez le prix en dollars canadiens (CAD)</p>
+            
+            <div className="pt-4 border-t border-gray-800 mt-4">
+              <label className="block text-xs font-black text-gray-500 uppercase mb-2 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-400"/>
+                Quantité Minimum Wholesale (MOQ)
+              </label>
+              <input 
+                type="number" min="1" value={formData.wholesale_moq} 
+                onChange={e => setFormData({...formData, wholesale_moq: e.target.value})}
+                className="w-full md:w-1/3 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white outline-none focus:border-blue-400"
+              />
+              <p className="text-[10px] text-gray-500 mt-1">Qté min. requise pour les achats B2B / Vente en gros.</p>
+            </div>
+            
+            <p className="text-[11px] text-gray-400 mt-4">Entrez le prix en dollars canadiens (CAD)</p>
 
             {/* Prix d'achat & Rentabilité */}
             <div className="pt-4 border-t border-gray-800 space-y-4">
@@ -1271,12 +1293,26 @@ export default function EditProductPage() {
             <h2 className="text-lg font-bold text-white flex items-center gap-2"><Tag className="w-5 h-5 text-secondary"/>Organisation</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Catégorie</label>
-                <select value={formData.category_id} onChange={(e) => setFormData({ ...formData, category_id: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white">
+                <label className="block text-xs font-black text-gray-500 uppercase mb-2">Catégorie Principale</label>
+                <select value={formData.category_id} onChange={(e) => setFormData({ ...formData, category_id: e.target.value, subcategory_id: '' })} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white">
                   <option value="">Choisir...</option>
-                  {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                  {categories.filter(c => !c.parent_id).map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                 </select>
               </div>
+              
+              {formData.category_id && categories.filter(c => c.parent_id === formData.category_id).length > 0 && (
+                <div>
+                  <label className="block text-xs font-black text-gray-500 uppercase mb-2">Sous-catégorie (Optionnel)</label>
+                  <select
+                    value={formData.subcategory_id}
+                    onChange={(e) => setFormData({ ...formData, subcategory_id: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white outline-none focus:border-primary"
+                  >
+                    <option value="">Sélectionner une sous-catégorie</option>
+                    {categories.filter(c => c.parent_id === formData.category_id).map(sub => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-black text-gray-500 uppercase mb-2">Tags</label>
                 <div className="flex gap-2 mb-2 flex-wrap">

@@ -10,6 +10,8 @@ export interface Product {
   price: number
   compare_price?: number
   category_id?: string
+  subcategory_id?: string
+  wholesale_moq?: number
   images: ProductImage[]
   variants: ProductVariant[]
   tags: string[]
@@ -68,6 +70,8 @@ export interface CartItem {
   product: Product
   quantity: number
   variant?: ProductVariant
+  isWholesale?: boolean
+  moq?: number
 }
 
 export interface Order {

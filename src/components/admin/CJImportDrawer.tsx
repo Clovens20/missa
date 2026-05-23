@@ -8,7 +8,7 @@ import {
   DollarSign, Package, Image,
   Video, VideoOff, RefreshCw,
   Save, AlertCircle, Globe,
-  Loader, Info, Edit3, TrendingUp, CheckCircle
+  Loader, Info, Edit3, TrendingUp, CheckCircle, Building2
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
@@ -54,6 +54,8 @@ export default function CJImportDrawer({
     sellingPrice: '',
     comparePrice: '',
     categoryId: '',
+    subcategoryId: '',
+    wholesaleMoq: '10',
     tags: [] as string[],
     newTag: '',
     aliUrl: '',
@@ -166,7 +168,7 @@ export default function CJImportDrawer({
   async function loadCategories() {
     const { data } = await supabase
       .from('categories')
-      .select('id, name')
+      .select('*')
       .eq('is_active', true)
       .order('name')
     setCategories(data || [])
@@ -259,6 +261,8 @@ export default function CJImportDrawer({
         (suggestedPrice * 1.25)
           .toFixed(2),
       categoryId: '',
+      subcategoryId: '',
+      wholesaleMoq: '10',
       tags: [
         product.categoryName
       ].filter(Boolean),
@@ -408,6 +412,9 @@ export default function CJImportDrawer({
             ),
             categoryId: 
               form.categoryId || undefined,
+            subcategoryId:
+              form.subcategoryId || undefined,
+            wholesale_moq: parseInt(form.wholesaleMoq) || 10,
             customName: form.name,
             customDescription: 
               form.description,
@@ -1379,14 +1386,15 @@ export default function CJImportDrawer({
                   <label className="block 
                     text-sm font-bold 
                     text-gray-300 mb-2">
-                    Catégorie Missa Shop
+                    Catégorie Principale
                   </label>
                   <select
                     value={form.categoryId}
                     onChange={e => 
                       setForm(p => ({
                         ...p, 
-                        categoryId: e.target.value
+                        categoryId: e.target.value,
+                        subcategoryId: ''
                       }))}
                     className="w-full px-4 py-3 
                       bg-gray-800 border 
@@ -1397,7 +1405,7 @@ export default function CJImportDrawer({
                     <option value="">
                       Sans catégorie
                     </option>
-                    {categories.map(cat => (
+                    {categories.filter(c => !c.parent_id).map(cat => (
                       <option 
                         key={cat.id} 
                         value={cat.id}>
@@ -1405,6 +1413,67 @@ export default function CJImportDrawer({
                       </option>
                     ))}
                   </select>
+                </div>
+
+                {/* Subcategory */}
+                {form.categoryId && categories.filter(c => c.parent_id === form.categoryId).length > 0 && (
+                  <div>
+                    <label className="block 
+                      text-sm font-bold 
+                      text-gray-300 mb-2">
+                      Sous-catégorie
+                    </label>
+                    <select
+                      value={form.subcategoryId}
+                      onChange={e => 
+                        setForm(p => ({
+                          ...p, 
+                          subcategoryId: e.target.value
+                        }))}
+                      className="w-full px-4 py-3 
+                        bg-gray-800 border 
+                        border-gray-700 rounded-xl 
+                        text-white text-sm 
+                        focus:border-primary 
+                        focus:outline-none">
+                      <option value="">
+                        Sélectionner une sous-catégorie
+                      </option>
+                      {categories.filter(c => c.parent_id === form.categoryId).map(sub => (
+                        <option 
+                          key={sub.id} 
+                          value={sub.id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Wholesale MOQ */}
+                <div>
+                  <label className="block 
+                    text-sm font-bold 
+                    text-blue-400 mb-2 flex items-center gap-2">
+                    <Building2 className="w-4 h-4"/>
+                    MOQ Vente en gros
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={form.wholesaleMoq}
+                    onChange={e => 
+                      setForm(p => ({
+                        ...p, 
+                        wholesaleMoq: e.target.value
+                      }))}
+                    className="w-full px-4 py-3 
+                      bg-gray-800 border 
+                      border-gray-700 rounded-xl 
+                      text-white text-sm 
+                      focus:border-blue-400 
+                      focus:outline-none"
+                  />
                 </div>
               </div>
             )}
