@@ -13,6 +13,7 @@ import { formatPrice } from '@/lib/utils'
 
 export default function TrackPage() {
   const [query, setQuery] = useState('')
+  const [trackingInput, setTrackingInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [order, setOrder] = useState<any>(null)
   const [error, setError] = useState('')
@@ -162,11 +163,38 @@ export default function TrackPage() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0"/>
-              <div>
-                <p className="text-red-400 font-bold text-sm">{error}</p>
-                <p className="text-gray-500 text-xs mt-1">Besoin d'aide? Contactez-nous via WhatsApp ou email.</p>
+              className="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"/>
+              <div className="flex-1">
+                <p className="text-red-400 font-bold text-sm">
+                  Commande introuvable. Vérifiez votre numéro ou email.
+                </p>
+                <p className="text-gray-500 text-xs mt-1">
+                  💡 Vous avez un numéro de suivi? Suivez directement sur: 17track.net
+                </p>
+                
+                <div className="mt-4 p-4 bg-white/5 rounded-xl border border-primary/20">
+                  <p className="text-sm text-gray-300 mb-2">
+                    📦 Suivre avec le numéro de colis directement:
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Ex: YT2412345..."
+                      className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-primary"
+                      value={trackingInput}
+                      onChange={(e) => setTrackingInput(e.target.value)}
+                    />
+                    <a
+                      href={`https://t.17track.net/en#nums=${trackingInput}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-primary-dark transition-all flex items-center"
+                    >
+                      Suivre →
+                    </a>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
@@ -231,8 +259,8 @@ export default function TrackPage() {
 
               {/* Tracking number */}
               {order.tracking_number && (
-                <div className="bg-primary/10 border border-primary/30 rounded-2xl p-5 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="bg-primary/10 border border-primary/30 rounded-2xl p-5">
+                  <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
                       <Truck className="w-5 h-5 text-primary"/>
                     </div>
@@ -245,10 +273,13 @@ export default function TrackPage() {
                     href={`https://t.17track.net/en#nums=${order.tracking_number}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all">
-                    Suivre
-                    <ArrowRight className="w-4 h-4"/>
+                    className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-black px-6 py-4 rounded-2xl transition-all shadow-lg shadow-primary/30"
+                  >
+                    📦 Suivre ma commande →
                   </a>
+                  <p className="text-xs text-gray-400 text-center mt-2">
+                    Vous serez redirigé vers 17track.net — compatible avec tous nos transporteurs
+                  </p>
                 </div>
               )}
 

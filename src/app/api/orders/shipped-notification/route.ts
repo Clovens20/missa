@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 export async function POST(req: Request) {
   const { email, firstName, orderNumber, trackingNumber, items, total, shippingAddress } = await req.json()
   const itemsHtml = items?.slice(0, 5).map((item: any) => `<tr><td style="padding:8px 0; border-bottom:1px solid #f3f4f6; font-size:14px">${item.qty}x ${item.name} ${item.variant?.size ? `(${item.variant.size})` : ''}</td><td style="padding:8px 0; text-align:right; font-weight:bold; border-bottom:1px solid #f3f4f6">$${(item.price * item.qty).toFixed(2)}</td></tr>`).join('') || ''
-  const addr = shippingAddress; const trackingUrl = `https://www.canadapost-postescanada.ca/track-reperage/en#/search?searchFor=${trackingNumber}`
+  const addr = shippingAddress; const trackingUrl = `https://t.17track.net/en#nums=${trackingNumber}`
   await resend.emails.send({
     from: 'Missa Shop <orders@missashopp.com>',
     to: [email],
