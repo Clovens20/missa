@@ -92,8 +92,14 @@ export default function CheckoutPage() {
     tax_rates: Record<string, { name: string, rate: number, enabled: boolean }>
   } | null>(null)
 
+  const [shippingSettings, setShippingSettings] = useState({
+    freeShippingThreshold: 100,
+    standardShippingFee: 8.99,
+    expressShippingFee: 9.99
+  })
+
   useEffect(() => {
-    async function loadTax() {
+    async function loadSettings() {
       try {
         const res = await fetch('/api/shop/tax-settings')
         if (res.ok) {
@@ -103,8 +109,27 @@ export default function CheckoutPage() {
       } catch (err) {
         console.error('Failed to load tax settings:', err)
       }
+
+      try {
+        const { data, error } = await supabase
+          .from('site_settings')
+          .select('key, value')
+          .in('key', ['free_shipping_threshold', 'shipping_fee_standard', 'shipping_fee_express'])
+        
+        if (data && !error) {
+          const s = { freeShippingThreshold: 100, standardShippingFee: 8.99, expressShippingFee: 9.99 }
+          data.forEach(row => {
+            if (row.key === 'free_shipping_threshold') s.freeShippingThreshold = Number(row.value) || 100
+            if (row.key === 'shipping_fee_standard') s.standardShippingFee = Number(row.value) || 8.99
+            if (row.key === 'shipping_fee_express') s.expressShippingFee = Number(row.value) || 9.99
+          })
+          setShippingSettings(s)
+        }
+      } catch (err) {
+        console.error('Failed to load shipping settings:', err)
+      }
     }
-    loadTax()
+    loadSettings()
   }, [])
 
   const hasLocalProducts = items.some(item => !item.product?.is_dropship)
@@ -172,7 +197,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const shipping = total >= 100 ? 0 : 8.99
+  const shipping = total >= shippingSettings.freeShippingThreshold ? 0 : shippingSettings.standardShippingFee
   
   let taxRate = 0
   let taxLabel = 'Taxes'
@@ -559,7 +584,7 @@ export default function CheckoutPage() {
                           </select>
                         </div>
                       </div>
-                      <div className="border-2 border-gray-100 rounded-2xl p-4"><p className="font-bold text-gray-700 text-sm mb-3">Mode de livraison</p><div className={`flex items-center justify-between p-3 rounded-xl border-2 ${total >= 100 ? 'border-secondary bg-secondary/10' : 'border-primary bg-primary/10'}`}><div><p className="font-bold text-sm">Livraison standard (5-7 jours)</p><p className="text-xs text-gray-500">{total >= 100 ? '✅ Gratuite!' : 'Standard'}</p></div><span className={`font-black ${total >= 100 ? 'text-secondary' : 'text-primary'}`}>{total >= 100 ? 'GRATUIT' : formatPrice(8.99)}</span></div></div>
+                      <div className="border-2 border-gray-100 rounded-2xl p-4"><p className="font-bold text-gray-700 text-sm mb-3">Mode de livraison</p><div className={`flex items-center justify-between p-3 rounded-xl border-2 ${total >= shippingSettings.freeShippingThreshold ? 'border-secondary bg-secondary/10' : 'border-primary bg-primary/10'}`}><div><p className="font-bold text-sm">Livraison standard (5-7 jours)</p><p className="text-xs text-gray-500">{total >= shippingSettings.freeShippingThreshold ? '✅ Gratuite!' : 'Standard'}</p></div><span className={`font-black ${total >= shippingSettings.freeShippingThreshold ? 'text-secondary' : 'text-primary'}`}>{total >= shippingSettings.freeShippingThreshold ? 'GRATUIT' : formatPrice(shippingSettings.standardShippingFee)}</span></div></div>
                       <div className="flex gap-3 pt-2"><button onClick={() => setStep('info')} className="px-6 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-600 hover:border-primary hover:text-primary transition-all">← Retour</button><button onClick={() => { if (!form.address || !form.city || !form.zip) { toast.error('Adresse complète requise'); return } setStep('payment'); trackInitiateCheckout(grandTotal) }} className="flex-1 bg-primary hover:bg-primary-dark text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all">Paiement <ChevronRight className="w-4 h-4"/></button></div>
                     </div>
                   </motion.div>

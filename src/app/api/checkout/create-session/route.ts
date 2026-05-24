@@ -53,9 +53,25 @@ export async function POST(req: Request) {
       quantity: item.quantity,
     }))
 
+    // Fetch dynamic shipping settings
+    const { data: siteSettingsRes } = await supabase
+      .from('site_settings')
+      .select('key, value')
+      .in('key', ['free_shipping_threshold', 'shipping_fee_standard', 'shipping_fee_express'])
+    
+    let freeShippingThreshold = 100
+    let standardShippingFee = 8.99
+    let expressShippingFee = 9.99
+
+    siteSettingsRes?.forEach(row => {
+      if (row.key === 'free_shipping_threshold') freeShippingThreshold = Number(row.value) || 100
+      if (row.key === 'shipping_fee_standard') standardShippingFee = Number(row.value) || 8.99
+      if (row.key === 'shipping_fee_express') expressShippingFee = Number(row.value) || 9.99
+    })
+
     // Calculate subtotal, shipping, and tax matching local calculations
     const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
-    const shippingCost = subtotal >= 100 ? 0 : 8.99
+    const shippingCost = subtotal >= freeShippingThreshold ? 0 : standardShippingFee
     
     // Dynamic taxes using our new lib/tax cache-based system
     const { calculateTax } = await import('@/lib/tax')
@@ -82,7 +98,7 @@ export async function POST(req: Request) {
     }
 
     const convertedShipping = Math.round((shippingCost * rate) * 100)
-    const convertedExpress = Math.round((9.99 * rate) * 100)
+    const convertedExpress = Math.round((expressShippingFee * rate) * 100)
 
     const orderNumber = 'MS-' + Date.now().toString().slice(-8)
 
