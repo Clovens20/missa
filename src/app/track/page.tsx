@@ -288,10 +288,26 @@ export default function TrackPage() {
                 <h3 className="font-black text-white">Articles commandés</h3>
                 {(order.items || []).map((item: any, i: number) => (
                   <div key={i} className="flex gap-4 pb-4 border-b border-gray-800 last:border-0 last:pb-0">
-                    {item.image && (
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    {item.image ? (
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0 flex items-center justify-center">
+                        <img 
+                          src={item.image} 
+                          alt={item.name || item.product_name || "Produit"} 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.classList.add('fallback-icon');
+                          }}
+                        />
+                        <style dangerouslySetInnerHTML={{__html: `
+                          .fallback-icon::after {
+                            content: '📦';
+                            font-size: 24px;
+                          }
+                        `}} />
                       </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0 flex items-center justify-center text-2xl">📦</div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-semibold text-sm line-clamp-2">{item.name || item.product_name}</p>

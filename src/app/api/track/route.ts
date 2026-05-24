@@ -18,35 +18,15 @@ export async function GET(req: Request) {
       )
     }
 
-    // Search by order number OR email
     const isEmail = query.includes('@')
 
     let orderQuery = supabase
-      .from('orders')
-      .select(`
-        id,
-        order_number,
-        status,
-        total_amount,
-        created_at,
-        tracking_number,
-        shipping_address,
-        customer_name,
-        customer_email,
-        items:order_items(
-          id,
-          quantity,
-          price,
-          name:product_name,
-          image:product_image,
-          size,
-          color
-        )
-      `)
+      .from('guest_orders')
+      .select('*')
 
     if (isEmail) {
       orderQuery = orderQuery
-        .ilike('customer_email', query)
+        .ilike('email', query)
         .order('created_at', { ascending: false })
         .limit(1)
     } else {
@@ -64,10 +44,32 @@ export async function GET(req: Request) {
       )
     }
 
-    // Hide sensitive data
+    // Format to match frontend expectations
     const safeOrder = {
-      ...data,
-      customer_email: data.customer_email?.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+      id: data.id,
+      order_number: data.order_number,
+      status: data.order_status,
+      total_amount: data.total,
+      created_at: data.created_at,
+      tracking_number: data.tracking_number,
+      shipping_address: {
+        name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
+        address: data.shipping_address?.address || '',
+        city: data.shipping_address?.city || '',
+        province: data.shipping_address?.state || '',
+        country: data.shipping_address?.country || '',
+      },
+      customer_name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
+      customer_email: data.email?.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+      items: (data.items || []).map((item: any) => ({
+        id: item.product_id || item.id,
+        quantity: item.qty || item.quantity || 1,
+        price: item.price,
+        product_name: item.name,
+        image: item.image,
+        size: item.variant?.size || item.size,
+        color: item.variant?.color || item.color,
+      }))
     }
 
     return NextResponse.json({ order: safeOrder })
