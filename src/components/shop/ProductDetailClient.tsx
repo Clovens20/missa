@@ -27,11 +27,13 @@ interface Props {
     category?: { name: string, slug: string }
   }
   reviews: Review[]
+  volumeDiscounts?: { d2: number, d3: number, d4: number, d5: number }
 }
 
 export default function ProductDetailClient({
   product,
-  reviews
+  reviews,
+  volumeDiscounts
 }: Props) {
   const { addItem } = useCart()
   const { toggle, isInWishlist } = useWishlist()
@@ -45,12 +47,13 @@ export default function ProductDetailClient({
   const [cartError, setCartError] = useState('')
   const router = useRouter()
 
+  const d = volumeDiscounts || { d2: 15, d3: 20, d4: 25, d5: 35 }
   const VOLUME_DISCOUNTS = [
     { qty: 1, discount: 0, label: '1 article' },
-    { qty: 2, discount: 15, label: '2 articles (-15%)' },
-    { qty: 3, discount: 20, label: '3 articles (-20%)' },
-    { qty: 4, discount: 25, label: '4 articles (-25%)' },
-    { qty: 5, discount: 35, label: '5 articles (-35%)' },
+    { qty: 2, discount: d.d2, label: `2 articles (-${d.d2}%)` },
+    { qty: 3, discount: d.d3, label: `3 articles (-${d.d3}%)` },
+    { qty: 4, discount: d.d4, label: `4 articles (-${d.d4}%)` },
+    { qty: 5, discount: d.d5, label: `5 articles (-${d.d5}%)` },
   ]
 
   const inWishlist = isInWishlist(product.id)

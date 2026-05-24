@@ -179,6 +179,19 @@ export default async function ProductPage({
     .order('created_at', { ascending: false })
     .limit(10)
 
+  const { data: siteSettingsRes } = await supabase
+    .from('site_settings')
+    .select('key, value')
+    .in('key', ['vol_discount_2', 'vol_discount_3', 'vol_discount_4', 'vol_discount_5'])
+  
+  const volumeDiscounts = { d2: 15, d3: 20, d4: 25, d5: 35 }
+  siteSettingsRes?.forEach(r => {
+    if (r.key === 'vol_discount_2') volumeDiscounts.d2 = Number(r.value) || 15
+    if (r.key === 'vol_discount_3') volumeDiscounts.d3 = Number(r.value) || 20
+    if (r.key === 'vol_discount_4') volumeDiscounts.d4 = Number(r.value) || 25
+    if (r.key === 'vol_discount_5') volumeDiscounts.d5 = Number(r.value) || 35
+  })
+
   return (
     <>
       <ProductSchema product={product}/>
@@ -192,7 +205,7 @@ export default async function ProductPage({
       <Header />
       <CartDrawer />
       <main>
-        <ProductDetailClient product={product} reviews={reviews || []} />
+        <ProductDetailClient product={product} reviews={reviews || []} volumeDiscounts={volumeDiscounts} />
         {related && related.length > 0 && (
           <RelatedProducts title="🔗 Dans la même catégorie" subtitle={`Plus de produits en ${product.category?.name}`} products={related} accentColor="primary" />
         )}
