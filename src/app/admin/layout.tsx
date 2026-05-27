@@ -51,7 +51,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const { count: orderCount } = await supabase
       .from('guest_orders')
       .select('*', { count: 'exact', head: true })
-      .in('order_status', ['pending', 'confirmed'])
+      .eq('order_status', 'pending')
     setNotifications(orderCount || 0)
 
     const { count: reviewCount } = await supabase
@@ -188,7 +188,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 sticky top-0 z-40">
           <div className="flex items-center gap-2 text-sm"><span className="text-gray-500">Admin</span><ChevronRight className="w-4 h-4 text-gray-600"/><span className="text-white font-semibold capitalize">{pathname.split('/admin')[1]?.split('/')[1] || 'Dashboard'}</span></div>
           <div className="flex items-center gap-3">
-            {notifications > 0 && <Link href="/admin/orders" className="relative p-2 bg-gray-800 rounded-xl hover:bg-gray-700 transition-colors"><Bell className="w-5 h-5 text-gray-400"/><span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">{notifications}</span></Link>}
+            <Link href="/admin/orders" className="relative p-2 bg-gray-800 rounded-xl hover:bg-gray-700 transition-colors">
+              <Bell className="w-5 h-5 text-gray-400"/>
+              {notifications > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                  {notifications}
+                </span>
+              )}
+            </Link>
             <Link href="/admin/settings" className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 text-primary px-4 py-2 rounded-xl text-sm font-bold transition-colors"><Settings className="w-4 h-4"/>Paramètres</Link>
           </div>
         </div>

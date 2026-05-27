@@ -35,63 +35,13 @@ export default function AdminDashboard() {
 
   async function loadDashboard() {
     setRefreshing(true)
-    const today = new Date(); today.setHours(0,0,0,0)
-    const isoToday = today.toISOString()
-    
     try {
-      // 1. Fetch counts and essential stats in parallel
-      const [
-        totalOrdersRes,
-        pendingOrdersRes,
-        todayOrdersRes,
-        productsRes,
-        customersRes,
-        recentRes
-      ] = await Promise.all([
-        supabase.from('guest_orders').select('*', { count: 'exact', head: true }),
-        supabase.from('guest_orders').select('*', { count: 'exact', head: true }).eq('order_status', 'pending'),
-        supabase.from('guest_orders').select('total, order_status, email').gte('created_at', isoToday),
-        supabase.from('products').select('id, stock_quantity, low_stock_threshold').eq('is_active', true),
-        supabase.from('abandoned_carts').select('id', { count: 'exact', head: true }),
-        supabase.from('guest_orders').select('*').order('created_at', { ascending: false }).limit(6)
-      ])
-
-      // 2. Fetch unique customers count from guest_orders
-      const { data: customerEmails } = await supabase
-        .from('guest_orders')
-        .select('email')
-      
-      const uniqueEmails = new Set(customerEmails?.map(c => c.email.toLowerCase()) || [])
-      
-      // Calculate today's new unique customers
-      const todayEmails = new Set(
-        todayOrdersRes.data?.map(o => (o as any).email?.toLowerCase()).filter(Boolean) || []
-      )
-
-      // 3. Fetch total revenue (only totals to save bandwidth)
-      const { data: allRevenueData } = await supabase
-        .from('guest_orders')
-        .select('total')
-        .not('order_status', 'eq', 'cancelled')
-
-      const totalRevenue = allRevenueData?.reduce((s, o) => s + o.total, 0) || 0
-      const todayRevenue = todayOrdersRes.data?.filter(o => o.order_status !== 'cancelled').reduce((s, o) => s + o.total, 0) || 0
-      
-      const products = productsRes.data || []
-      const lowStock = products.filter(p => p.stock_quantity <= (p.low_stock_threshold || 5)).length
-
-      setStats({
-        totalRevenue, 
-        todayRevenue, 
-        totalOrders: totalOrdersRes.count || 0, 
-        pendingOrders: pendingOrdersRes.count || 0, 
-        totalProducts: products.length, 
-        lowStockProducts: lowStock, 
-        totalCustomers: uniqueEmails.size, 
-        newCustomersToday: todayEmails.size,
-        revenueGrowth: 15.2
-      })
-      setRecentOrders(recentRes.data || [])
+      const { getDashboardData } = await import('./dashboard-actions')
+      const data = await getDashboardData()
+      if (data) {
+        setStats(data.stats)
+        setRecentOrders(data.recentOrders)
+      }
     } catch (err) {
       console.error('Error loading dashboard:', err)
     } finally {

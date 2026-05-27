@@ -262,7 +262,7 @@ export default function CheckoutPage() {
             quantity: item.quantity,
             variant: item.variant || null,
           })),
-          cart_total: cartTotal,
+          total: cartTotal,
           cart_url: window.location.href,
           last_seen_at: new Date().toISOString(),
           recovered: false,

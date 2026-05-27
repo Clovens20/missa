@@ -38,10 +38,12 @@ export async function POST(req: Request) {
     )
   }
 
+  // ─────────────────────────────────────────────
+  // ✅ PAIEMENT RÉUSSI
+  // ─────────────────────────────────────────────
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as any
 
-    // Retrieve original pre-inserted guest order to get original items/order details
     const { data: guestOrder, error: guestFetchErr } = await supabase
       .from('guest_orders')
       .select('*')
@@ -55,12 +57,10 @@ export async function POST(req: Request) {
     const orderNumber = guestOrder?.order_number || ('MS-' + Date.now().toString().slice(-8))
     const lineItems = await stripe.checkout.sessions.listLineItems(session.id)
 
-    // Split Stripe shipping details name
     const nameParts = (session.shipping_details?.name || session.customer_details?.name || '').split(' ')
     const firstName = nameParts[0] || ''
     const lastName = nameParts.slice(1).join(' ') || ''
 
-    // Update guest_orders table which is used for fulfillment/admin panels
     const { error: guestUpdateErr } = await supabase
       .from('guest_orders')
       .update({
@@ -89,7 +89,6 @@ export async function POST(req: Request) {
       console.error('Error updating guest_order status in Webhook:', guestUpdateErr)
     }
 
-    // Insert into legacy orders table as requested for CSP / tracking analytics
     const { error: legacyInsertErr } = await supabase
       .from('orders')
       .insert({
@@ -118,7 +117,6 @@ export async function POST(req: Request) {
       console.error('Error inserting legacy order in Webhook:', legacyInsertErr)
     }
 
-    // Trigger automated order confirmation email to customer
     try {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.missashopp.com'
       await fetch(`${appUrl}/api/orders/confirm`, {
@@ -140,6 +138,43 @@ export async function POST(req: Request) {
       })
     } catch (mailErr) {
       console.error('Failed to trigger confirmation email in Stripe Webhook:', mailErr)
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // ❌ SESSION EXPIRÉE — CLIENT N'A PAS PAYÉ
+  // ─────────────────────────────────────────────
+  if (event.type === 'checkout.session.expired') {
+    const session = event.data.object as any
+
+    console.log('Checkout session expired:', session.id, '| Order:', session.metadata?.order_number)
+
+    // Annuler dans guest_orders
+    const { error: guestCancelErr } = await supabase
+      .from('guest_orders')
+      .update({
+        order_status: 'cancelled',
+        payment_status: 'unpaid',
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_session_id', session.id)
+
+    if (guestCancelErr) {
+      console.error('Error cancelling guest_order on session expired:', guestCancelErr)
+    }
+
+    // Annuler aussi dans la table orders (si une ligne existe déjà)
+    const { error: orderCancelErr } = await supabase
+      .from('orders')
+      .update({
+        status: 'cancelled',
+        payment_status: 'unpaid',
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_session_id', session.id)
+
+    if (orderCancelErr) {
+      console.error('Error cancelling order on session expired:', orderCancelErr)
     }
   }
 
