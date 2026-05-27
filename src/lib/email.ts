@@ -33,7 +33,7 @@ export async function sendOrderConfirmation(
         </div>
         <p>Vous recevrez un email avec votre numéro de suivi dès que votre colis sera en route.</p>
         <br/>
-        <a href="${appUrl}/orders/${order.id}" 
+        <a href="${appUrl}/track?q=${order.id}" 
            style="display: inline-block; background: #F97316; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
           Voir ma commande →
         </a>

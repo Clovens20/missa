@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Package, Truck,
@@ -18,33 +18,41 @@ export default function TrackPage() {
   const [order, setOrder] = useState<any>(null)
   const [error, setError] = useState('')
 
-  async function trackOrder() {
-    if (!query.trim()) return
+  const trackOrderValue = async (val: string) => {
+    if (!val.trim()) return
     setLoading(true)
     setError('')
     setOrder(null)
+    setQuery(val)
 
     try {
-      const res = await fetch(`/api/track?q=${encodeURIComponent(query.trim())}`)
+      const res = await fetch(`/api/track?q=${encodeURIComponent(val.trim())}`)
       const data = await res.json()
 
       if (data.error || !data.order) {
-        setError(
-          'Commande introuvable. ' +
-          'Vérifiez votre numéro ou email.'
-        )
+        setError('Commande introuvable. Vérifiez votre numéro ou email.')
       } else {
         setOrder(data.order)
       }
     } catch {
-      setError(
-        'Erreur de connexion. ' +
-        'Réessayez plus tard.'
-      )
+      setError('Erreur de connexion. Réessayez plus tard.')
     } finally {
       setLoading(false)
     }
   }
+
+  async function trackOrder() {
+    return trackOrderValue(query)
+  }
+
+  // Load from URL automatically
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get('q')
+    if (q) {
+      trackOrderValue(q)
+    }
+  }, [])
 
   // Order status steps
   const STATUS_STEPS = [
