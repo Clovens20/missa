@@ -21,6 +21,7 @@ import MiniStarRating from '@/components/shop/MiniStarRating'
 import ShareProduct from '@/components/shop/ShareProduct'
 import { trackAddToCart } from '@/components/shop/PixelsInjector'
 import ProductVariantSelector from '@/components/shop/ProductVariantSelector'
+import EmailCaptureModal from '@/components/EmailCaptureModal'
 
 interface Props {
   product: Product & { 
@@ -35,7 +36,7 @@ export default function ProductDetailClient({
   reviews,
   volumeDiscounts
 }: Props) {
-  const { addItem } = useCart()
+  const { addItem, setGuestEmail } = useCart()
   const { toggle, isInWishlist } = useWishlist()
   const { country: visitorCountry } = useCountry()
   
@@ -45,6 +46,9 @@ export default function ProductDetailClient({
   const [activeTab, setActiveTab] = useState<'desc'|'specs'|'reviews'>('desc')
   const [adding, setAdding] = useState(false)
   const [cartError, setCartError] = useState('')
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [capturedEmail, setCapturedEmail] = useState('')
+  const [pendingAction, setPendingAction] = useState<'buy' | 'cart' | null>(null)
   const router = useRouter()
 
   const d = volumeDiscounts || { d2: 15, d3: 20, d4: 25, d5: 35 }
@@ -97,6 +101,16 @@ export default function ProductDetailClient({
     }
 
     setCartError('')
+    
+    if (!capturedEmail) {
+      setPendingAction('cart')
+      setShowEmailModal(true)
+    } else {
+      executeAddToCart()
+    }
+  }
+
+  function executeAddToCart() {
     setAdding(true)
     const productToAdd = { ...product, price: unitPrice }
     addItem(productToAdd, quantity, selectedVariant || undefined)
@@ -114,10 +128,32 @@ export default function ProductDetailClient({
       return
     }
     setCartError('')
+    
+    if (!capturedEmail) {
+      setPendingAction('buy')
+      setShowEmailModal(true)
+    } else {
+      executeBuyNow()
+    }
+  }
+
+  function executeBuyNow() {
     const productToAdd = { ...product, price: unitPrice }
     addItem(productToAdd, quantity, selectedVariant || undefined)
     trackAddToCart(productToAdd, quantity)
     router.push('/checkout')
+  }
+
+  function handleEmailSubmit(email: string) {
+    setCapturedEmail(email)
+    setGuestEmail(email)
+    setShowEmailModal(false)
+    
+    if (pendingAction === 'buy') {
+      executeBuyNow()
+    } else if (pendingAction === 'cart') {
+      executeAddToCart()
+    }
   }
 
   function handleShare() {
@@ -408,6 +444,13 @@ export default function ProductDetailClient({
           reviewBreakdown={product.review_breakdown || {}}
         />
       </div>
+
+      <EmailCaptureModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        onSubmit={handleEmailSubmit}
+        productName={product.name}
+      />
     </div>
   )
 }

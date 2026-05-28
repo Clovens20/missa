@@ -172,54 +172,15 @@ export async function POST(req: Request) {
       metadata: {
         source: 'missashopp.com',
         items_count: items.length.toString(),
-        order_number: orderNumber
+        order_number: orderNumber,
+        items_json: JSON.stringify(items.map((i: any) => ({
+          id: i.id || i.product_id || i.product?.id,
+          name: i.name,
+          qty: i.quantity,
+          price: i.price
+        }))).substring(0, 499)
       },
     })
-
-    // Pre-insert into guest_orders so we don't lose items array and CJ variants info
-    const guestOrderData = {
-      order_number: orderNumber,
-      stripe_session_id: session.id,
-      email: customerEmail || shippingDetails?.email || '',
-      first_name: shippingDetails?.firstName || '',
-      last_name: shippingDetails?.lastName || '',
-      phone: shippingDetails?.phone || '',
-      items: items.map((item: any) => ({
-        product_id: item.product_id || item.product?.id || item.id,
-        name: item.name,
-        price: item.price,
-        qty: item.quantity,
-        image: item.image,
-        variant: item.variant || null,
-        variant_id: item.variant?.id || item.variant_id || null,
-        is_dropship: item.is_dropship || item.product?.is_dropship || false,
-        cj_price: item.cj_price || item.product?.cj_price || item.price
-      })),
-      subtotal: subtotal,
-      shipping: shippingCost,
-      tax: tax,
-      total: grandTotal,
-      shipping_address: {
-        address: shippingDetails?.address || '',
-        city: shippingDetails?.city || '',
-        state: shippingDetails?.state || '',
-        zip: shippingDetails?.zip || '',
-        country: shippingDetails?.country || 'CA',
-      },
-      payment_method: 'card',
-      payment_status: 'pending',
-      order_status: 'pending',
-      notes: shippingDetails?.notes || '',
-      currency: targetCurrency.toUpperCase(),
-    }
-
-    const { error: insertErr } = await supabase
-      .from('guest_orders')
-      .insert(guestOrderData)
-
-    if (insertErr) {
-      console.error('Error pre-inserting guest_order:', insertErr)
-    }
 
     return NextResponse.json({
       url: session.url,

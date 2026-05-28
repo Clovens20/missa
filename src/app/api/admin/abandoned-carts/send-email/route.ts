@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
+import { resend, FROM } from '@/lib/email'
 import {
   getAbandonedCartEmail1,
   getAbandonedCartEmail2,
@@ -10,9 +10,6 @@ import {
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-const resend = new Resend(
-  process.env.RESEND_API_KEY
 )
 
 function generateCode(
@@ -123,12 +120,17 @@ export async function POST(req: Request) {
     }
 
     // Send email using Resend
-    await resend.emails.send({
-      from: 'Missa Shop <hello@www.missashopp.com>',
+    const { error: resendError } = await resend.emails.send({
+      from: FROM,
       to: email,
       subject,
       html,
     })
+
+    if (resendError) {
+      console.error('Resend error:', resendError)
+      return NextResponse.json({ error: resendError.message }, { status: 400 })
+    }
 
     // Update DB timestamp
     const updateData: any = {}

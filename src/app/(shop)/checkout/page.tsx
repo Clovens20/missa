@@ -248,10 +248,10 @@ export default function CheckoutPage() {
         0
       )
 
-      // Upsert abandoned cart record
-      await supabase
-        .from('abandoned_carts')
-        .upsert({
+      await fetch('/api/abandoned-carts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           customer_email: email.toLowerCase(),
           customer_name: name || null,
           items: items.map(item => ({
@@ -259,6 +259,7 @@ export default function CheckoutPage() {
             name: item.product.name,
             price: item.product.price,
             image: item.product.images?.[0]?.url,
+            slug: item.product.slug,
             quantity: item.quantity,
             variant: item.variant || null,
           })),
@@ -266,9 +267,8 @@ export default function CheckoutPage() {
           cart_url: window.location.href,
           last_seen_at: new Date().toISOString(),
           recovered: false,
-        }, {
-          onConflict: 'customer_email,recovered'
         })
+      })
     } catch (err) {
       console.error('Cart capture error:', err)
     }

@@ -99,12 +99,11 @@ export default async function RootLayout({
 
   return (
     <html lang="fr" suppressHydrationWarning>
-      <head>
+      <head />
+      <body className={`${inter.variable} font-sans antialiased`}>
         {pixelData?.google_enabled && pixelData?.google_pixel_script && (
           <div dangerouslySetInnerHTML={{ __html: pixelData.google_pixel_script }} />
         )}
-      </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
         <SettingsProvider>
           <CurrencyProvider>
             <CartProvider>

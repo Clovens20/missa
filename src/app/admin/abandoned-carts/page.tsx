@@ -41,28 +41,28 @@ export default function AbandonedCartsPage() {
     // Stats
     const { data: allCarts } = await supabase
       .from('abandoned_carts')
-      .select('cart_total, total, recovered, converted')
+      .select('total, recovered, converted')
     
-    const total = allCarts?.length || 0
-    const recovered = allCarts?.filter(
+    const totalCount = allCarts?.length || 0
+    const recoveredCount = allCarts?.filter(
       c => c.recovered || c.converted
     ).length || 0
     const totalValue = allCarts?.reduce(
-      (sum, c) => sum + (c.cart_total !== null && c.cart_total !== undefined ? c.cart_total : (c.total || 0)),
+      (sum, c) => sum + (c.total || 0),
       0
     ) || 0
     const recoveredValue = allCarts
       ?.filter(c => c.recovered || c.converted)
       .reduce(
-        (sum, c) => sum + (c.cart_total !== null && c.cart_total !== undefined ? c.cart_total : (c.total || 0)),
+        (sum, c) => sum + (c.total || 0),
         0
       ) || 0
 
     setStats({
-      total,
-      recovered,
-      rate: total > 0 
-        ? Math.round((recovered/total)*100) 
+      total: totalCount,
+      recovered: recoveredCount,
+      rate: totalCount > 0 
+        ? Math.round((recoveredCount/totalCount)*100) 
         : 0,
       totalValue,
       recoveredValue,
@@ -259,7 +259,7 @@ export default function AbandonedCartsPage() {
               carts.map(cart => {
                 const email = cart.customer_email || cart.email
                 const name = cart.customer_name || cart.first_name || 'Anonyme'
-                const cartTotalValue = cart.cart_total !== null && cart.cart_total !== undefined ? cart.cart_total : (cart.total || 0)
+                const cartTotalValue = cart.total || 0
                 const isRecovered = cart.recovered || cart.converted
 
                 return (

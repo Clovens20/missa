@@ -15,6 +15,7 @@ interface CartContextType {
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clearCart: () => void
+  restoreCart: (items: CartItem[]) => void
   toggleCart: () => void
   setGuestEmail: (email: string) => void
 }
@@ -75,14 +76,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         slug: item.product.slug,
       })),
       total,
-      cart_total: total,
       converted: false,
       recovered: false,
       updated_at: new Date().toISOString(),
       last_seen_at: new Date().toISOString(),
     }
 
-    await supabase.from('abandoned_carts').upsert(cartData, { onConflict: 'session_id' })
+    try {
+      await fetch('/api/abandoned-carts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cartData)
+      })
+    } catch (err) {
+      console.error('Failed to sync abandoned cart:', err)
+    }
   }
 
   async function setGuestEmail(email: string) {
@@ -130,6 +138,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
+  function restoreCart(newItems: CartItem[]) {
+    setItems(newItems)
+  }
+
   function clearCart() {
     setItems([])
     localStorage.removeItem('missa-cart')
@@ -146,7 +158,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   return (
     <CartContext.Provider value={{
       items, total, count, isOpen, guestEmail,
-      addItem, removeItem, updateQty, clearCart, toggleCart, setGuestEmail,
+      addItem, removeItem, updateQty, clearCart, restoreCart, toggleCart, setGuestEmail,
     }}>
       {children}
     </CartContext.Provider>

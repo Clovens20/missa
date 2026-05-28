@@ -9,8 +9,10 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Header from '@/components/shop/Header'
+import { useCart } from '@/contexts/CartContext'
 
 function RecoverCartContent() {
+  const { restoreCart, setGuestEmail } = useCart()
   const params = useSearchParams()
   const router = useRouter()
   const token = params.get('token')
@@ -43,13 +45,37 @@ function RecoverCartContent() {
 
       setCart(data.cart)
       setStatus('success')
+      
+      // Mettre à jour l'email et le contexte du panier
+      if (data.cart.customer_email || data.cart.email) {
+        setGuestEmail(data.cart.customer_email || data.cart.email)
+      }
 
-      // Redirect to checkout after 3s
+      // Reconstruire les CartItems
+      if (data.cart.items && Array.isArray(data.cart.items)) {
+        const mappedItems = data.cart.items.map((i: any) => ({
+          id: i.variant?.id ? `${i.id || i.product_id}-${i.variant.id}` : (i.id || i.product_id),
+          product: {
+            id: i.id || i.product_id,
+            name: i.name,
+            price: i.price,
+            images: i.image ? [{ url: i.image }] : [],
+            slug: i.slug || '',
+          },
+          quantity: i.quantity || i.qty || 1,
+          variant: i.variant
+        }))
+        restoreCart(mappedItems)
+      }
+
+      // Determiner la redirection (vers la page produit si 1 seul article, sinon checkout)
       setTimeout(() => {
-        router.push(
-          '/checkout' + 
-          (code ? `?coupon=${code}` : '')
-        )
+        const firstItemSlug = data.cart?.items?.[0]?.slug
+        if (data.cart?.items?.length === 1 && firstItemSlug) {
+          router.push(`/product/${firstItemSlug}${code ? `?coupon=${code}` : ''}`)
+        } else {
+          router.push('/checkout' + (code ? `?coupon=${code}` : ''))
+        }
       }, 3000)
     } catch {
       setStatus('error')

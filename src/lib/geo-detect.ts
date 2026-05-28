@@ -16,9 +16,8 @@ export async function getVisitorCountry(): Promise<string> {
     const country = await res.text()
     return country?.trim() || 'UNKNOWN'
   } catch (err) {
-    console.error('Geo detection error:', err)
+    // Suppressed error log for cleaner console, defaults to UNKNOWN on failure
     return 'UNKNOWN'
-    // If detection fails -> show product (better UX than hiding everything)
   }
 }
 

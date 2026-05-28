@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from 
-  '@supabase/supabase-js'
-import { Resend } from 'resend'
+import { createClient } from '@supabase/supabase-js'
+import { resend, FROM } from '@/lib/email'
 import {
   getAbandonedCartEmail1,
   getAbandonedCartEmail2,
@@ -11,9 +10,6 @@ import {
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-const resend = new Resend(
-  process.env.RESEND_API_KEY
 )
 
 // Generate discount code
@@ -72,7 +68,7 @@ export async function GET(req: Request) {
         getAbandonedCartEmail1(cart)
       
       await resend.emails.send({
-        from: 'Missa Shop <hello@www.missashopp.com>',
+        from: FROM,
         to: cart.customer_email,
         subject,
         html,
@@ -148,7 +144,7 @@ export async function GET(req: Request) {
         )
 
       await resend.emails.send({
-        from: 'Missa Shop <hello@www.missashopp.com>',
+        from: FROM,
         to: cart.customer_email,
         subject,
         html,
@@ -200,7 +196,7 @@ export async function GET(req: Request) {
         )
 
       await resend.emails.send({
-        from: 'Missa Shop <hello@www.missashopp.com>',
+        from: FROM,
         to: cart.customer_email,
         subject,
         html,
