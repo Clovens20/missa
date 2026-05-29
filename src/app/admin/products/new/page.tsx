@@ -45,6 +45,7 @@ interface ProductFormData {
   available_countries: string[]
   sold_count: number
   ali_url: string
+  shipping_fee: string
 }
 
 export default function NewProductPage() {
@@ -81,6 +82,7 @@ export default function NewProductPage() {
     available_countries: ['*'],
     sold_count: Math.floor(Math.random() * 150) + 20,
     ali_url: '',
+    shipping_fee: '0'
   })
 
   const [imageUrl, setImageUrl] = useState('')
@@ -259,6 +261,7 @@ export default function NewProductPage() {
         availability_type: formData.availability_type,
         available_countries: formData.available_countries,
         sold_count: formData.sold_count,
+        shipping_fee: formData.shipping_fee ? parseFloat(formData.shipping_fee) : 0,
         rating: 5, // Temporary, will update below
         review_count: 0, // Temporary
         review_avg: 5, // Temporary
@@ -397,6 +400,16 @@ export default function NewProductPage() {
                     type="number"
                     value={formData.sold_count}
                     onChange={(e) => setFormData({ ...formData, sold_count: parseInt(e.target.value) || 0 })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:border-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-gray-500 uppercase mb-2">Poids (g)</label>
+                  <input
+                    type="number"
+                    value={formData.weight}
+                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                    placeholder="Ex: 500"
                     className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:border-primary outline-none"
                   />
                 </div>
@@ -569,6 +582,22 @@ export default function NewProductPage() {
               </div>
             </div>
             
+            <div className="pt-4 border-t border-gray-800 mt-4">
+              <label className="block text-xs font-black text-gray-500 uppercase mb-2 flex items-center gap-2">
+                <Package className="w-4 h-4 text-purple-400"/>
+                Frais de livraison spécifiques (US$)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <input 
+                  type="number" step="0.01" min="0" value={formData.shipping_fee} 
+                  onChange={e => setFormData({...formData, shipping_fee: e.target.value})}
+                  className="w-full md:w-1/3 bg-gray-800 border border-gray-700 rounded-xl pl-12 pr-4 py-2.5 text-white outline-none focus:border-purple-400"
+                />
+              </div>
+              <p className="text-[10px] text-gray-500 mt-1">Laissez à 0 pour utiliser les frais standards. S'additionne au coût de livraison total.</p>
+            </div>
+
             <div className="pt-4 border-t border-gray-800 mt-4">
               <label className="block text-xs font-black text-gray-500 uppercase mb-2 flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-blue-400"/>

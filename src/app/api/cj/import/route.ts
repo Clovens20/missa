@@ -285,6 +285,13 @@ export async function POST(
       0
     ) || cjProduct.productStock || 999
 
+    let rawWeight = typeof cjProduct.productWeight === 'string' 
+      ? parseFloat(cjProduct.productWeight.split('-')[0]) 
+      : cjProduct.productWeight;
+      
+    // Si le poids est invalide, 0, ou un poids fictif énorme (ex: 99999), on met null
+    const finalWeight = (!rawWeight || isNaN(rawWeight) || rawWeight > 10000) ? null : rawWeight;
+
     // Generate random engagement metrics
     const randomSoldCount = Math.floor(Math.random() * 150) + 20; // 20 to 169
     const contextStr = `${cjProduct.categoryName || ''} ${productName} ${finalTags.join(' ')}`;
@@ -334,9 +341,7 @@ export async function POST(
           tags: finalTags,
           is_active: totalStock > 0,
           is_dropship: true,
-          weight: typeof cjProduct.productWeight === 'string' 
-            ? parseFloat(cjProduct.productWeight.split('-')[0]) 
-            : cjProduct.productWeight,
+          weight: finalWeight,
           availability_type: 'worldwide',
           available_countries: ['*'],
           sold_count: randomSoldCount,

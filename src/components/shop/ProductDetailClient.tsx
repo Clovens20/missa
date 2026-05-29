@@ -388,7 +388,7 @@ export default function ProductDetailClient({
         )}
         {activeTab === 'specs' && (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {[ ['SKU', product.sku || 'N/A'], ['Catégorie', product.category?.name || 'N/A'], ['Stock', `${product.stock_quantity} unités`], ['Tags', product.tags?.join(', ') || 'N/A'], ['Poids', product.weight ? `${product.weight} kg` : 'N/A'], ['Vendu', `${product.sold_count} fois`] ].map(([key, val]) => (
+            {[ ['SKU', product.sku || 'N/A'], ['Catégorie', product.category?.name || 'N/A'], ['Stock', `${product.stock_quantity} unités`], ['Tags', product.tags?.join(', ') || 'N/A'], ['Poids', product.weight ? `${product.weight} g` : 'N/A'], ['Vendu', `${product.sold_count} fois`] ].map(([key, val]) => (
               <div key={key} className="bg-gray-50 rounded-xl p-4"><p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">{key}</p><p className="font-bold text-gray-800 text-sm">{val}</p></div>
             ))}
           </div>

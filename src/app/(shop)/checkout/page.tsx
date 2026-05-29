@@ -197,7 +197,9 @@ export default function CheckoutPage() {
     }
   }
 
-  const shipping = total >= shippingSettings.freeShippingThreshold ? 0 : shippingSettings.standardShippingFee
+  const productSpecificShipping = items.reduce((sum, item) => sum + ((item.product.shipping_fee || 0) * item.quantity), 0)
+  const baseShipping = total >= shippingSettings.freeShippingThreshold ? 0 : shippingSettings.standardShippingFee
+  const shipping = baseShipping + productSpecificShipping
   
   let taxRate = 0
   let taxLabel = 'Taxes'
@@ -402,7 +404,8 @@ export default function CheckoutPage() {
                 image: i.product.images?.[0]?.url || null,
                 variant: i.variant || null,
                 is_dropship: i.product.is_dropship || false,
-                variant_id: i.variant?.id || null
+                variant_id: i.variant?.id || null,
+                shipping_fee: i.product.shipping_fee || 0
               }
             }),
             shippingDetails: {
@@ -584,7 +587,7 @@ export default function CheckoutPage() {
                           </select>
                         </div>
                       </div>
-                      <div className="border-2 border-gray-100 rounded-2xl p-4"><p className="font-bold text-gray-700 text-sm mb-3">Mode de livraison</p><div className={`flex items-center justify-between p-3 rounded-xl border-2 ${total >= shippingSettings.freeShippingThreshold ? 'border-secondary bg-secondary/10' : 'border-primary bg-primary/10'}`}><div><p className="font-bold text-sm">Livraison standard (5-7 jours)</p><p className="text-xs text-gray-500">{total >= shippingSettings.freeShippingThreshold ? '✅ Gratuite!' : 'Standard'}</p></div><span className={`font-black ${total >= shippingSettings.freeShippingThreshold ? 'text-secondary' : 'text-primary'}`}>{total >= shippingSettings.freeShippingThreshold ? 'GRATUIT' : formatPrice(shippingSettings.standardShippingFee)}</span></div></div>
+                      <div className="border-2 border-gray-100 rounded-2xl p-4"><p className="font-bold text-gray-700 text-sm mb-3">Mode de livraison</p><div className={`flex items-center justify-between p-3 rounded-xl border-2 ${shipping === 0 ? 'border-secondary bg-secondary/10' : 'border-primary bg-primary/10'}`}><div><p className="font-bold text-sm">Livraison standard (5-7 jours)</p><p className="text-xs text-gray-500">{shipping === 0 ? '✅ Gratuite!' : 'Standard'}</p></div><span className={`font-black ${shipping === 0 ? 'text-secondary' : 'text-primary'}`}>{shipping === 0 ? 'GRATUIT' : formatPrice(shipping)}</span></div></div>
                       <div className="flex gap-3 pt-2"><button onClick={() => setStep('info')} className="px-6 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-600 hover:border-primary hover:text-primary transition-all">← Retour</button><button onClick={() => { if (!form.address || !form.city || !form.zip) { toast.error('Adresse complète requise'); return } setStep('payment'); trackInitiateCheckout(grandTotal) }} className="flex-1 bg-primary hover:bg-primary-dark text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all">Paiement <ChevronRight className="w-4 h-4"/></button></div>
                     </div>
                   </motion.div>

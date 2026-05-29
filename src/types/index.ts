@@ -30,6 +30,7 @@ export interface Product {
   review_breakdown?: Record<string, number>
   is_dropship?: boolean
   shipping_time?: string
+  shipping_fee?: number
   colors?: string[]
   available_colors?: string[]
   sizes?: string[]

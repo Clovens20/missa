@@ -71,7 +71,11 @@ export async function POST(req: Request) {
 
     // Calculate subtotal, shipping, and tax matching local calculations
     const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
-    const shippingCost = subtotal >= freeShippingThreshold ? 0 : standardShippingFee
+    const productSpecificShipping = items.reduce((sum: number, item: any) => sum + ((item.shipping_fee || 0) * item.quantity), 0)
+    
+    const baseShippingCost = subtotal >= freeShippingThreshold ? 0 : standardShippingFee
+    const shippingCost = baseShippingCost + productSpecificShipping
+    const totalExpressShipping = expressShippingFee + productSpecificShipping
     
     // Dynamic taxes using our new lib/tax cache-based system
     const { calculateTax } = await import('@/lib/tax')
@@ -98,7 +102,7 @@ export async function POST(req: Request) {
     }
 
     const convertedShipping = Math.round((shippingCost * rate) * 100)
-    const convertedExpress = Math.round((expressShippingFee * rate) * 100)
+    const convertedExpress = Math.round((totalExpressShipping * rate) * 100)
 
     const orderNumber = 'MS-' + Date.now().toString().slice(-8)
 
