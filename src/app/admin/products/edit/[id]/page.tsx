@@ -154,8 +154,7 @@ export default function EditProductPage() {
         availability_type: p.availability_type || 'worldwide',
         available_countries: p.available_countries || ['*'],
         sold_count: p.sold_count || 0,
-        shipping_fee: p.shipping_fee?.toString() || '0',
-        weight: p.weight?.toString() || ''
+        shipping_fee: p.shipping_fee?.toString() || '0'
       })
       setImageUrl(p.images?.[0]?.url || '')
       setAdditionalImages(p.images?.slice(1) || [])
