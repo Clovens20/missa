@@ -79,7 +79,7 @@ export default function ProductQuickView({
     name: v.name || v.sku || '',
     color: v.color || v.properties?.find((p: any) => p.name?.toLowerCase().includes('color'))?.value || null,
     size: v.size || v.properties?.find((p: any) => p.name?.toLowerCase().includes('size'))?.value || null,
-    price: v.price || v.cjPrice || product.price,
+    price: product.price, // Use shop's selling price, avoid CJ cost price (v.price/v.cjPrice)
     stock: v.stock || 0,
     image: v.image || v.variantImage || null
   }))

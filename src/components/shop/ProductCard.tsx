@@ -542,7 +542,7 @@ export default function ProductCard({
           const selectedVariant = product.variants?.find((v: any) => (v.id || v.vid) === vid) as any
           addItem({
             ...product,
-            price: selectedVariant?.price || product.price,
+            price: product.price, // Use shop's selling price instead of CJ variant cost price
           }, qty, {
             color: selectedVariant?.color || null,
             size: selectedVariant?.size || null,
