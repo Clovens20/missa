@@ -122,9 +122,69 @@ export default function ProductVariantsManager({
     const newColors = [...colors, trimmed]
     setColors(newColors)
     setCustomColor('')
+    
+    // Auto-detect images for this color
+    let newVI = { ...variantImages }
+    
+    if (!newVI[trimmed] || newVI[trimmed].length === 0) {
+      const colorTranslations: Record<string, string[]> = {
+        'Noir': ['black', 'noir', 'blk'],
+        'Blanc': ['white', 'blanc', 'wht'],
+        'Rouge': ['red', 'rouge'],
+        'Bleu': ['blue', 'bleu'],
+        'Vert': ['green', 'vert'],
+        'Rose': ['pink', 'rose'],
+        'Jaune': ['yellow', 'jaune'],
+        'Violet': ['purple', 'violet'],
+        'Orange': ['orange'],
+        'Gris': ['gray', 'grey', 'gris'],
+        'Beige': ['beige', 'khaki'],
+        'Marine': ['navy', 'marine'],
+        'Bordeaux': ['burgundy', 'bordeaux', 'wine'],
+        'Marron': ['brown', 'marron'],
+        'Kaki': ['khaki', 'kaki'],
+      }
+      
+      const synonyms = colorTranslations[trimmed] || [trimmed.toLowerCase()]
+      
+      // 1. Look in general images (alt text or URL)
+      const foundInGeneral = generalImages.filter(img => {
+        const text = ((img.alt || '') + ' ' + (img.url || '')).toLowerCase()
+        return synonyms.some(syn => text.includes(syn))
+      })
+      
+      // 2. Look in variant images (keys matching synonyms)
+      let foundInVariant: VariantImage[] = []
+      const allVariantImageSources = { ...initialVariantImages, ...variantImages }
+      
+      Object.keys(allVariantImageSources).forEach(key => {
+        if (synonyms.some(syn => key.toLowerCase().includes(syn))) {
+          foundInVariant = [...foundInVariant, ...allVariantImageSources[key]]
+        }
+      })
+      
+      const allFound = [...foundInGeneral, ...foundInVariant]
+      
+      // Deduplicate by URL
+      const uniqueFound: VariantImage[] = []
+      const seen = new Set()
+      for (const img of allFound) {
+        if (!seen.has(img.url)) {
+          seen.add(img.url)
+          uniqueFound.push(img)
+        }
+      }
+      
+      if (uniqueFound.length > 0) {
+        newVI[trimmed] = uniqueFound.map((img, i) => ({...img, is_primary: i === 0}))
+        toast.success(`📸 ${uniqueFound.length} image(s) auto-associée(s) pour la couleur ${trimmed}`)
+      }
+    }
+
+    setVariantImages(newVI)
     // Auto-open new color tab
     setActiveColorTab(trimmed)
-    notify(newColors, sizes, variantImages, generalImages)
+    notify(newColors, sizes, newVI, generalImages)
   }
 
   // ── Remove color ──────────────────

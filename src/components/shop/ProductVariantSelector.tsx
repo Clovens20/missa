@@ -58,6 +58,12 @@ ProductVariantSelector({
   const [currentImgIdx, setCurrentImgIdx] =
     useState(0)
 
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
+  
+  useEffect(() => {
+    setPortalTarget(document.getElementById('variant-options-portal'))
+  }, [])
+
   // Find variant for current selection
   const currentVariant = (product.variants || []).find((v: any) => {
     const colorMatch = (v.color || '') === (selectedColor || '')
@@ -312,196 +318,77 @@ ProductVariantSelector({
         </div>
       </div>
 
-      {/* ── COLOR SELECTOR ── */}
-      {colors.length > 0 && (
-        <div>
-          <div className="flex items-center
-            justify-between mb-3">
-            <p className="text-sm
-              font-black text-gray-900">
-              Couleur:
-              <span className="text-primary
-                ml-2 font-black">
-                {selectedColor}
-              </span>
-            </p>
-            {variantImages[selectedColor]
-              ?.length > 0 && (
-              <span className="text-[10px]
-                text-secondary font-bold
-                bg-secondary/10
-                px-2 py-1 rounded-full">
-                📸 {
-                  variantImages[selectedColor]
-                    .length
-                } photo(s)
-              </span>
-            )}
-          </div>
-
-          <div className="flex gap-3
-            flex-wrap">
-            {colors.map(color => {
-              const hex = getColorHex(color)
-              const isSelected =
-                selectedColor === color
-              const hasOwnImages =
-                (variantImages[color]
-                  ?.length || 0) > 0
-              const isLight = [
-                'Blanc', 'White', 'blanc casse', 'creme', 'ivoire',
-                'Beige', 'Jaune', 'light yellow', 'champagne',
-              ].includes(color) || hex === '#f5f5f5' || hex === '#ffffff'
-
-
-              return (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() =>
-                    setSelectedColor(color)}
-                  title={color}
-                  className={`
-                    relative flex flex-col
-                    items-center gap-1.5
-                    transition-all`}>
-
-                  {/* Color circle */}
-                  <div
-                    className={`
-                      w-10 h-10 rounded-full
-                      border-2 transition-all
-                      ${isSelected
-                        ? 'border-primary scale-110 shadow-lg'
-                        : isLight
-                          ? 'border-gray-300 hover:border-gray-500'
-                          : 'border-gray-200 hover:border-gray-400'
-                      }`}
-                    style={{
-                      background: hex
-                    }}>
-                    {isSelected && (
-                      <div className="w-full
-                        h-full rounded-full
-                        flex items-center
-                        justify-center">
-                        <Check
-                          className={`w-5 h-5
-                            font-black
-                            ${isLight
-                              ? 'text-gray-800'
-                              : 'text-white'
-                            }`}
-                        />
-                      </div>
+      {/* ── OPTIONS RENDERED VIA PORTAL TO THE RIGHT COLUMN ── */}
+      {portalTarget
+        ? (require('react-dom').createPortal(
+            <>
+              {/* ── COLOR SELECTOR ── */}
+              {colors.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-black text-gray-900">Couleur:<span className="text-primary ml-2 font-black">{selectedColor}</span></p>
+                    {variantImages[selectedColor]?.length > 0 && (
+                      <span className="text-[10px] text-secondary font-bold bg-secondary/10 px-2 py-1 rounded-full">📸 {variantImages[selectedColor].length} photo(s)</span>
                     )}
                   </div>
-
-                  {/* Color name */}
-                  <span className={`text-[10px]
-                    font-bold transition-colors
-                    ${isSelected
-                      ? 'text-primary'
-                      : 'text-gray-500'
-                    }`}>
-                    {color}
-                  </span>
-
-                  {/* Has images dot */}
-                  {hasOwnImages && (
-                    <div className="absolute
-                      -top-0.5 -right-0.5
-                      w-3 h-3 bg-secondary
-                      rounded-full border-2
-                      border-white"/>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── SIZE SELECTOR ── */}
-      {sizes.length > 0 && (
-        <div>
-          <div className="flex items-center
-            justify-between mb-3">
-            <p className="text-sm
-              font-black text-gray-900">
-              Taille:
-              {selectedSize && (
-                <span className="text-primary
-                  ml-2">
-                  {selectedSize}
-                </span>
+                  <div className="flex gap-3 flex-wrap">
+                    {colors.map(color => {
+                      const hex = getColorHex(color)
+                      const isSelected = selectedColor === color
+                      const hasOwnImages = (variantImages[color]?.length || 0) > 0
+                      const isLight = ['Blanc', 'White', 'blanc casse', 'creme', 'ivoire', 'Beige', 'Jaune', 'light yellow', 'champagne'].includes(color) || hex === '#f5f5f5' || hex === '#ffffff'
+                      return (
+                        <button key={color} type="button" onClick={() => setSelectedColor(color)} title={color} className={`relative flex flex-col items-center gap-1.5 transition-all`}>
+                          <div className={`w-10 h-10 rounded-full border-2 transition-all ${isSelected ? 'border-primary scale-110 shadow-lg' : isLight ? 'border-gray-300 hover:border-gray-500' : 'border-gray-200 hover:border-gray-400'}`} style={{ background: hex }}>
+                            {isSelected && <div className="w-full h-full rounded-full flex items-center justify-center"><Check className={`w-5 h-5 font-black ${isLight ? 'text-gray-800' : 'text-white'}`} /></div>}
+                          </div>
+                          <span className={`text-[10px] font-bold transition-colors ${isSelected ? 'text-primary' : 'text-gray-500'}`}>{color}</span>
+                          {hasOwnImages && <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-secondary rounded-full border-2 border-white"/>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
               )}
-            </p>
-            <a href="#size-guide"
-              className="text-xs
-                text-primary
-                hover:underline font-bold">
-              Guide des tailles →
-            </a>
-          </div>
 
-          {/* Stock status for current combination */}
-          {selectedColor && selectedSize && (
-            <div className="mb-3">
-              {isOutOfStock ? (
-                <span className="text-[10px] font-black bg-red-100 text-red-600 px-2 py-1 rounded-full uppercase">
-                  ❌ Rupture de stock
-                </span>
-              ) : currentVariant ? (
-                <span className="text-[10px] font-black bg-green-100 text-green-600 px-2 py-1 rounded-full uppercase">
-                  ✅ En stock ({currentVariant.stock})
-                </span>
-              ) : null}
-            </div>
-          )}
-
-          <div className="flex gap-2
-            flex-wrap">
-            {sizes.map(size => {
-              const isSelected =
-                selectedSize === size
-              const status = getSizeStatus(size, selectedColor)
-              const isDisabled = status === 'not-exists'
-              const isLowStock = status === 'out-of-stock'
-
-              return (
-                <button
-                  key={size}
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() =>
-                    setSelectedSize(size)}
-                  className={`
-                    min-w-[52px] h-12
-                    px-3 rounded-2xl
-                    border-2 font-black
-                    text-sm transition-all
-                    relative
-                    ${isSelected
-                      ? 'border-primary bg-primary/10 text-primary shadow-md'
-                      : isDisabled
-                        ? 'border-gray-100 text-gray-300 cursor-not-allowed opacity-50'
-                        : 'border-gray-200 text-gray-600 hover:border-primary/50 hover:text-primary'
-                    }
-                    ${isLowStock ? 'text-gray-400' : ''}
-                  `}>
-                  <span className={isLowStock ? 'line-through opacity-50' : ''}>
-                    {size}
-                  </span>
-                  {isLowStock && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
+              {/* ── SIZE SELECTOR ── */}
+              {sizes.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-black text-gray-900">Taille:{selectedSize && <span className="text-primary ml-2">{selectedSize}</span>}</p>
+                    <a href="#size-guide" className="text-xs text-primary hover:underline font-bold">Guide des tailles →</a>
+                  </div>
+                  {selectedColor && selectedSize && (
+                    <div className="mb-3">
+                      {isOutOfStock ? <span className="text-[10px] font-black bg-red-100 text-red-600 px-2 py-1 rounded-full uppercase">❌ Rupture de stock</span> : currentVariant ? <span className="text-[10px] font-black bg-green-100 text-green-600 px-2 py-1 rounded-full uppercase">✅ En stock ({currentVariant.stock})</span> : null}
+                    </div>
                   )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+                  <div className="flex gap-2 flex-wrap">
+                    {sizes.map(size => {
+                      const isSelected = selectedSize === size
+                      const status = getSizeStatus(size, selectedColor)
+                      const isDisabled = status === 'not-exists'
+                      const isLowStock = status === 'out-of-stock'
+                      return (
+                        <button key={size} type="button" disabled={isDisabled} onClick={() => setSelectedSize(size)} className={`min-w-[52px] h-12 px-3 rounded-2xl border-2 font-black text-sm transition-all relative ${isSelected ? 'border-primary bg-primary/10 text-primary shadow-md' : isDisabled ? 'border-gray-100 text-gray-300 cursor-not-allowed opacity-50' : 'border-gray-200 text-gray-600 hover:border-primary/50 hover:text-primary'} ${isLowStock ? 'text-gray-400' : ''}`}>
+                          <span className={isLowStock ? 'line-through opacity-50' : ''}>{size}</span>
+                          {isLowStock && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>,
+            portalTarget
+          ))
+        : (
+            <>
+              {/* Fallback if portal not found */}
+              {colors.length > 0 && <div className="text-red-500">Couleurs disponibles... (Portal manquant)</div>}
+            </>
+          )
+      }
     </div>
   )
 }

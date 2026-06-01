@@ -180,25 +180,41 @@ export async function POST(
         : (Array.isArray(cjProduct.variants) ? cjProduct.variants : [])
             .map((v: any) => {
               const properties = Array.isArray(v.variantProperty) ? v.variantProperty : []
+              
+              let parsedSize = properties.find(
+                (p: any) => 
+                  p.propertyName
+                    ?.toLowerCase() === 'size'
+              )?.propertyValueEn
+              
+              let parsedColor = properties.find(
+                (p: any) => 
+                  p.propertyName
+                    ?.toLowerCase() === 'color'
+              )?.propertyValueEn
+
+              if (!parsedColor && !parsedSize && v.variantKey) {
+                const parts = v.variantKey.split('-')
+                if (parts.length >= 2) {
+                  parsedColor = parts[0]
+                  parsedSize = parts[1]
+                } else if (parts.length === 1) {
+                  const val = parts[0]
+                  if (/^\d+/.test(val) || ['s','m','l','xl','xxl','xs'].includes(val.toLowerCase())) {
+                    parsedSize = val
+                  } else {
+                    parsedColor = val
+                  }
+                }
+              }
+
               return {
                 id: v.vid,
                 vid: v.vid,
                 sku: v.variantSku,
-                size: properties.find(
-                  (p: any) => 
-                    p.propertyName
-                      ?.toLowerCase() === 'size'
-                )?.propertyValueEn,
-                color: properties.find(
-                  (p: any) => 
-                    p.propertyName
-                      ?.toLowerCase() === 'color'
-                )?.propertyValueEn,
-                color_hex: getColorHex(properties.find(
-                  (p: any) => 
-                    p.propertyName
-                      ?.toLowerCase() === 'color'
-                )?.propertyValueEn || ''),
+                size: parsedSize,
+                color: parsedColor,
+                color_hex: getColorHex(parsedColor || ''),
                 image: v.variantImage || null,
                 stock: v.variantStock || 999,
                 cjPrice: parseFloat(

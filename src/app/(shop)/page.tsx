@@ -553,7 +553,7 @@ export default function HomePage() {
           {/* ── PRODUCTS GRID ── */}
           {loading ? (
             // Loading skeleton
-            <div className={`grid gap-3 sm:gap-4 ${viewMode === 'grid' ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            <div className={`grid gap-3 sm:gap-4 ${viewMode === 'grid' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7' : 'grid-cols-1 sm:grid-cols-2'}`}>
               {Array.from({ length: 20 }).map((_, i) => (
                 <div key={i} className="bg-white rounded-2xl overflow-hidden border border-gray-100 animate-pulse">
                   <div className="bg-gray-100 aspect-square sm:aspect-[4/5]"/>
@@ -580,7 +580,7 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              <div className={`grid gap-3 sm:gap-4 ${viewMode === 'grid' ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid-cols-1 sm:grid-cols-2'}`}>
+              <div className={`grid gap-3 sm:gap-4 ${viewMode === 'grid' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7' : 'grid-cols-1 sm:grid-cols-2'}`}>
                 <AnimatePresence mode="popLayout">
                   {products.map((product, i) => (
                     <ProductCard key={product.id} product={product} index={i} />

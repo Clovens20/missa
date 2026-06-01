@@ -744,6 +744,28 @@ export async function getAllProductVariants(
               .includes('type')
         )
 
+        // Fallback logic if names don't match standard terms
+        const fallbackColorProp = colorProp || properties[0]
+        const fallbackSizeProp = sizeProp || (properties.length > 1 ? properties[1] : null)
+
+        let parsedColor = fallbackColorProp?.propertyValueEn || fallbackColorProp?.propertyValueName || null
+        let parsedSize = fallbackSizeProp?.propertyValueEn || fallbackSizeProp?.propertyValueName || null
+
+        if (!parsedColor && !parsedSize && v.variantKey) {
+          const parts = v.variantKey.split('-')
+          if (parts.length >= 2) {
+            parsedColor = parts[0]
+            parsedSize = parts[1]
+          } else if (parts.length === 1) {
+            const val = parts[0]
+            if (/^\d+/.test(val) || ['s','m','l','xl','xxl','xs'].includes(val.toLowerCase())) {
+              parsedSize = val
+            } else {
+              parsedColor = val
+            }
+          }
+        }
+
         return {
           // CJ identifiers
           vid: v.vid,
@@ -751,14 +773,8 @@ export async function getAllProductVariants(
             `SKU-${pid}-${index}`,
           
           // Display properties
-          size: sizeProp
-            ?.propertyValueEn || 
-            sizeProp?.propertyValueName || 
-            null,
-          color: colorProp
-            ?.propertyValueEn || 
-            colorProp?.propertyValueName || 
-            null,
+          size: parsedSize,
+          color: parsedColor,
           material: materialProp
             ?.propertyValueEn || null,
           style: styleProp
